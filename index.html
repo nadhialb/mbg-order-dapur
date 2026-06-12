@@ -489,6 +489,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
       <div class="fh" id="item-price-hint"></div>
     </div>
     <div id="item-order-info" style="font-size:12.5px;color:var(--mt);padding:8px 12px;background:var(--bg);border-radius:8px;display:none"></div>
+    <div id="del-item-row" style="display:none;margin-bottom:4px">
+      <button class="btn" onclick="deleteItemFromModal()" style="width:100%;color:#ef4444;border:1.5px solid #ef4444;background:#fff5f5;font-weight:700">🗑 Hapus Bahan dari Jadwal</button>
+    </div>
     <div class="mac">
       <button class="btn btn-ol" onclick="closeModal('modal-add-item')">Batal</button>
       <button class="btn btn-pr" onclick="saveItem()">Simpan</button>
@@ -522,6 +525,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
         </select>
         <div class="fh">Rapel = diorder Jumat minggu sebelumnya · H-1 = barang tiba satu hari sebelum masak</div>
       </div>
+    </div>
+    <div id="del-mat-row" style="display:none;margin-bottom:4px">
+      <button class="btn" onclick="deleteMaterialFromModal()" style="width:100%;color:#ef4444;border:1.5px solid #ef4444;background:#fff5f5;font-weight:700">🗑 Hapus Bahan Baku</button>
     </div>
     <div class="mac">
       <button class="btn btn-ol" onclick="closeModal('modal-material')">Batal</button>
@@ -1309,31 +1315,34 @@ function renderJadwalContent(){
     html+=`<div class="empty"><div class="ei">📋</div><div class="et">Belum ada bahan untuk hari ini</div><div class="ed">Klik "Tambah Bahan" untuk menambahkan.</div></div>`;
   } else {
     let total=0;
-    items.forEach(si=>{
-      const m=getMat(si.materialId);if(!m)return;
-      const ep=effPrice(si);const sub=si.qty*ep;total+=sub;
-      const hasDiff=si.unitPrice!=null&&si.unitPrice!==m.price;
-      html+=`<div class="oi" style="border-left-color:${typeColor(m.type)}">
-        <div class="oi-info">
-          <div class="oi-name">${m.name}</div>
-          <div class="oi-meta">
-            <span style="color:var(--tx);font-weight:500">${si.qty} ${m.unit}</span>
-            <span style="color:var(--br)">·</span>
-            ${typeBadge(m.type)}
-            ${m.stockType==='rapel'?'<span class="badge bg-gn">Rapel</span>':m.stockType==='h1'?'<span class="badge bg-bl">H-1</span>':''}
-            ${hasDiff?`<span style="color:var(--or);font-size:11px">≠ master</span>`:''}
+    const _tOrder=['Karbohidrat','Protein','Sayuran','Bumbu','Minyak & Lemak','Buah','Minuman','Frozen Food','Lainnya'];
+    const _byType={};
+    items.forEach(si=>{const m=getMat(si.materialId);if(!m)return;const t=m.type||'Lainnya';if(!_byType[t])_byType[t]=[];_byType[t].push(si);});
+    const _sortedTypes=[..._tOrder.filter(t=>_byType[t]),...Object.keys(_byType).filter(t=>!_tOrder.includes(t))];
+    _sortedTypes.forEach(typ=>{
+      html+=`<div style="display:flex;align-items:center;gap:8px;margin:12px 0 4px;padding:0 2px">${typeBadge(typ)}<div style="flex:1;height:1px;background:var(--br)"></div></div>`;
+      _byType[typ].sort((a,b)=>{const ma=getMat(a.materialId),mb=getMat(b.materialId);return (ma?.name||'').localeCompare(mb?.name||'');}).forEach(si=>{
+        const m=getMat(si.materialId);if(!m)return;
+        const ep=effPrice(si);const sub=si.qty*ep;total+=sub;
+        const hasDiff=si.unitPrice!=null&&si.unitPrice!==m.price;
+        html+=`<div class="oi" style="border-left-color:${typeColor(m.type)}">
+          <div class="oi-info">
+            <div class="oi-name">${m.name}</div>
+            <div class="oi-meta">
+              <span style="color:var(--tx);font-weight:500">${si.qty} ${m.unit}</span>
+              <span style="color:var(--br)">·</span>
+              ${m.stockType==='rapel'?'<span class="badge bg-gn">Rapel</span>':m.stockType==='h1'?'<span class="badge bg-bl">H-1</span>':''}
+              ${hasDiff?`<span style="color:var(--or);font-size:11px">≠ master</span>`:''}
+            </div>
           </div>
-        </div>
-        <div class="oi-right">
-          <div class="oi-price">${fmtRp(sub)}</div>
-          <div style="font-size:11px;color:var(--mt)">${fmtRp(ep)}/${m.unit}</div>
-          ${dlChip(m,nd,dates,si.isOrdered)}
-        </div>
-        <div style="display:flex;gap:4px;flex-shrink:0">
-          <button class="btn btn-ol btn-xs" onclick="editItem('${si.id}')">✏️</button>
-          <button class="btn-gh btn-xs" onclick="deleteItem('${si.id}')" style="color:var(--rd)">🗑️</button>
-        </div>
-      </div>`;
+          <div class="oi-right">
+            <div class="oi-price">${fmtRp(sub)}</div>
+            <div style="font-size:11px;color:var(--mt)">${fmtRp(ep)}/${m.unit}</div>
+            ${dlChip(m,nd,dates,si.isOrdered)}
+          </div>
+          <button class="btn btn-ol btn-xs" onclick="editItem('${si.id}')" style="flex-shrink:0">✏️</button>
+        </div>`;
+      });
     });
     html+=`<div class="sumbar"><span class="sl">Total ${DAYS[curDay]}</span><span class="sv">${fmtRp(total)}</span></div>`;
   }
@@ -1374,6 +1383,7 @@ function goToCurrentWeek(){curWeek=getWeekKey(new Date());renderWeekLabel();rend
 // ── Add/Edit Item ──
 function openAddItem(){
   editItemId=null;
+  const _delRow=document.getElementById('del-item-row');if(_delRow)_delRow.style.display='none';
   document.getElementById('add-item-title').textContent='Tambah Bahan ke Jadwal';
   document.getElementById('item-material-search').value='';
   document.getElementById('item-material').value='';
@@ -1395,7 +1405,15 @@ function editItem(id){
   document.getElementById('item-price').value=si.unitPrice!=null?si.unitPrice:'';
   document.getElementById('mat-suggestions').classList.remove('open');
   onItemMaterialChange(si.unitPrice);
+  const _delRowE=document.getElementById('del-item-row');if(_delRowE)_delRowE.style.display='block';
   openModal('modal-add-item');
+}
+function deleteItemFromModal(){
+  if(!editItemId)return;
+  if(!confirm('Hapus bahan ini dari jadwal?'))return;
+  const _eid=editItemId;
+  closeModal('modal-add-item');
+  deleteItem(_eid);
 }
 function onItemMaterialChange(existingPrice){
   const mid=document.getElementById('item-material').value;
@@ -1829,7 +1847,7 @@ function renderMasterBarang(){
         </select>
       </td>
       <td style="text-align:right;white-space:nowrap">
-        <button class="btn-gh btn-xs" onclick="deleteMaterial('${m.id}')" style="color:#ef4444;font-size:15px;padding:3px 6px" title="Hapus bahan">🗑</button>
+        <button class="btn-gh btn-xs" onclick="openEditMaterial('${m.id}')" style="color:var(--mt);font-size:15px;padding:3px 6px" title="Edit bahan">✏️</button>
       </td>
     </tr>`;
   }).join('');
@@ -1890,7 +1908,13 @@ function openEditMaterial(id){
   document.getElementById('mat-price').value=m.price||0;
   document.getElementById('mat-days').value=m.days??1;
   document.getElementById('mat-stocktype').value=m.stockType||'normal';
+  const _dmrE=document.getElementById('del-mat-row');if(_dmrE)_dmrE.style.display='block';
   openModal('modal-material');
+}
+function deleteMaterialFromModal(){
+  const id=document.getElementById('mat-id').value;if(!id)return;
+  closeModal('modal-material');
+  deleteMaterial(id);
 }
 function saveMaterial(){
   const name=document.getElementById('mat-name').value.trim();
@@ -2076,47 +2100,36 @@ function openRekap(){
     return (ta<0?99:ta)-(tb<0?99:tb)||a.mat.name.localeCompare(b.mat.name);
   });
 
-  const DAYS_SHORT=['SEN','SEL','RAB','KAM','JUM'];
-  const dHdrs=dates.map((d,i)=>`<th style="text-align:center;min-width:68px;font-size:10.5px;font-weight:700;color:var(--mt);padding:8px 4px">${DAYS_SHORT[i]}<br>${d.getDate()}/${d.getMonth()+1}</th>`).join('');
+  const DAYS_SHORT=['Sen','Sel','Rab','Kam','Jum'];
 
   let rows='';let lastType='';let totalBahan=0;
   sorted.forEach(([matId,{mat,days,siIds}])=>{
     totalBahan++;
-    // Check if all schedule items for this material are ordered
     const matSis=allItems.filter(s=>s.materialId===matId);
     const allOrd=matSis.length>0&&matSis.every(s=>s.isOrdered);
     if(mat.type!==lastType){
       lastType=mat.type;
-      const emoji=TYPE_EMOJI[mat.type]||'📦';
-      rows+=`<tr style="background:#f8fafb"><td colspan="8" style="padding:7px 12px;font-size:11.5px;font-weight:800;color:var(--mt);letter-spacing:.3px;text-transform:uppercase">${emoji} ${mat.type}</td></tr>`;
+      rows+=`<div style="display:flex;align-items:center;gap:8px;margin:14px 0 6px">${typeBadge(mat.type)}<div style="flex:1;height:1px;background:var(--br)"></div></div>`;
     }
     const totalQty=Object.values(days).reduce((a,b)=>a+b,0);
-    const ordStyle=allOrd?'color:#94a3b8;text-decoration:line-through':'';
-    const dayCells=[0,1,2,3,4].map(d=>{
-      const q=days[d]||0;
+    const multiDay=Object.keys(days).length>1;
+    const ordTxt=allOrd?'opacity:.45;text-decoration:line-through':'';
+    const dayPills=[0,1,2,3,4].filter(d=>days[d]).map(d=>{
       const si=allItems.find(s=>s.materialId===matId&&s.day===d);
       const cellOrd=si?.isOrdered;
-      const cellStyle=cellOrd?'color:#94a3b8;text-decoration:line-through':'';
-      return q>0?`<td style="text-align:center;font-size:13px;padding:8px 4px;${cellStyle}">${q}</td>`:`<td style="text-align:center;color:#cbd5e1;font-size:12px;padding:8px 4px">—</td>`;
+      return `<span style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:6px;background:${cellOrd?'#f1f5f9':'#f0f4ff'};color:${cellOrd?'#94a3b8':'#2f6fb5'};${cellOrd?'text-decoration:line-through':''}">${DAYS_SHORT[d]}: ${days[d]}</span>`;
     }).join('');
-    const multiDay=Object.keys(days).length>1;
-    rows+=`<tr style="border-bottom:1px solid var(--br)${allOrd?';background:#f8fafc':''}">
-      <td style="padding:8px 4px 8px 12px;width:28px">
-        <input type="checkbox" ${allOrd?'checked':''} onchange="toggleRekapOrdered('${matId}','${kid}','${pesananWeek}',this.checked)" style="width:16px;height:16px;cursor:pointer;accent-color:var(--pr)">
-      </td>
-      <td style="padding:8px 6px;min-width:130px">
-        <div style="font-size:13.5px;font-weight:${allOrd?400:600};${ordStyle}">${mat.name}</div>
-        <div style="display:flex;align-items:center;gap:4px;margin-top:2px">
-          <span style="font-size:11px;color:#94a3b8">${mat.unit}</span>
-          ${multiDay?'<span style="font-size:10px;font-weight:700;padding:1px 5px;border-radius:8px;background:#dbeafe;color:#1e40af">📦 1 PO</span>':''}
-        </div>
-      </td>
-      ${dayCells}
-      <td style="text-align:right;font-weight:800;font-size:14px;color:var(--pr);padding:8px 4px 8px 4px;${ordStyle}">${totalQty}</td>
-      <td style="padding:8px 12px 8px 2px">
-        <button onclick="copyMatFromRekap('${matId}')" style="background:none;border:none;cursor:pointer;font-size:15px;opacity:.6" title="Copy jadwal bahan ini">📋</button>
-      </td>
-    </tr>`;
+    rows+=`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--br)">
+      <input type="checkbox" ${allOrd?'checked':''} onchange="toggleRekapOrdered('${matId}','${kid}','${pesananWeek}',this.checked)" style="width:17px;height:17px;flex-shrink:0;cursor:pointer;accent-color:var(--pr)">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;${ordTxt}">${mat.name} <span style="font-size:11px;color:#94a3b8;font-weight:400">${mat.unit}</span>${multiDay?'<span style="margin-left:4px;font-size:10px;font-weight:700;padding:1px 5px;border-radius:8px;background:#dbeafe;color:#1e40af">1 PO</span>':''}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px">${dayPills}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+        <span style="font-size:14px;font-weight:800;color:${allOrd?'#94a3b8':'var(--pr)'};${ordTxt}">${totalQty}</span>
+        <button onclick="copyMatFromRekap('${matId}')" style="background:none;border:none;cursor:pointer;font-size:14px;opacity:.5;padding:2px" title="Copy">📋</button>
+      </div>
+    </div>`;
   });
 
   document.getElementById('rekap-body').innerHTML=`
@@ -2124,17 +2137,7 @@ function openRekap(){
       <div style="font-size:15px;font-weight:800">Rekap Bahan</div>
       <div style="font-size:12px;color:var(--mt);background:var(--bg);padding:4px 10px;border-radius:20px">${totalBahan} bahan</div>
     </div>
-    <div style="overflow-x:auto">
-    <table style="width:100%;border-collapse:collapse">
-      <thead><tr style="border-bottom:2px solid var(--br)">
-        <th style="width:28px;padding:8px 4px 8px 12px"></th>
-        <th style="text-align:left;padding:8px 6px;font-size:10.5px;font-weight:700;color:var(--mt)">BAHAN</th>
-        ${dHdrs}
-        <th style="text-align:right;padding:8px 4px 8px 4px;font-size:10.5px;font-weight:700;color:var(--pr)">TOTAL</th>
-        <th style="width:32px;padding:8px 12px 8px 2px"></th>
-      </tr></thead>
-      <tbody>${rows}</tbody>
-    </table></div>`;
+    <div style="padding:0 12px 12px">${rows}</div>`;
   openModal('modal-rekap');
 }
 function copyRekapToClipboard(){
