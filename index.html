@@ -32,6 +32,14 @@ body{font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif
 .mob-hdr .brand{font-size:17px;font-weight:800;flex:1}
 .mob-hdr .mb{font-size:11px;background:rgba(255,255,255,.2);padding:3px 8px;border-radius:99px}
 .bot-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--br);z-index:100}
+.fab{display:none;position:fixed;bottom:72px;right:16px;z-index:200}
+.fab-btn{width:48px;height:48px;border-radius:50%;background:var(--pr);color:#fff;border:none;font-size:24px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;transition:transform .2s}
+.fab-btn:active{transform:scale(.92)}
+.fab-actions{display:flex;flex-direction:column;gap:8px;align-items:flex-end;margin-bottom:10px}
+.fab-action{display:flex;align-items:center;gap:8px;opacity:0;transform:translateY(8px);transition:all .18s;pointer-events:none}
+.fab-action.fab-open{opacity:1;transform:translateY(0);pointer-events:auto}
+.fab-action-label{background:#1a1a1a;color:#fff;font-size:12px;font-weight:600;padding:5px 10px;border-radius:8px;white-space:nowrap}
+.fab-action-ico{width:40px;height:40px;border-radius:50%;background:#fff;border:1.5px solid var(--br);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.15)}
 .bot-nav-inner{display:flex;justify-content:space-around;padding:5px 0 env(safe-area-inset-bottom,3px)}
 .bn-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 8px;cursor:pointer;font-size:10px;font-weight:600;color:var(--mt);min-width:52px}
 .bn-item .ic{width:22px;height:20px;display:flex;align-items:center;justify-content:center}.bn-item.active{color:#e07b39}.bn-item.active .ic{filter:drop-shadow(0 0 3px rgba(224,123,57,.3))}
@@ -219,12 +227,13 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
 
 /* ── RESPONSIVE ── */
 @media(max-width:768px){
-  .sidebar{display:none}.mob-hdr{display:flex}.bot-nav{display:block}
+  .sidebar{display:none}.mob-hdr{display:flex}.bot-nav{display:block}.fab{display:block}
   .main{margin-left:0;padding:12px;padding-top:64px;padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}
   .fr2,.fr3{grid-template-columns:1fr}
   .page-hdr{flex-direction:column;align-items:flex-start}
   .k-dash-hdr{padding:12px 16px}.k-dash-body{padding:14px 16px}
-  .tbl-wrap table{min-width:540px}
+  .tbl-wrap table{min-width:0}
+  .mb-col-hide{display:none!important}
   .modal{padding:18px;border-radius:16px}.modal-lg{max-width:98vw}
   .stat-val{font-size:22px}
   .wiz-step-num{display:none}
@@ -403,23 +412,28 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
       <div class="page-sub" style="margin-bottom:12px">Kelola daftar bahan baku dan jadwal pemesanan</div>
       <div style="display:flex;flex-direction:column;gap:10px">
         <div style="display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap">
-          <span style="font-size:10.5px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.6px;min-width:52px;padding-top:6px">Cloud</span>
           <div style="display:flex;flex-direction:column;gap:3px">
-            <div style="display:flex;gap:6px;flex-wrap:wrap">
-              <button class="btn btn-ol" id="sync-btn" style="background:#e8f5e9;border-color:#2d7a4f;color:#2d7a4f" onclick="manualSync()">☁ Simpan ke Cloud</button>
-              <button class="btn btn-ol" id="pull-btn" style="background:#e8f0fe;border-color:#2f6fb5;color:#2f6fb5" onclick="pullFromCloud()">⬇ Ambil dari Cloud</button>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+              <button class="btn btn-ol" id="sync-btn" style="background:#e8f5e9;border-color:#2d7a4f;color:#2d7a4f" onclick="manualSync()">☁ Simpan</button>
+              <button class="btn btn-ol" id="pull-btn" style="background:#e8f0fe;border-color:#2f6fb5;color:#2f6fb5" onclick="pullFromCloud()">⬇ Ambil</button>
+              <button class="btn btn-ol" onclick="openImportWizard()">📊 Import Excel</button>
+              <div style="position:relative;display:inline-block">
+                <button class="btn btn-ol" onclick="toggleLainnyaMenu()" id="lainnya-btn" style="padding:6px 10px">⋮ Lainnya</button>
+                <div id="lainnya-menu" style="display:none;position:absolute;top:calc(100% + 4px);right:0;background:#fff;border:1px solid var(--br);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:300;min-width:180px;overflow:hidden">
+                  <button onclick="closeLainnyaMenu();exportAllData()" style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;border:none;background:none;cursor:pointer;font-size:13px;text-align:left;color:var(--tx)">⬇ Backup Data</button>
+                  <label style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;border:none;background:none;cursor:pointer;font-size:13px;text-align:left;color:var(--tx)">⬆ Restore Data<input type="file" accept=".json" style="display:none" onchange="closeLainnyaMenu();importAllData(this)"></label>
+                  <div style="height:1px;background:var(--br);margin:2px 0"></div>
+                  <button onclick="closeLainnyaMenu();exportMasterBarang()" style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;border:none;background:none;cursor:pointer;font-size:13px;text-align:left;color:var(--tx)">⬇ Export JSON</button>
+                  <label style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;border:none;background:none;cursor:pointer;font-size:13px;text-align:left;color:var(--tx)">⬆ Import JSON<input type="file" accept=".json" style="display:none" onchange="closeLainnyaMenu();importMasterBarang(this)"></label>
+                  <div style="height:1px;background:var(--br);margin:2px 0"></div>
+                  <button onclick="closeLainnyaMenu();resetIgnoredPairs()" style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;border:none;background:none;cursor:pointer;font-size:13px;text-align:left;color:var(--tx)">↺ Reset Abaikan</button>
+                </div>
+              </div>
             </div>
             <span id="sync-timestamp" style="font-size:10px;color:var(--mt);font-weight:500;padding-left:2px"></span>
           </div>
-          <button class="btn btn-ol" style="background:#fff3e0;border-color:#e07b39;color:#c2580a" onclick="exportAllData()">↓ Backup Data</button>
-          <label class="btn btn-ol" style="cursor:pointer;margin:0;background:#fff3e0;border-color:#e07b39;color:#c2580a">↑ Restore Data<input type="file" accept=".json" style="display:none" onchange="importAllData(this)"></label>
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-          <span style="font-size:10.5px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.6px;min-width:52px">Master</span>
-          <button class="btn btn-ol" onclick="openImportWizard()">📊 Import Excel</button>
-          <button class="btn btn-ol" onclick="exportMasterBarang()">↓ Export JSON</button>
-          <label class="btn btn-ol" style="cursor:pointer;margin:0">↑ Import JSON<input type="file" accept=".json" style="display:none" onchange="importMasterBarang(this)"></label>
-          <button class="btn btn-ol" onclick="resetIgnoredPairs()">↺ Reset Abaikan</button>
           <button class="btn btn-or" onclick="openAddMaterial()">＋ Tambah Bahan Baku</button>
         </div>
       </div>
@@ -429,7 +443,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
         <thead><tr>
           <th onclick="sortMaster('name')" style="cursor:pointer;user-select:none">Nama Bahan <span id="sort-name">↕</span></th>
           <th onclick="sortMaster('type')" style="cursor:pointer;user-select:none">Jenis <span id="sort-type">↕</span></th>
-          <th>Satuan</th><th>Harga Ref.</th><th>Pesan H-</th><th>Tipe Stok</th><th></th>
+          <th>Satuan</th><th>Harga Ref.</th><th class="mb-col-hide">H-</th><th class="mb-col-hide">Tipe Stok</th><th></th>
         </tr></thead>
         <tbody id="material-tbody"></tbody>
       </table></div>
@@ -452,6 +466,26 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
 
 
 </main>
+
+<!-- FAB -->
+<div class="fab" id="fab-root">
+  <div class="fab-actions" id="fab-actions">
+    <div class="fab-action" id="fab-a1">
+      <span class="fab-action-label">Tambah Bahan</span>
+      <div class="fab-action-ico" onclick="closeFab();openAddMaterial()">＋</div>
+    </div>
+    <div class="fab-action" id="fab-a2">
+      <span class="fab-action-label">Import Menu</span>
+      <div class="fab-action-ico" onclick="closeFab();openImportMenu()">📋</div>
+    </div>
+    <div class="fab-action" id="fab-a3">
+      <span class="fab-action-label">Tambah Dapur</span>
+      <div class="fab-action-ico" onclick="closeFab();openAddKitchen()">🏠</div>
+    </div>
+  </div>
+  <button class="fab-btn" id="fab-main-btn" onclick="toggleFab()">＋</button>
+</div>
+<div id="fab-overlay" onclick="closeFab()" style="display:none;position:fixed;inset:0;z-index:199"></div>
 
 <!-- BOTTOM NAV -->
 <div class="bot-nav"><div class="bot-nav-inner">
@@ -553,11 +587,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
 <!-- MODAL: Rekap Pesanan -->
 <div class="mbg" id="modal-rekap">
   <div class="modal modal-lg" style="padding:0;overflow:hidden">
-    <div id="rekap-body" style="max-height:80vh;overflow-y:auto"></div>
-    <div class="mac" style="padding:12px 16px;border-top:1px solid var(--br)">
-      <button class="btn btn-ol" onclick="copyRekapToClipboard()">📋 Copy</button>
-      <button class="btn btn-pr" onclick="closeModal('modal-rekap')">Tutup</button>
-    </div>
+    <div id="rekap-body" style="max-height:85vh;overflow-y:auto"></div>
   </div>
 </div>
 
@@ -1071,7 +1101,38 @@ function renderDashboard(){
     return;
   }
 
-  let html='';
+  // === Global summary bar ===
+  const allWkItems=S.scheduleItems.filter(si=>S.kitchens.some(k=>k.id===si.kitchenId)&&si.weekKey===wk);
+  const urgentToday=[];const urgentOverdue=[];
+  S.kitchens.forEach(k=>{
+    const r=getReminders(k.id,wk);
+    r.today.forEach(x=>urgentToday.push({...x,kitName:k.name}));
+    r.overdue.forEach(x=>urgentOverdue.push({...x,kitName:k.name}));
+  });
+  const totalUnordered=allWkItems.filter(s=>!s.isOrdered).length;
+  const totalUnpaid=allWkItems.filter(s=>s.isOrdered&&!s.isPaid).length;
+  const urgentCount=urgentToday.length+urgentOverdue.length;
+
+  const summaryColor=(n,ok,warn,danger)=>n===0?ok:n<=2?warn:danger;
+  html+=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+    <div style="background:${urgentCount===0?'#f0fdf4':'#fff7ed'};border:1px solid ${urgentCount===0?'#bbf7d0':'#fed7aa'};border-radius:10px;padding:10px 12px;cursor:pointer" onclick="navigate('pesanan')">
+      <div style="font-size:11px;font-weight:600;color:${urgentCount===0?'#166534':'#9a3412'};margin-bottom:4px">🔔 Urgen</div>
+      <div style="font-size:22px;font-weight:800;color:${urgentCount===0?'#16a34a':'#ea580c'}">${urgentCount}</div>
+      <div style="font-size:10px;color:${urgentCount===0?'#4ade80':'#fb923c'};margin-top:2px">${urgentCount===0?'Semua aman':'item mendesak'}</div>
+    </div>
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 12px;cursor:pointer" onclick="navigate('pesanan')">
+      <div style="font-size:11px;font-weight:600;color:#1e40af;margin-bottom:4px">📦 Belum Pesan</div>
+      <div style="font-size:22px;font-weight:800;color:#2563eb">${totalUnordered}</div>
+      <div style="font-size:10px;color:#60a5fa;margin-top:2px">minggu ini</div>
+    </div>
+    <div style="background:${totalUnpaid===0?'#f0fdf4':'#fefce8'};border:1px solid ${totalUnpaid===0?'#bbf7d0':'#fde68a'};border-radius:10px;padding:10px 12px;cursor:pointer" onclick="navigate('pesanan')">
+      <div style="font-size:11px;font-weight:600;color:${totalUnpaid===0?'#166534':'#92400e'};margin-bottom:4px">💳 Belum Bayar</div>
+      <div style="font-size:22px;font-weight:800;color:${totalUnpaid===0?'#16a34a':'#d97706'}">${totalUnpaid}</div>
+      <div style="font-size:10px;color:${totalUnpaid===0?'#4ade80':'#fbbf24'};margin-top:2px">${totalUnpaid===0?'Lunas semua':'sudah dipesan'}</div>
+    </div>
+  </div>`;
+
+  let html2='';
   S.kitchens.forEach(kit=>{
     const items=S.scheduleItems.filter(si=>si.kitchenId===kit.id&&si.weekKey===wk);
     const total=items.reduce((a,si)=>a+si.qty*effPrice(si),0);
@@ -1099,7 +1160,7 @@ function renderDashboard(){
       reminderHtml+=`<div class="alert info"><span class="ai">📋</span><div><div class="at">Segera dipesan dalam 4 hari (${rem.soon.length})</div><div class="ai-list">${its}${more}</div></div></div>`;
     }
 
-    html+=`<div class="k-dash">
+    html2+=`<div class="k-dash">
       <div class="k-dash-hdr">
         <div>
           <h3>🍳 ${kit.name}</h3>
@@ -1122,7 +1183,7 @@ function renderDashboard(){
       </div>
     </div>`;
   });
-  document.getElementById('dash-body').innerHTML=html;
+  document.getElementById('dash-body').innerHTML=html+html2;
 }
 function changeDashWeek(dir){const d=getWeekDates(dashWeek);dashWeek=getWeekKey(addDays(d[0],dir*7));renderDashboard();}
 function goToDashThisWeek(){dashWeek=getWeekKey(new Date());renderDashboard();}
@@ -1539,6 +1600,21 @@ function markGroupOrdered(ids){
   save();renderPesanan();if(curPage==='dashboard')renderDashboard();
 }
 
+function markDayOrdered(di){
+  const kid=document.getElementById('pesanan-kitchen')?.value||curKitchen;
+  const its=S.scheduleItems.filter(s=>s.weekKey===pesananWeek&&s.kitchenId===kid&&s.day===di);
+  const allOrd=its.length>0&&its.every(s=>s.isOrdered);
+  its.forEach(s=>{s.isOrdered=!allOrd;s.orderedAt=!allOrd?fmtDate(new Date()):null;});
+  save();renderPesanan();if(curPage==='dashboard')renderDashboard();
+}
+function markDayPaid(di){
+  const kid=document.getElementById('pesanan-kitchen')?.value||curKitchen;
+  const its=S.scheduleItems.filter(s=>s.weekKey===pesananWeek&&s.kitchenId===kid&&s.day===di&&s.isOrdered);
+  if(!its.length){alert('Tandai "Sudah Pesan" dulu sebelum menandai bayar.');return;}
+  const allPaid=its.length>0&&its.every(s=>s.isPaid);
+  its.forEach(s=>{s.isPaid=!allPaid;s.paidAt=!allPaid?fmtDate(new Date()):null;});
+  save();renderPesanan();if(curPage==='dashboard')renderDashboard();
+}
 function toggleDayCollapse(key){
   if(!window._pesCollapseDay)window._pesCollapseDay={};
   window._pesCollapseDay[key]=window._pesCollapseDay[key]===false?true:false;
@@ -1590,7 +1666,11 @@ function renderPesananByHari(items,dates){
           <div style="font-size:10.5px;color:rgba(255,255,255,0.45);margin-top:2px">Menu: ${DAYS[di]}, ${String(nd.getDate()).padStart(2,'0')}/${String(nd.getMonth()+1).padStart(2,'0')}</div>
         </div>
       </div>
-      <span style="font-size:11.5px;font-weight:600;color:${ordN===dis.length?'#6ee7a8':'rgba(255,255,255,0.45)'}">${ordN}/${dis.length}</span>
+      <div style="display:flex;align-items:center;gap:6px" onclick="event.stopPropagation()">
+        <button onclick="markDayOrdered(${di})" style="background:none;border:1px solid ${ordN===dis.length?'#6ee7a8':'rgba(255,255,255,0.3)'};border-radius:7px;padding:3px 8px;font-size:10.5px;font-weight:700;color:${ordN===dis.length?'#6ee7a8':'rgba(255,255,255,0.6)'};cursor:pointer;white-space:nowrap">✓ Pesan</button>
+        <button onclick="markDayPaid(${di})" style="background:none;border:1px solid rgba(255,220,80,0.4);border-radius:7px;padding:3px 8px;font-size:10.5px;font-weight:700;color:rgba(255,220,80,0.8);cursor:pointer;white-space:nowrap">✓ Bayar</button>
+        <span style="font-size:11px;color:rgba(255,255,255,0.35)">${ordN}/${dis.length}</span>
+      </div>
     </div>`;
 
     if(dayOpen){
@@ -1835,15 +1915,15 @@ function renderMasterBarang(){
           ${hasSimilar?`<span class="badge bg-yw" style="cursor:pointer" onclick="openMergeModal('${m.id}')" title="Mirip: ${similarTo}">⚠️ Mirip</span><span class="badge bg-gr" style="cursor:pointer;font-size:10px" onclick="ignoreMatPair('${m.id}','${ignoreIds[0]||''}')">Abaikan</span>`:''}
         </div>
       </td>
-      <td><div style="display:inline-flex;align-items:center;gap:5px"><span style="font-size:14px;line-height:1">${TYPE_EMOJI[m.type]||'📦'}</span>${buildTypeSelect('td-sel',m.type,m.id)}</div></td>
+      <td style="white-space:nowrap"><span style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:6px;background:${typeColor(m.type)}1a;color:${typeColor(m.type)};border:1px solid ${typeColor(m.type)}40">${TYPE_EMOJI[m.type]||'📦'} ${m.type.length>7?m.type.slice(0,7)+'…':m.type}</span></td>
       <td>${buildUnitCell(m.id,m.unit)}</td>
       <td><input class="td-inp" type="number" value="${m.price}" min="0" step="500" onchange="updateMatField('${m.id}','price',this.value)" style="width:90px"></td>
-      <td><input class="td-inp" type="number" value="${m.days||0}" min="0" max="30" onchange="updateMatField('${m.id}','days',this.value)" style="width:52px"></td>
-      <td>
-        <select onchange="updateStockType('${m.id}',this.value)" style="width:auto;min-width:140px;padding:4px 8px;font-size:12px;border-radius:6px;border:1.5px solid var(--br);cursor:pointer;-webkit-appearance:auto;appearance:auto">
+      <td class="mb-col-hide"><input class="td-inp" type="number" value="${m.days||0}" min="0" max="30" onchange="updateMatField('${m.id}','days',this.value)" style="width:52px"></td>
+      <td class="mb-col-hide">
+        <select onchange="updateStockType('${m.id}',this.value)" style="width:auto;min-width:120px;padding:4px 8px;font-size:12px;border-radius:6px;border:1.5px solid var(--br);cursor:pointer;-webkit-appearance:auto;appearance:auto">
           <option value="normal" ${(m.stockType||'normal')==='normal'?'selected':''}>Normal</option>
-          <option value="rapel" ${m.stockType==='rapel'?'selected':''}>📦 Rapel Mingguan</option>
-          <option value="h1" ${m.stockType==='h1'?'selected':''}>⏰ Datang H-1</option>
+          <option value="rapel" ${m.stockType==='rapel'?'selected':''}>📦 Rapel</option>
+          <option value="h1" ${m.stockType==='h1'?'selected':''}>⏰ H-1</option>
         </select>
       </td>
       <td style="text-align:right;white-space:nowrap">
@@ -2100,7 +2180,8 @@ function openRekap(){
     return (ta<0?99:ta)-(tb<0?99:tb)||a.mat.name.localeCompare(b.mat.name);
   });
 
-  const DAYS_SHORT=['Sen','Sel','Rab','Kam','Jum'];
+  const DAYS_SHORT=['SN','SL','RB','KM','JM'];
+  const dHdrs=dates.map((d,i)=>`<th style="text-align:center;width:42px;padding:7px 3px;font-size:10px;font-weight:700;color:var(--mt);white-space:nowrap;position:sticky;top:0;background:#fff;z-index:4">${DAYS_SHORT[i]}<br><span style="font-weight:400;font-size:9px">${d.getDate()}/${d.getMonth()+1}</span></th>`).join('');
 
   let rows='';let lastType='';let totalBahan=0;
   sorted.forEach(([matId,{mat,days,siIds}])=>{
@@ -2109,35 +2190,57 @@ function openRekap(){
     const allOrd=matSis.length>0&&matSis.every(s=>s.isOrdered);
     if(mat.type!==lastType){
       lastType=mat.type;
-      rows+=`<div style="display:flex;align-items:center;gap:8px;margin:14px 0 6px">${typeBadge(mat.type)}<div style="flex:1;height:1px;background:var(--br)"></div></div>`;
+      const emoji=TYPE_EMOJI[mat.type]||'📦';
+      rows+=`<tr style="background:#f5f9f6"><td colspan="8" style="padding:6px 10px;font-size:10.5px;font-weight:700;color:#2d7a4f;letter-spacing:.3px">${emoji} ${mat.type.toUpperCase()}</td></tr>`;
     }
     const totalQty=Object.values(days).reduce((a,b)=>a+b,0);
     const multiDay=Object.keys(days).length>1;
-    const ordTxt=allOrd?'opacity:.45;text-decoration:line-through':'';
-    const dayPills=[0,1,2,3,4].filter(d=>days[d]).map(d=>{
+    const nameStyle=allOrd?'color:#94a3b8;text-decoration:line-through':'font-weight:600';
+    const dayCells=[0,1,2,3,4].map(d=>{
+      const q=days[d]||0;
       const si=allItems.find(s=>s.materialId===matId&&s.day===d);
       const cellOrd=si?.isOrdered;
-      return `<span style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:6px;background:${cellOrd?'#f1f5f9':'#f0f4ff'};color:${cellOrd?'#94a3b8':'#2f6fb5'};${cellOrd?'text-decoration:line-through':''}">${DAYS_SHORT[d]}: ${days[d]}</span>`;
+      if(!q)return `<td style="text-align:center;color:#d1d5db;font-size:11px;padding:7px 3px">—</td>`;
+      return `<td style="text-align:center;padding:4px 2px"><span style="display:inline-block;min-width:28px;padding:3px 4px;border-radius:5px;font-size:12px;font-weight:700;${cellOrd?'background:#dcfce7;color:#166534':'background:#eff6ff;color:#1d4ed8'}">${q}</span></td>`;
     }).join('');
-    rows+=`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--br)">
-      <input type="checkbox" ${allOrd?'checked':''} onchange="toggleRekapOrdered('${matId}','${kid}','${pesananWeek}',this.checked)" style="width:17px;height:17px;flex-shrink:0;cursor:pointer;accent-color:var(--pr)">
-      <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:600;${ordTxt}">${mat.name} <span style="font-size:11px;color:#94a3b8;font-weight:400">${mat.unit}</span>${multiDay?'<span style="margin-left:4px;font-size:10px;font-weight:700;padding:1px 5px;border-radius:8px;background:#dbeafe;color:#1e40af">1 PO</span>':''}</div>
-        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px">${dayPills}</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-        <span style="font-size:14px;font-weight:800;color:${allOrd?'#94a3b8':'var(--pr)'};${ordTxt}">${totalQty}</span>
-        <button onclick="copyMatFromRekap('${matId}')" style="background:none;border:none;cursor:pointer;font-size:14px;opacity:.5;padding:2px" title="Copy">📋</button>
-      </div>
-    </div>`;
+    rows+=`<tr style="border-bottom:1px solid var(--br)${allOrd?';background:#fafafa':''}">
+      <td style="padding:7px 4px 7px 8px;position:sticky;left:0;background:${allOrd?'#fafafa':'#fff'};z-index:2;min-width:0;width:34px">
+        <input type="checkbox" ${allOrd?'checked':''} onchange="toggleRekapOrdered('${matId}','${kid}','${pesananWeek}',this.checked)" style="width:15px;height:15px;cursor:pointer;accent-color:var(--gn)">
+      </td>
+      <td style="padding:7px 6px 7px 0;position:sticky;left:34px;background:${allOrd?'#fafafa':'#fff'};z-index:2;max-width:120px;min-width:90px">
+        <div style="font-size:12.5px;${nameStyle};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${mat.name}</div>
+        <div style="display:flex;gap:3px;align-items:center;margin-top:1px">
+          <span style="font-size:10px;color:#94a3b8">${mat.unit}</span>
+          ${multiDay?'<span style="font-size:9px;font-weight:700;padding:0 4px;border-radius:4px;background:#dbeafe;color:#1e40af">PO</span>':''}
+        </div>
+      </td>
+      ${dayCells}
+      <td style="text-align:right;font-weight:700;font-size:13px;padding:7px 4px;color:${allOrd?'#94a3b8':'var(--pr)'}${allOrd?';text-decoration:line-through':''}">${totalQty}</td>
+      <td style="padding:7px 8px 7px 2px">
+        <button onclick="copyMatFromRekap('${matId}')" style="background:none;border:none;cursor:pointer;font-size:13px;opacity:.45;padding:1px" title="Copy">📋</button>
+      </td>
+    </tr>`;
   });
 
   document.getElementById('rekap-body').innerHTML=`
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;border-bottom:1px solid var(--br)">
-      <div style="font-size:15px;font-weight:800">Rekap Bahan</div>
-      <div style="font-size:12px;color:var(--mt);background:var(--bg);padding:4px 10px;border-radius:20px">${totalBahan} bahan</div>
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--br);position:sticky;top:0;background:#fff;z-index:10">
+      <div style="font-size:14px;font-weight:800;flex:1">Rekap Bahan</div>
+      <div style="font-size:11px;color:var(--mt);background:var(--bg);padding:2px 8px;border-radius:20px;flex-shrink:0">${totalBahan} bahan</div>
+      <button onclick="copyRekapToClipboard()" style="background:none;border:1px solid var(--br);border-radius:8px;padding:4px 9px;font-size:12px;cursor:pointer;color:var(--tx);flex-shrink:0">📋 Copy</button>
+      <button onclick="closeModal('modal-rekap')" style="background:none;border:1px solid var(--br);border-radius:8px;width:30px;height:30px;font-size:18px;cursor:pointer;color:var(--mt);flex-shrink:0;display:flex;align-items:center;justify-content:center;line-height:1">×</button>
     </div>
-    <div style="padding:0 12px 12px">${rows}</div>`;
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+      <table style="width:100%;border-collapse:collapse;min-width:320px">
+        <thead><tr>
+          <th style="width:34px;padding:0;position:sticky;top:0;left:0;background:#fff;z-index:9"></th>
+          <th style="text-align:left;padding:7px 6px 7px 0;font-size:10px;font-weight:700;color:var(--mt);position:sticky;top:0;left:34px;background:#fff;z-index:9;min-width:90px;max-width:120px">BAHAN</th>
+          ${dHdrs}
+          <th style="text-align:right;padding:7px 4px;font-size:10px;font-weight:700;color:var(--pr);position:sticky;top:0;background:#fff;z-index:4">TOT</th>
+          <th style="width:28px;position:sticky;top:0;background:#fff;z-index:4"></th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
   openModal('modal-rekap');
 }
 function copyRekapToClipboard(){
@@ -2936,6 +3039,32 @@ function migrateState(state){
   return state;
 }
 
+function toggleLainnyaMenu(){
+  const m=document.getElementById('lainnya-menu');
+  if(m)m.style.display=m.style.display==='none'?'block':'none';
+}
+function closeLainnyaMenu(){
+  const m=document.getElementById('lainnya-menu');if(m)m.style.display='none';
+}
+document.addEventListener('click',function(e){
+  const btn=document.getElementById('lainnya-btn');
+  const menu=document.getElementById('lainnya-menu');
+  if(menu&&btn&&!btn.contains(e.target)&&!menu.contains(e.target))menu.style.display='none';
+});
+let _fabOpen=false;
+function toggleFab(){_fabOpen?closeFab():openFab();}
+function openFab(){
+  _fabOpen=true;
+  document.getElementById('fab-overlay').style.display='block';
+  document.getElementById('fab-main-btn').style.transform='rotate(45deg)';
+  ['fab-a1','fab-a2','fab-a3'].forEach((id,i)=>setTimeout(()=>document.getElementById(id)?.classList.add('fab-open'),i*50));
+}
+function closeFab(){
+  _fabOpen=false;
+  document.getElementById('fab-overlay').style.display='none';
+  document.getElementById('fab-main-btn').style.transform='';
+  ['fab-a1','fab-a2','fab-a3'].forEach(id=>document.getElementById(id)?.classList.remove('fab-open'));
+}
 function init(){
   applyState(loadState());
   sbGet().then(remote=>{
