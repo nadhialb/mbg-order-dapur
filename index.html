@@ -2707,7 +2707,8 @@ function showLoadingScreen(visible){
 async function init(){
   showLoadingScreen(true);
   try{
-    const snap = await DOC.get();
+    const timeout = new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),6000));
+    const snap = await Promise.race([DOC.get(), timeout]);
     if(snap.exists){
       applyState(snap.data());
       // Juga update localStorage sebagai cache
