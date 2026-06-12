@@ -394,6 +394,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
       <div class="page-sub" style="margin-bottom:12px">Kelola daftar bahan baku dan jadwal pemesanan</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btn-ol" style="font-size:13px;font-weight:500;font-family:'Outfit',sans-serif" onclick="resetIgnoredPairs()" title="Tampilkan kembali semua pasangan yang diabaikan">↺ Reset Abaikan</button>
+        <button class="btn btn-ol" id="sync-btn" style="font-size:13px;font-weight:500;font-family:'Outfit',sans-serif;background:#e8f5e9;border-color:#2d7a4f;color:#2d7a4f" onclick="manualSync()" title="Upload data ke cloud">☁ Sync ke Cloud</button>
         <button class="btn btn-ol" style="font-size:13px;font-weight:500;font-family:'Outfit',sans-serif" onclick="exportMasterBarang()" title="Download master barang sebagai file JSON">↓ Export Master</button>
         <label class="btn btn-ol" style="cursor:pointer;margin:0;font-size:13px;font-weight:500;font-family:'Outfit',sans-serif" title="Upload file JSON master barang">↑ Import Master<input type="file" accept=".json" style="display:none" onchange="importMasterBarang(this)"></label>
         <button class="btn btn-ol" style="font-size:13px;font-weight:500;font-family:'Outfit',sans-serif" onclick="openImportWizard()">⊞ Import Excel</button>
@@ -656,12 +657,42 @@ async function sbGet(){
   return null;
 }
 async function sbSet(data){
+  const body=JSON.stringify({data:data});
   if(_sbRowId){
-    await fetch(SB_URL+'/app_state?id=eq.'+_sbRowId,{method:'PATCH',headers:SB_HDR,body:JSON.stringify({data:data})});
+    const res=await fetch(SB_URL+'/app_state?id=eq.'+_sbRowId,{method:'PATCH',headers:{...SB_HDR,'Prefer':'return=representation'},body});
+    if(!res.ok){const t=await res.text();throw new Error('PATCH failed: '+t);}
   }else{
-    const res=await fetch(SB_URL+'/app_state',{method:'POST',headers:{...SB_HDR,'Prefer':'return=representation'},body:JSON.stringify({data:data})});
+    const res=await fetch(SB_URL+'/app_state',{method:'POST',headers:{...SB_HDR,'Prefer':'return=representation'},body});
+    if(!res.ok){const t=await res.text();throw new Error('POST failed: '+t);}
     const rows=await res.json();
     if(rows&&rows[0])_sbRowId=rows[0].id;
+  }
+}
+
+function setSyncBtn(state){
+  const btn=document.getElementById('sync-btn');
+  if(!btn)return;
+  if(state==='loading'){btn.textContent='☁ Syncing...';btn.style.opacity='0.6';btn.disabled=true;}
+  else if(state==='ok'){btn.textContent='✓ Tersync';btn.style.background='#e8f5e9';btn.style.color='#2d7a4f';btn.style.borderColor='#2d7a4f';btn.disabled=false;btn.style.opacity='1';}
+  else if(state==='error'){btn.textContent='✗ Sync Gagal';btn.style.background='#fff0f0';btn.style.color='#d94f4f';btn.style.borderColor='#d94f4f';btn.disabled=false;btn.style.opacity='1';}
+  else{btn.textContent='☁ Sync ke Cloud';btn.style.background='#e8f5e9';btn.style.color='#2d7a4f';btn.style.borderColor='#2d7a4f';btn.disabled=false;btn.style.opacity='1';}
+}
+
+async function manualSync(){
+  setSyncBtn('loading');
+  try{
+    S._updated=Date.now();
+    localStorage.setItem('mbg-v2',JSON.stringify(S));
+    // Re-fetch row id first
+    const rows=await fetch(SB_URL+'/app_state?select=id&limit=1',{headers:SB_HDR}).then(r=>r.json());
+    if(rows&&rows.length>0)_sbRowId=rows[0].id;
+    await sbSet(JSON.parse(JSON.stringify(S)));
+    setSyncBtn('ok');
+    setTimeout(()=>setSyncBtn('idle'),3000);
+  }catch(e){
+    console.error('Sync error:',e);
+    setSyncBtn('error');
+    alert('Sync gagal: '+e.message);
   }
 }
 
