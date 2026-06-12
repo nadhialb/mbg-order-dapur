@@ -78,7 +78,7 @@ body{font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif
 .ai-item .kt{font-size:11px;opacity:.7;flex-shrink:0}
 
 /* ── BUTTONS ── */
-.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:500;font-family:'Outfit',-apple-system,sans-serif;cursor:pointer;border:none;transition:all .15s;white-space:nowrap}
 .btn-pr{background:var(--pr);color:#fff}.btn-pr:hover{background:var(--prd)}
 .btn-gn{background:var(--gn);color:#fff}.btn-gn:hover{background:#2d6a4f}
 .btn-ol{background:#fff;color:var(--tx);border:1.5px solid var(--br)}.btn-ol:hover{background:var(--prp);border-color:#d0d0d0}
@@ -271,14 +271,18 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
 .mat-sug-empty{padding:14px;text-align:center;color:var(--mt);font-size:13px}
 
 /* ── MENU MASAKAN ── */
-.day-menus{background:#fafafa;border:1px solid var(--br);border-radius:10px;padding:12px 14px;margin-bottom:12px}
-.day-menus-hdr{font-size:11px;font-weight:600;color:var(--mt);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
-.menu-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;min-height:4px}
-.menu-tag{display:inline-flex;align-items:center;gap:4px;background:#fff;border:1px solid #bac8ff;border-radius:99px;padding:3px 10px;font-size:12.5px;font-weight:600;color:var(--pr)}
-.menu-tag-del{cursor:pointer;opacity:.45;font-size:10px;margin-left:2px;line-height:1;border:none;background:none;color:inherit;padding:0}
-.menu-tag-del:hover{opacity:1}
+.day-menus{background:linear-gradient(135deg,#fafafa 0%,#f5f5f5 100%);border:1px solid var(--br);border-radius:12px;padding:12px 14px;margin-bottom:12px}
+.day-menus-hdr{display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
+.menu-list{display:flex;flex-direction:column;gap:4px;margin-bottom:8px}
+.menu-list-empty{font-size:12px;color:var(--mt);font-style:italic;padding:6px 0 8px;text-align:center}
+.menu-list-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:#fff;border:1px solid var(--br);border-radius:8px;transition:background .1s}
+.menu-list-item:hover{background:#f8f9ff}
+.menu-num{min-width:20px;height:20px;display:flex;align-items:center;justify-content:center;background:var(--or);color:#fff;border-radius:50%;font-size:10px;font-weight:800;flex-shrink:0}
+.menu-list-name{flex:1;font-size:13px;font-weight:600;color:var(--tx)}
+.menu-list-del{border:none;background:none;color:var(--mt);cursor:pointer;font-size:11px;opacity:.4;padding:2px 5px;border-radius:4px;line-height:1}
+.menu-list-del:hover{opacity:1;color:var(--rd);background:#fee2e2}
 .menu-add-row{display:flex;gap:7px;align-items:center}
-.menu-add-input{flex:1;padding:6px 12px;border-radius:99px;border:1.5px solid var(--br);font-size:14px;background:#fff;font-family:inherit;color:var(--tx);-webkit-appearance:none}
+.menu-add-input{flex:1;padding:6px 12px;border-radius:99px;border:1.5px solid var(--br);font-size:13px;background:#fff;font-family:inherit;color:var(--tx);-webkit-appearance:none}
 .menu-add-input:focus{outline:none;border-color:var(--prl);box-shadow:none}
 .menu-add-btn{padding:6px 14px;border-radius:99px;background:var(--pr);color:#fff;border:none;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit}
 
@@ -334,6 +338,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div class="page-hdr">
       <div><div class="page-title">Jadwal Menu</div><div class="page-sub">Atur kebutuhan bahan baku per hari</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-ol" onclick="openImportMenu()">📋 Import Menu</button>
         <button class="btn btn-or" onclick="openAddItem()">＋ Tambah Bahan</button>
       </div>
     </div>
@@ -392,15 +397,24 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div style="margin-bottom:20px">
       <div class="page-title">Master Barang</div>
       <div class="page-sub" style="margin-bottom:12px">Kelola daftar bahan baku dan jadwal pemesanan</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-ol" style="font-size:13px;font-weight:500;font-family:'Outfit',sans-serif" onclick="resetIgnoredPairs()" title="Tampilkan kembali semua pasangan yang diabaikan">↺ Reset Abaikan</button>
-        <button class="btn btn-ol" id="sync-btn" style="font-size:13px;font-weight:500;font-family:'Outfit',sans-serif;background:#e8f5e9;border-color:#2d7a4f;color:#2d7a4f" onclick="manualSync()" title="Upload data ke cloud">☁ Sync ke Cloud</button>
-        <button class="btn btn-ol" style="font-size:13px;font-weight:500;font-family:'Outfit',sans-serif" onclick="exportMasterBarang()" title="Download master barang sebagai file JSON">↓ Export Master</button>
-        <label class="btn btn-ol" style="cursor:pointer;margin:0;font-size:13px;font-weight:500;font-family:'Outfit',sans-serif" title="Upload file JSON master barang">↑ Import Master<input type="file" accept=".json" style="display:none" onchange="importMasterBarang(this)"></label>
-        <button class="btn btn-ol" style="font-size:13px;font-weight:500;font-family:'Outfit',sans-serif" onclick="openImportWizard()">⊞ Import Excel</button>
-        <button class="btn btn-ol" style="font-size:13px;font-weight:500;font-family:'Outfit',sans-serif;background:#fff3e0;border-color:#e07b39;color:#c2580a" onclick="exportAllData()" title="Download semua data (backup)">↓ Backup Semua Data</button>
-        <label class="btn btn-ol" style="cursor:pointer;margin:0;font-size:13px;font-weight:500;font-family:'Outfit',sans-serif;background:#fff3e0;border-color:#e07b39;color:#c2580a" title="Restore semua data dari backup">↑ Restore Data<input type="file" accept=".json" style="display:none" onchange="importAllData(this)"></label>
-        <button class="btn btn-or" style="font-size:13px;font-weight:500;font-family:'Outfit',sans-serif" onclick="openAddMaterial()">+ Tambah Bahan Baku</button>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap">
+          <span style="font-size:10.5px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.6px;min-width:52px;padding-top:6px">Cloud</span>
+          <div style="display:flex;flex-direction:column;gap:3px">
+            <button class="btn btn-ol" id="sync-btn" style="background:#e8f5e9;border-color:#2d7a4f;color:#2d7a4f" onclick="manualSync()">☁ Sync ke Cloud</button>
+            <span id="sync-timestamp" style="font-size:10px;color:var(--mt);font-weight:500;padding-left:2px"></span>
+          </div>
+          <button class="btn btn-ol" style="background:#fff3e0;border-color:#e07b39;color:#c2580a" onclick="exportAllData()">↓ Backup Data</button>
+          <label class="btn btn-ol" style="cursor:pointer;margin:0;background:#fff3e0;border-color:#e07b39;color:#c2580a">↑ Restore Data<input type="file" accept=".json" style="display:none" onchange="importAllData(this)"></label>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <span style="font-size:10.5px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.6px;min-width:52px">Master</span>
+          <button class="btn btn-ol" onclick="openImportWizard()">📊 Import Excel</button>
+          <button class="btn btn-ol" onclick="exportMasterBarang()">↓ Export JSON</button>
+          <label class="btn btn-ol" style="cursor:pointer;margin:0">↑ Import JSON<input type="file" accept=".json" style="display:none" onchange="importMasterBarang(this)"></label>
+          <button class="btn btn-ol" onclick="resetIgnoredPairs()">↺ Reset Abaikan</button>
+          <button class="btn btn-or" onclick="openAddMaterial()">＋ Tambah Bahan Baku</button>
+        </div>
       </div>
     </div>
     <div class="card">
@@ -568,6 +582,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
 //  CONSTANTS & DEFAULT DATA
 // ═══════════════════════════════════════
 const DAYS=['Senin','Selasa','Rabu','Kamis','Jumat'];
+const ALL_DAYS=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
 const MONTHS=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 const DRY_TYPES=['Karbohidrat','Bumbu','Minyak & Lemak'];
 
@@ -599,6 +614,14 @@ const DEFAULT={
 };
 
 const TYPE_EMOJI={'Karbohidrat':'🌾','Protein':'🍗','Sayuran':'🥬','Bumbu':'🧄','Minyak & Lemak':'🫙','Buah':'🍊','Minuman':'🥤','Frozen Food':'🧊','Lainnya':'📦'};
+const TYPE_PILL={'Karbohidrat':'background:#fef9c3;color:#854d0e','Protein':'background:#fee2e2;color:#991b1b','Sayuran':'background:#dcfce7;color:#166534','Bumbu':'background:#fef3c7;color:#92400e','Minyak & Lemak':'background:#e0f2fe;color:#075985','Buah':'background:#fce7f3;color:#9d174d','Minuman':'background:#dbeafe;color:#1e40af','Frozen Food':'background:#e0f2fe;color:#0e7490','Lainnya':'background:#f1f5f9;color:#475569'};
+// Unified type badge renderer
+function typeBadge(type,opts={}){
+  const emoji=TYPE_EMOJI[type]||'📦';
+  const pill=TYPE_PILL[type]||'background:#f1f5f9;color:#475569';
+  const sz=opts.size||'11px';
+  return `<span style="display:inline-flex;align-items:center;gap:3px;font-size:${sz};font-weight:600;padding:2px 7px;border-radius:20px;${pill}">${emoji} ${type}</span>`;
+}
 
 // ═══════════════════════════════════════
 //  STATE
@@ -669,11 +692,27 @@ async function sbSet(data){
   }
 }
 
+function fmtSyncTime(ts){
+  if(!ts)return '';
+  const d=new Date(ts);
+  const dd=String(d.getDate()).padStart(2,'0');
+  const mm=String(d.getMonth()+1).padStart(2,'0');
+  const yy=d.getFullYear();
+  const hh=String(d.getHours()).padStart(2,'0');
+  const mi=String(d.getMinutes()).padStart(2,'0');
+  return `${dd}/${mm}/${yy} ${hh}:${mi}`;
+}
+function updateSyncTimestamp(ts){
+  const el=document.getElementById('sync-timestamp');
+  if(!el)return;
+  const t=ts||S._updated;
+  el.textContent=t?`Terakhir sync: ${fmtSyncTime(t)}`:'Belum pernah sync';
+}
 function setSyncBtn(state){
   const btn=document.getElementById('sync-btn');
   if(!btn)return;
   if(state==='loading'){btn.textContent='☁ Syncing...';btn.style.opacity='0.6';btn.disabled=true;}
-  else if(state==='ok'){btn.textContent='✓ Tersync';btn.style.background='#e8f5e9';btn.style.color='#2d7a4f';btn.style.borderColor='#2d7a4f';btn.disabled=false;btn.style.opacity='1';}
+  else if(state==='ok'){btn.textContent='✓ Tersync';btn.style.background='#e8f5e9';btn.style.color='#2d7a4f';btn.style.borderColor='#2d7a4f';btn.disabled=false;btn.style.opacity='1';updateSyncTimestamp(Date.now());}
   else if(state==='error'){btn.textContent='✗ Sync Gagal';btn.style.background='#fff0f0';btn.style.color='#d94f4f';btn.style.borderColor='#d94f4f';btn.disabled=false;btn.style.opacity='1';}
   else{btn.textContent='☁ Sync ke Cloud';btn.style.background='#e8f5e9';btn.style.color='#2d7a4f';btn.style.borderColor='#2d7a4f';btn.disabled=false;btn.style.opacity='1';}
 }
@@ -865,6 +904,77 @@ document.getElementById('item-material-search').addEventListener('keydown',e=>{
 function getDayMenus(kitId,wk,day){
   if(!S.menus)S.menus=[];
   return S.menus.filter(m=>m.kitchenId===kitId&&m.weekKey===wk&&m.day===day);
+}
+let _importMenuNames=[];
+function openImportMenu(){
+  _importMenuNames=[];
+  document.getElementById('import-menu-file').value='';
+  document.getElementById('import-menu-preview').innerHTML='<div style="color:var(--mt);font-size:12px;text-align:center;padding:20px 0">Upload file Excel untuk melihat preview menu</div>';
+  document.getElementById('import-menu-col-row').style.display='none';
+  document.getElementById('import-menu-col').innerHTML='';
+  document.querySelectorAll('#import-menu-days input').forEach(cb=>{
+    cb.checked=parseInt(cb.value)===curDay;
+  });
+  openModal('modal-import-menu');
+}
+function onImportMenuFile(input){
+  const file=input.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      if(!rows.length){alert('File kosong.');return;}
+      // Detect columns: find cols with >1 non-empty text cells
+      const numCols=Math.max(...rows.map(r=>r.length));
+      const colHeaders=rows[0]||[];
+      const colData=[];
+      for(let c=0;c<numCols;c++){
+        const vals=rows.slice(1).map(r=>(r[c]||'').toString().trim()).filter(v=>v&&isNaN(v));
+        if(vals.length>0) colData.push({idx:c,header:colHeaders[c]||`Kolom ${c+1}`,vals});
+      }
+      if(!colData.length){alert('Tidak ada data teks ditemukan di file ini.');return;}
+      // Populate column selector
+      const colSel=document.getElementById('import-menu-col');
+      colSel.innerHTML=colData.map((c,i)=>`<option value="${i}">${c.header} (${c.vals.length} item)</option>`).join('');
+      document.getElementById('import-menu-col-row').style.display='flex';
+      window._importMenuColData=colData;
+      updateImportMenuPreview();
+    }catch(err){alert('Gagal membaca file: '+err.message);}
+  };
+  reader.readAsArrayBuffer(file);
+}
+function updateImportMenuPreview(){
+  const colData=window._importMenuColData||[];
+  const idx=parseInt(document.getElementById('import-menu-col').value)||0;
+  const col=colData[idx];
+  if(!col){return;}
+  _importMenuNames=col.vals;
+  const rows=_importMenuNames.map((n,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;background:#fff;border:1px solid var(--br)"><span style="min-width:18px;height:18px;display:flex;align-items:center;justify-content:center;background:var(--or);color:#fff;border-radius:50%;font-size:9px;font-weight:800">${i+1}</span><span style="font-size:12.5px;font-weight:600">${n}</span></div>`).join('');
+  document.getElementById('import-menu-preview').innerHTML=`<div style="font-size:11px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Preview (${_importMenuNames.length} menu terdeteksi)</div><div style="display:flex;flex-direction:column;gap:3px;max-height:160px;overflow-y:auto">${rows}</div>`;
+}
+function confirmImportMenu(){
+  if(!_importMenuNames.length){alert('Upload file Excel terlebih dahulu.');return;}
+  const days=[...document.querySelectorAll('#import-menu-days input:checked')].map(cb=>parseInt(cb.value));
+  if(!days.length){alert('Pilih minimal 1 hari.');return;}
+  const kid=document.getElementById('jadwal-kitchen').value||curKitchen;
+  const wk=curWeek;
+  let added=0;
+  days.forEach(day=>{
+    _importMenuNames.forEach(name=>{
+      const existing=getDayMenus(kid,wk,day);
+      if(!existing.find(m=>m.name.toLowerCase()===name.toLowerCase())){
+        S.menus.push({id:uid(),kitchenId:kid,weekKey:wk,day,name});
+        added++;
+      }
+    });
+  });
+  save();
+  closeModal('modal-import-menu');
+  renderJadwal();
+  alert(`✓ ${added} menu berhasil diimport ke ${days.length} hari`);
 }
 function addMenu(kitId,wk,day){
   const inp=document.getElementById('menu-input-'+day);
@@ -1172,11 +1282,13 @@ function renderJadwalContent(){
   const items=S.scheduleItems.filter(s=>s.weekKey===curWeek&&s.kitchenId===curKitchen&&s.day===curDay);
   // — Menu masakan section —
   const dayMen=getDayMenus(curKitchen,curWeek,curDay);
-  const menuTags=dayMen.map(m=>`<span class="menu-tag">${m.name}<button class="menu-tag-del" onclick="deleteMenu('${m.id}')" title="Hapus">✕</button></span>`).join('');
   const _kid=curKitchen.replace(/'/g,"\'"),_wk=curWeek.replace(/'/g,"\'");
+  const menuRows=dayMen.length
+    ? dayMen.map((m,i)=>`<div class="menu-list-item"><span class="menu-num">${i+1}</span><span class="menu-list-name">${m.name}</span><button class="menu-list-del" onclick="deleteMenu('${m.id}')" title="Hapus">✕</button></div>`).join('')
+    : `<div class="menu-list-empty">Belum ada menu untuk hari ini</div>`;
   const menuHtml=`<div class="day-menus">
-    <div class="day-menus-hdr">🍽️ Menu Masakan</div>
-    <div class="menu-tags">${menuTags}</div>
+    <div class="day-menus-hdr"><span>🍽️ Menu Masakan</span><span style="font-size:10px;font-weight:600;background:var(--or);color:#fff;padding:2px 8px;border-radius:99px">${dayMen.length} menu</span></div>
+    <div class="menu-list">${menuRows}</div>
     <div class="menu-add-row">
       <input class="menu-add-input" id="menu-input-${curDay}" type="text" placeholder="Tambah masakan... (Enter)" maxlength="60"
         onkeydown="handleMenuKey(event,'${_kid}','${_wk}',${curDay})">
@@ -1198,7 +1310,7 @@ function renderJadwalContent(){
           <div class="oi-meta">
             <span style="color:var(--tx);font-weight:500">${si.qty} ${m.unit}</span>
             <span style="color:var(--br)">·</span>
-            <span class="badge" style="${tsStyle(m.type)}">${m.type}</span>
+            ${typeBadge(m.type)}
             ${m.stockType==='rapel'?'<span class="badge bg-gn">Rapel</span>':m.stockType==='h1'?'<span class="badge bg-bl">H-1</span>':''}
             ${hasDiff?`<span style="color:var(--or);font-size:11px">≠ master</span>`:''}
           </div>
@@ -1400,72 +1512,100 @@ function markGroupOrdered(ids){
   save();renderPesanan();if(curPage==='dashboard')renderDashboard();
 }
 
+function toggleDayCollapse(key){
+  if(!window._pesCollapseDay)window._pesCollapseDay={};
+  window._pesCollapseDay[key]=window._pesCollapseDay[key]===false?true:false;
+  renderPesanan();
+}
+function toggleCatCollapse(key){
+  if(!window._pesCopyCollapseType)window._pesCopyCollapseType={};
+  window._pesCopyCollapseType[key]=window._pesCopyCollapseType[key]===false?true:false;
+  renderPesanan();
+}
 function renderPesananByHari(items,dates){
   const td=today0();
   const typeOrder=['Karbohidrat','Protein','Sayuran','Bumbu','Minyak & Lemak','Buah','Minuman','Frozen Food','Lainnya'];
-  // Type badge colors (pill style)
-  const TYPE_PILL={
-    'Karbohidrat':'background:#fef9c3;color:#92400e',
-    'Protein':'background:#fee2e2;color:#991b1b',
-    'Sayuran':'background:#dcfce7;color:#166534',
-    'Bumbu':'background:#fef3c7;color:#92400e',
-    'Minyak & Lemak':'background:#e0f2fe;color:#075985',
-    'Buah':'background:#fce7f3;color:#9d174d',
-    'Minuman':'background:#dbeafe;color:#1e40af',
-    'Frozen Food':'background:#e0f2fe;color:#0e7490',
-    'Lainnya':'background:#f1f5f9;color:#475569'
-  };
+  // TYPE_PILL is now global
   if(!items.length){
     document.getElementById('pesanan-content').innerHTML='<div class="empty"><div class="ei">🛒</div><div class="et">Tidak ada item pesanan</div><div class="ed">Tambahkan bahan baku di menu Jadwal Menu.</div></div>';
     return;
   }
   let html='';
+  // Track collapse state per day and per category
+  if(!window._pesCollapseDay)window._pesCollapseDay={};
+  if(!window._pesCopyCollapseType)window._pesCopyCollapseType={};
+
   [0,1,2,3,4].forEach(di=>{
     const dis=items.filter(s=>s.day===di);if(!dis.length)return;
-    const nd=dates[di];const isToday=nd.getTime()===td.getTime();
+    const nd=dates[di];
+    // Delivery day = menu day - 1
+    const deliveryDate=addDays(nd,-1);
+    const deliveryDayName=ALL_DAYS[deliveryDate.getDay()];
+    const ddd=String(deliveryDate.getDate()).padStart(2,'0');
+    const ddm=String(deliveryDate.getMonth()+1).padStart(2,'0');
+    const ddY=deliveryDate.getFullYear();
+    const isTodayDelivery=deliveryDate.getTime()===td.getTime();
     const ordN=dis.filter(s=>s.isOrdered).length;
-    // Day header
+    const dayKey=`day_${di}`;
+    const dayOpen=window._pesCollapseDay[dayKey]!==false; // default open
+    const chevron=dayOpen?'▾':'▸';
+
     html+=`${di>0?'<div style="height:10px"></div>':''}
     <div style="background:#fff;border:1px solid var(--br);border-radius:12px;overflow:hidden;margin-bottom:2px">
-    <div style="padding:11px 16px;border-bottom:1px solid var(--br);display:flex;align-items:center;justify-content:space-between;background:#1a1a1a;border-radius:0">
+    <div onclick="toggleDayCollapse('${dayKey}')" style="padding:11px 16px;border-bottom:${dayOpen?'1px solid var(--br)':'none'};display:flex;align-items:center;justify-content:space-between;background:#1a1a1a;border-radius:0;cursor:pointer;user-select:none">
       <div style="display:flex;align-items:center;gap:10px">
-        <span style="font-size:15px;font-weight:800;font-family:'Plus Jakarta Sans','Outfit',sans-serif;letter-spacing:-.3px;color:#fff">${DAYS[di]}</span>
-        <span style="font-size:11.5px;color:rgba(255,255,255,0.5)">${fmt(nd)}</span>
-        ${isToday?'<span class="badge" style="background:rgba(255,255,255,0.15);color:#fff">Hari Ini</span>':''}
+        <span style="font-size:13px;color:rgba(255,255,255,0.5)">${chevron}</span>
+        <div>
+          <div style="display:flex;align-items:center;gap:7px">
+            <span style="font-size:15px;font-weight:800;font-family:'Plus Jakarta Sans','Outfit',sans-serif;letter-spacing:-.3px;color:#fff">${deliveryDayName}, ${ddd}/${ddm}/${ddY}</span>
+            ${isTodayDelivery?'<span class="badge" style="background:rgba(255,255,255,0.15);color:#fff">Hari Ini</span>':''}
+          </div>
+          <div style="font-size:10.5px;color:rgba(255,255,255,0.45);margin-top:2px">Menu: ${DAYS[di]}, ${String(nd.getDate()).padStart(2,'0')}/${String(nd.getMonth()+1).padStart(2,'0')}</div>
+        </div>
       </div>
-      <span style="font-size:11.5px;font-weight:600;color:${ordN===dis.length?'#6ee7a8':'rgba(255,255,255,0.45)'}">${ordN}/${dis.length} dipesan</span>
+      <span style="font-size:11.5px;font-weight:600;color:${ordN===dis.length?'#6ee7a8':'rgba(255,255,255,0.45)'}">${ordN}/${dis.length}</span>
     </div>`;
-    // Group by type within this day
-    const byType={};
-    dis.forEach(si=>{
-      const m=getMat(si.materialId);if(!m)return;
-      if(!byType[m.type])byType[m.type]=[];
-      byType[m.type].push({si,m});
-    });
-    const sortedTypes=typeOrder.filter(t=>byType[t]).concat(Object.keys(byType).filter(t=>!typeOrder.includes(t)));
-    sortedTypes.forEach(typ=>{
-      const emoji=TYPE_EMOJI[typ]||'📦';
-      const pillStyle=TYPE_PILL[typ]||'background:#f1f5f9;color:#475569';
-      const _ck=`tc_${di}_${typ.replace(/\W/g,'_')}`;
-      window[_ck]={label:`${DAYS[di]}, ${String(nd.getDate()).padStart(2,'0')}/${String(nd.getMonth()+1).padStart(2,'0')}`,items:byType[typ].map(({si,m})=>({name:m.name,qty:si.qty,unit:m.unit,ord:si.isOrdered}))};
-      html+=`<div style="display:flex;align-items:center;gap:6px;padding:7px 16px 3px">
-        <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;${pillStyle}">${emoji} ${typ}</span>
-        <button onclick="copyTypeKey('${_ck}')" style="background:none;border:none;cursor:pointer;font-size:13px;opacity:.5;padding:0 2px" title="Copy ${typ} hari ini">📋</button>
-      </div>`;
-      byType[typ].forEach(({si,m})=>{
-        const ord=si.isOrdered;
-        const dimStyle=ord?'color:#94a3b8':'';
-        const strikeStyle=ord?'text-decoration:line-through;color:#94a3b8':'font-weight:600';
-        html+=`<div style="display:flex;align-items:center;padding:9px 16px;border-bottom:1px solid var(--br);${ord?'background:#fafafa':''}">
-          <label style="display:flex;align-items:center;flex:1;cursor:pointer;gap:10px">
-            <input type="checkbox" ${ord?'checked':''} onchange="toggleOrdered('${si.id}',this.checked)" style="width:17px;height:17px;flex-shrink:0;accent-color:var(--pr);cursor:pointer">
-            <span style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:14px;flex-shrink:0;${pillStyle}">${emoji} ${typ}</span>
-            <span style="font-size:13px;flex:1;${strikeStyle}">${m.name}</span>
-          </label>
-          <span style="font-size:13px;font-weight:600;flex-shrink:0;margin-left:auto;padding-left:12px;${dimStyle||'color:var(--tx);text-align:right'}">${si.qty} ${m.unit}</span>
-        </div>`;
+
+    if(dayOpen){
+      const byType={};
+      dis.forEach(si=>{
+        const m=getMat(si.materialId);if(!m)return;
+        if(!byType[m.type])byType[m.type]=[];
+        byType[m.type].push({si,m});
       });
-    });
+      const sortedTypes=typeOrder.filter(t=>byType[t]).concat(Object.keys(byType).filter(t=>!typeOrder.includes(t)));
+      sortedTypes.forEach(typ=>{
+        const catKey=`cat_${di}_${typ.replace(/\W/g,'_')}`;
+        const catOpen=window._pesCopyCollapseType[catKey]!==false;
+        const catChev=catOpen?'▾':'▸';
+        const _ck=`tc_${di}_${typ.replace(/\W/g,'_')}`;
+        window[_ck]={label:`Pengiriman ${deliveryDayName} ${ddd}/${ddm}`,items:byType[typ].map(({si,m})=>({name:m.name,qty:si.qty,unit:m.unit,ord:si.isOrdered}))};
+
+        html+=`<div style="border-bottom:1px solid var(--br)">
+          <div onclick="toggleCatCollapse('${catKey}')" style="display:flex;align-items:center;gap:6px;padding:7px 16px;background:#fafafa;cursor:pointer;user-select:none">
+            ${typeBadge(typ)}
+            <span style="font-size:11px;color:var(--mt);margin-left:auto">${byType[typ].length} item</span>
+            <button onclick="event.stopPropagation();copyTypeKey('${_ck}')" style="background:none;border:none;cursor:pointer;font-size:12px;opacity:.4;padding:0 2px" title="Copy">📋</button>
+            <span style="font-size:10px;color:var(--mt);width:14px;text-align:center">${catChev}</span>
+          </div>`;
+
+        if(catOpen){
+          byType[typ].forEach(({si,m})=>{
+            const ord=si.isOrdered;
+            const dimStyle=ord?'color:#94a3b8':'';
+            const strikeStyle=ord?'text-decoration:line-through;color:#94a3b8':'font-weight:600';
+            html+=`<div style="display:flex;align-items:center;padding:9px 16px 9px 32px;border-top:1px solid var(--br);${ord?'background:#fafafa':''}">
+              <label style="display:flex;align-items:center;flex:1;cursor:pointer;gap:10px">
+                <input type="checkbox" ${ord?'checked':''} onchange="toggleOrdered('${si.id}',this.checked)" style="width:17px;height:17px;flex-shrink:0;accent-color:var(--or);cursor:pointer">
+                <span style="font-size:13px;flex:1;${strikeStyle}">${m.name}</span>
+              </label>
+              <span style="font-size:13px;font-weight:600;flex-shrink:0;margin-left:auto;padding-left:12px;${dimStyle||'color:var(--tx)'}">${si.qty} ${m.unit}</span>
+            </div>`;
+          });
+        }
+        html+='</div>'; // close category
+      });
+    }
     html+='</div>';  // close day card
   });
   const ordTotal=items.filter(s=>s.isOrdered).length;
@@ -1509,7 +1649,7 @@ function renderPesananByBahan(items,dates){
     const typeMids=byType[type]||[];
     const emoji=TYPE_EMOJI[type]||'📦';
     html+=`<div style="display:flex;align-items:center;gap:10px;margin:18px 0 8px">
-      <span style="font-size:12px;font-weight:800;color:var(--mt);letter-spacing:.5px;text-transform:uppercase;white-space:nowrap"><span class="badge" style="${tsStyle(type)}">${emoji} ${type}</span></span>
+      ${typeBadge(type,{size:"12px"})}
       <div style="flex:1;height:1px;background:var(--br)"></div>
     </div>`;
 
@@ -1629,6 +1769,7 @@ function handleUnitChange(matId,sel){
   updateMatField(matId,'unit',sel.value);
 }
 function renderMasterBarang(){
+  updateSyncTimestamp();
   const tbody=document.getElementById('material-tbody');
   if(!S.materials.length){
     tbody.innerHTML=`<tr><td colspan="7"><div class="empty"><div class="ei">📦</div><div class="et">Belum ada bahan baku</div></div></td></tr>`;return;
@@ -1659,11 +1800,11 @@ function renderMasterBarang(){
     return `<tr style="${rowBg}">
       <td style="white-space:nowrap">
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-          <input class="td-inp" type="text" value="${m.name}" onchange="updateMatField('${m.id}','name',this.value)" style="min-width:130px;font-weight:600;font-size:13px">
+          <input class="td-inp" type="text" value="${m.name}" onchange="updateMatField('${m.id}','name',this.value)" style="min-width:130px;font-weight:600;font-size:13px;border-left:3px solid ${typeColor(m.type)};padding-left:8px">
           ${hasSimilar?`<span class="badge bg-yw" style="cursor:pointer" onclick="openMergeModal('${m.id}')" title="Mirip: ${similarTo}">⚠️ Mirip</span><span class="badge bg-gr" style="cursor:pointer;font-size:10px" onclick="ignoreMatPair('${m.id}','${ignoreIds[0]||''}')">Abaikan</span>`:''}
         </div>
       </td>
-      <td>${buildTypeSelect('td-sel',m.type,m.id)}</td>
+      <td><div style="display:inline-flex;align-items:center;gap:5px"><span style="font-size:14px;line-height:1">${TYPE_EMOJI[m.type]||'📦'}</span>${buildTypeSelect('td-sel',m.type,m.id)}</div></td>
       <td>${buildUnitCell(m.id,m.unit)}</td>
       <td><input class="td-inp" type="number" value="${m.price}" min="0" step="500" onchange="updateMatField('${m.id}','price',this.value)" style="width:90px"></td>
       <td><input class="td-inp" type="number" value="${m.days||0}" min="0" max="30" onchange="updateMatField('${m.id}','days',this.value)" style="width:52px"></td>
@@ -1800,10 +1941,12 @@ function fallbackCopy(txt){
 }
 function buildDayText(day,date,items){
   if(!items.length)return '';
-  const dd=String(date.getDate()).padStart(2,'0');
-  const mm=String(date.getMonth()+1).padStart(2,'0');
-  let txt=`*${DAYS[day]}, ${dd}/${mm}*\n`;
-  items.forEach(si=>{const m=getMat(si.materialId);if(m)txt+=`• ${m.name} ${si.qty} ${m.unit}\n`;});
+  const delivDate=addDays(date,-1);
+  const ddd=String(delivDate.getDate()).padStart(2,'0');
+  const ddm=String(delivDate.getMonth()+1).padStart(2,'0');
+  const ddn=ALL_DAYS[delivDate.getDay()];
+  let txt=`*Pengiriman ${ddn} ${ddd}/${ddm}*\n`;
+  items.forEach(si=>{const m=getMat(si.materialId);if(m)txt+=`• ${m.name} ${si.qty} ${m.unit}${si.isOrdered?' ✅':''}\n`;});
   return txt;
 }
 function copyPesananByHari(){
@@ -1835,9 +1978,11 @@ function copyMatFromRekap(matId){
   let txt='';
   sis.sort((a,b)=>a.day-b.day).forEach(si=>{
     const nd=dates[si.day];
-    const dd=String(nd.getDate()).padStart(2,'0');
-    const mm=String(nd.getMonth()+1).padStart(2,'0');
-    txt+=`${DAYS[si.day]}, ${dd}/${mm}\n• ${m.name} ${si.qty} ${m.unit}${si.isOrdered?' ✅':''}\n\n`;
+    const delivDate=addDays(nd,-1);
+    const dd=String(delivDate.getDate()).padStart(2,'0');
+    const mm=String(delivDate.getMonth()+1).padStart(2,'0');
+    const ddn=ALL_DAYS[delivDate.getDay()];
+    txt+=`Pengiriman ${ddn} ${dd}/${mm}\n• ${m.name} ${si.qty} ${m.unit}${si.isOrdered?' ✅':''}\n\n`;
   });
   copyText(txt.trim());
 }
@@ -1991,7 +2136,13 @@ function copyRekapToClipboard(){
     matMap[si.materialId].days[si.day]=(matMap[si.materialId].days[si.day]||0)+si.qty;
   });
   Object.values(matMap).filter(x=>x.mat).sort((a,b)=>a.mat.name.localeCompare(b.mat.name)).forEach(({mat,days})=>{
-    const parts=[0,1,2,3,4].filter(d=>days[d]).map(d=>`${DAYS[d]}: ${days[d]} ${mat.unit}`);
+    const parts=[0,1,2,3,4].filter(d=>days[d]).map(d=>{
+      const delivDate=addDays(dates[d],-1);
+      const ddn=ALL_DAYS[delivDate.getDay()];
+      const ddd=String(delivDate.getDate()).padStart(2,'0');
+      const ddm=String(delivDate.getMonth()+1).padStart(2,'0');
+      return `${ddn} ${ddd}/${ddm}: ${days[d]} ${mat.unit}`;
+    });
     txt+=`• ${mat.name} — ${parts.join(', ')}\n`;
   });
   copyText(txt.trim());
@@ -2031,7 +2182,7 @@ function openMergeModal(id){
   document.getElementById('merge-body').innerHTML=`
     <div class="alert warning" style="margin-bottom:12px"><span class="ai">⚠️</span><div><div class="at">Merge akan menggabungkan dua bahan menjadi satu. Qty, hari, dan tanggal pesanan tidak berubah.</div></div></div>
     <div class="fg"><label class="fl">Pertahankan (master)</label>
-      <div style="padding:10px;background:var(--bg);border-radius:8px;font-weight:700">${m.name} <span class="badge" style="${tsStyle(m.type)}">${m.type}</span></div>
+      <div style="padding:10px;background:var(--bg);border-radius:8px;font-weight:700">${m.name} ${typeBadge(m.type)}</div>
     </div>
     <div class="fg"><label class="fl">Gabungkan ke dalam (akan dihapus)</label>
       <select id="merge-delete-sel" onchange="mergeDeleteId=this.value" style="width:100%">${opts}</select>
@@ -2484,7 +2635,7 @@ function renderWizStep(step){
     const{newMats,newItems,skipItems,dryGroups,priceUpdates=[]}=result;
 
     let matHtml=newMats.length
-      ?newMats.map(m=>`<div class="import-review-item"><b>${m.name}</b> — <span class="badge" style="${tsStyle(m.type)}">${m.type}</span> · ${m.unit} · ${fmtRp(m.price)}${m.stockType==='rapel'?' 📦':m.stockType==='h1'?' ⏰':''}</div>`).join('')
+      ?newMats.map(m=>`<div class="import-review-item"><b>${m.name}</b> — ${typeBadge(m.type)} · ${m.unit} · ${fmtRp(m.price)}${m.stockType==='rapel'?' 📦':m.stockType==='h1'?' ⏰':''}</div>`).join('')
       :'<div style="color:var(--mt);font-size:13px">Tidak ada bahan baru — semua sudah ada di master</div>';
 
     let itemHtml=newItems.map(si=>{
@@ -2769,35 +2920,56 @@ function migrateState(state){
   return state;
 }
 
-
-
 function init(){
-  // Langsung tampil dari localStorage
   applyState(loadState());
-
-  // Supabase sync di background
   sbGet().then(remote=>{
     if(remote){
       const remoteV=remote._updated||0;
       const localV=S._updated||0;
-      if(remoteV>localV){
-        applyState(remote);
-        localStorage.setItem('mbg-v2',JSON.stringify(S));
-        renderDashboard();
-        console.log('Data diperbarui dari Supabase ✓');
-      } else {
-        // Local lebih baru, update Supabase
-        sbSet(JSON.parse(JSON.stringify(S))).catch(e=>console.warn(e));
-      }
+      if(remoteV>localV){ applyState(remote); localStorage.setItem('mbg-v2',JSON.stringify(S)); renderDashboard(); }
+      else { sbSet(JSON.parse(JSON.stringify(S))).catch(e=>console.warn(e)); }
     } else {
-      // Supabase kosong, upload data lokal
-      S._updated=Date.now();
-      localStorage.setItem('mbg-v2',JSON.stringify(S));
+      S._updated=Date.now(); localStorage.setItem('mbg-v2',JSON.stringify(S));
       sbSet(JSON.parse(JSON.stringify(S))).catch(e=>console.warn(e));
     }
   }).catch(e=>console.warn('Supabase sync gagal:',e));
 }
 init();
 </script>
+<!-- MODAL: Import Menu Bulk dari Excel -->
+<div class="mbg" id="modal-import-menu" onclick="if(event.target===this)closeModal('modal-import-menu')">
+<div class="modal" style="max-width:520px">
+  <div class="modal-hdr"><div class="mt">📊 Import Menu dari Excel</div><button class="modal-cls" onclick="closeModal('modal-import-menu')">✕</button></div>
+  <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+    <div style="background:#f8faff;border:1.5px dashed #bac8ff;border-radius:10px;padding:14px;text-align:center">
+      <div style="font-size:12px;font-weight:700;color:var(--mt);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">① Upload File Excel</div>
+      <input type="file" id="import-menu-file" accept=".xlsx,.xls,.csv" onchange="onImportMenuFile(this)" style="display:none">
+      <button class="btn btn-ol" onclick="document.getElementById('import-menu-file').click()" style="margin-bottom:6px">📂 Pilih File .xlsx / .xls / .csv</button>
+      <div style="font-size:11px;color:var(--mt)">File Excel dengan kolom berisi nama menu masakan</div>
+    </div>
+    <div id="import-menu-col-row" style="display:none;align-items:center;gap:8px">
+      <span style="font-size:12px;font-weight:600;color:var(--mt);white-space:nowrap">② Pilih Kolom Menu</span>
+      <select id="import-menu-col" onchange="updateImportMenuPreview()" style="flex:1;padding:6px 10px;border:1.5px solid var(--br);border-radius:8px;font-family:inherit;font-size:12px"></select>
+    </div>
+    <div id="import-menu-preview" style="background:#f8f8f8;border:1px solid var(--br);border-radius:8px;padding:10px;min-height:60px">
+      <div style="color:var(--mt);font-size:12px;text-align:center;padding:20px 0">Upload file Excel untuk melihat preview menu</div>
+    </div>
+    <div>
+      <div style="font-size:12px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">③ Pilih Hari Tujuan</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap" id="import-menu-days">
+        <label style="display:flex;align-items:center;gap:5px;font-size:13px"><input type="checkbox" value="0" checked style="accent-color:var(--or)"> Senin</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:13px"><input type="checkbox" value="1" style="accent-color:var(--or)"> Selasa</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:13px"><input type="checkbox" value="2" style="accent-color:var(--or)"> Rabu</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:13px"><input type="checkbox" value="3" style="accent-color:var(--or)"> Kamis</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:13px"><input type="checkbox" value="4" style="accent-color:var(--or)"> Jumat</label>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-ol" onclick="closeModal('modal-import-menu')">Batal</button>
+      <button class="btn btn-or" onclick="confirmImportMenu()">✓ Import Menu</button>
+    </div>
+  </div>
+</div>
+</div>
 </body>
 </html>
