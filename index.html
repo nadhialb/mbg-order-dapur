@@ -642,7 +642,38 @@ function loadState(){
   }catch(e){}
   return {...DEFAULT,scheduleItems:buildDemo(),_v:6};
 }
-function save(){localStorage.setItem('mbg-v2',JSON.stringify(S));}
+// ── Supabase sync ──────────────────────────
+const SB_URL='https://mvliluqrkzywojjnqxdm.supabase.co/rest/v1';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12bGlsdXFya3p5d29qam5xeGRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyMjU1MjIsImV4cCI6MjA5NjgwMTUyMn0.I9tRfUBBxO6T12Fct2Tl0T_po5keT8H7Eq7Cmboudmw';
+const SB_HDR={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
+let _sbRowId=null;
+let _saveTimer=null;
+
+async function sbGet(){
+  const res=await fetch(SB_URL+'/app_state?select=id,data&limit=1',{headers:SB_HDR});
+  const rows=await res.json();
+  if(rows&&rows.length>0){_sbRowId=rows[0].id;return rows[0].data;}
+  return null;
+}
+async function sbSet(data){
+  if(_sbRowId){
+    await fetch(SB_URL+'/app_state?id=eq.'+_sbRowId,{method:'PATCH',headers:SB_HDR,body:JSON.stringify({data:data})});
+  }else{
+    const res=await fetch(SB_URL+'/app_state',{method:'POST',headers:{...SB_HDR,'Prefer':'return=representation'},body:JSON.stringify({data:data})});
+    const rows=await res.json();
+    if(rows&&rows[0])_sbRowId=rows[0].id;
+  }
+}
+
+function save(){
+  localStorage.setItem('mbg-v2',JSON.stringify(S));
+  clearTimeout(_saveTimer);
+  _saveTimer=setTimeout(()=>{
+    S._updated=Date.now();
+    localStorage.setItem('mbg-v2',JSON.stringify(S));
+    sbSet(JSON.parse(JSON.stringify(S))).catch(e=>console.warn('Supabase save error:',e));
+  },2000);
+}
 
 function buildDemo(){
   const wk=getWeekKey(new Date());
@@ -2696,7 +2727,30 @@ function migrateState(state){
 
 
 function init(){
+  // Langsung tampil dari localStorage
   applyState(loadState());
+
+  // Supabase sync di background
+  sbGet().then(remote=>{
+    if(remote){
+      const remoteV=remote._updated||0;
+      const localV=S._updated||0;
+      if(remoteV>localV){
+        applyState(remote);
+        localStorage.setItem('mbg-v2',JSON.stringify(S));
+        renderDashboard();
+        console.log('Data diperbarui dari Supabase ✓');
+      } else {
+        // Local lebih baru, update Supabase
+        sbSet(JSON.parse(JSON.stringify(S))).catch(e=>console.warn(e));
+      }
+    } else {
+      // Supabase kosong, upload data lokal
+      S._updated=Date.now();
+      localStorage.setItem('mbg-v2',JSON.stringify(S));
+      sbSet(JSON.parse(JSON.stringify(S))).catch(e=>console.warn(e));
+    }
+  }).catch(e=>console.warn('Supabase sync gagal:',e));
 }
 init();
 </script>
