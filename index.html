@@ -681,13 +681,27 @@ function setSyncBtn(state){
 async function manualSync(){
   setSyncBtn('loading');
   try{
-    S._updated=Date.now();
-    localStorage.setItem('mbg-v2',JSON.stringify(S));
-    // Re-fetch row id first
-    const rows=await fetch(SB_URL+'/app_state?select=id&limit=1',{headers:SB_HDR}).then(r=>r.json());
-    if(rows&&rows.length>0)_sbRowId=rows[0].id;
-    await sbSet(JSON.parse(JSON.stringify(S)));
-    setSyncBtn('ok');
+    // Ambil data dari Supabase dulu
+    const remote=await sbGet();
+    const localV=S._updated||0;
+    const remoteV=remote?._updated||0;
+
+    if(remote&&remoteV>localV){
+      // Cloud lebih baru → pakai data cloud
+      applyState(remote);
+      localStorage.setItem('mbg-v2',JSON.stringify(S));
+      renderDashboard();
+      if(curPage==='master-barang')renderMasterBarang();
+      setSyncBtn('ok');
+      alert('✓ Data terbaru dari cloud berhasil dimuat!');
+    } else {
+      // Lokal lebih baru → push ke cloud
+      S._updated=Date.now();
+      localStorage.setItem('mbg-v2',JSON.stringify(S));
+      await sbSet(JSON.parse(JSON.stringify(S)));
+      setSyncBtn('ok');
+      alert('✓ Data berhasil disimpan ke cloud!');
+    }
     setTimeout(()=>setSyncBtn('idle'),3000);
   }catch(e){
     console.error('Sync error:',e);
