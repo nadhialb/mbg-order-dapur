@@ -662,7 +662,7 @@ function save(){
   // Debounce ke Firestore (max 1x per 1.5 detik)
   clearTimeout(_saveTimer);
   _saveTimer = setTimeout(()=>{
-    DOC.set(JSON.parse(JSON.stringify(S))).catch(e=>console.warn('Firestore save error:',e));
+    S._updated=Date.now();S._updated=Date.now();localStorage.setItem('mbg-v2',JSON.stringify(S));DOC.set(JSON.parse(JSON.stringify(S))).catch(e=>console.warn('Firestore save error:',e));
   }, 1500);
 }
 
@@ -2692,39 +2692,29 @@ function migrateState(state){
   return state;
 }
 
-function showLoadingScreen(visible){
-  let el=document.getElementById('fb-loading');
-  if(!el){
-    el=document.createElement('div');
-    el.id='fb-loading';
-    el.style.cssText='position:fixed;inset:0;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:12px;font-family:Outfit,sans-serif';
-    el.innerHTML='<div style="font-size:28px">🔥</div><div style="font-size:15px;font-weight:600;color:#1a1a1a">Memuat data...</div><div style="font-size:12px;color:#888">Menghubungkan ke Firebase</div>';
-    document.body.appendChild(el);
-  }
-  el.style.display=visible?'flex':'none';
-}
+// showLoadingScreen removed — app loads instantly from localStorage
 
-async function init(){
-  showLoadingScreen(true);
-  try{
-    const timeout = new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),6000));
-    const snap = await Promise.race([DOC.get(), timeout]);
+function init(){
+  // Langsung tampil dari localStorage tanpa nunggu Firebase
+  applyState(loadState());
+
+  // Firebase sync di background
+  DOC.get().then(snap=>{
     if(snap.exists){
-      applyState(snap.data());
-      // Juga update localStorage sebagai cache
-      localStorage.setItem('mbg-v2', JSON.stringify(S));
+      const remote=snap.data();
+      const remoteV=(remote._updated||0);
+      const localV=(S._updated||0);
+      if(remoteV>localV){
+        applyState(remote);
+        localStorage.setItem('mbg-v2',JSON.stringify(S));
+        renderDashboard();
+      }
     } else {
-      // Firestore kosong - cek localStorage dulu
-      const local = loadState();
-      applyState(local);
-      // Upload data lokal ke Firestore
+      // Firestore kosong, upload data lokal
+      S._updated=Date.now();
       DOC.set(JSON.parse(JSON.stringify(S))).catch(e=>console.warn(e));
     }
-  } catch(e){
-    console.warn('Firestore gagal, pakai localStorage:', e);
-    applyState(loadState());
-  }
-  showLoadingScreen(false);
+  }).catch(e=>console.warn('Firebase sync gagal:',e));
 }
 init();
 </script>
