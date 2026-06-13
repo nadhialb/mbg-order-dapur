@@ -266,6 +266,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
 
   /* ── Mob header select style ── */
   #jadwal-kitchen{font-size:14px;padding:6px 28px 6px 10px}
+  .mbg{align-items:flex-start;padding:8px}
 }
 @media(max-width:480px){
   .k-stat-row{grid-template-columns:1fr 1fr}
@@ -475,20 +476,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
 </main>
 
 <!-- FAB -->
-<div class="fab" id="fab-root">
-  <div class="fab-actions" id="fab-actions">
-    <div class="fab-action" id="fab-a1">
-      <span class="fab-action-label">Tambah Bahan</span>
-      <div class="fab-action-ico" onclick="closeFab();openAddMaterial()">＋</div>
-    </div>
-        <div class="fab-action" id="fab-a3">
-      <span class="fab-action-label">Tambah Dapur</span>
-      <div class="fab-action-ico" onclick="closeFab();openAddKitchen()">🏠</div>
-    </div>
-  </div>
-  <button class="fab-btn" id="fab-main-btn" onclick="toggleFab()">＋</button>
-</div>
-<div id="fab-overlay" onclick="closeFab()" style="display:none;position:fixed;inset:0;z-index:199"></div>
+
+
 
 <!-- BOTTOM NAV -->
 <div class="bot-nav"><div class="bot-nav-inner">
@@ -597,8 +586,18 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
 
 <!-- MODAL: Rekap Pesanan -->
 <div class="mbg" id="modal-rekap">
-  <div class="modal modal-lg" style="padding:0;overflow:hidden;width:min(96vw,700px);max-width:96vw">
-    <div id="rekap-body" style="max-height:88vh;overflow-y:auto"></div>
+  <div class="modal modal-lg" style="padding:0;overflow:hidden;width:min(96vw,700px);max-width:96vw;display:flex;flex-direction:column;max-height:90vh">
+    <div id="rekap-header" style="display:flex;align-items:center;gap:6px;padding:10px 12px;border-bottom:1px solid var(--br);flex-shrink:0;background:#fff">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:800">Rekap Bahan</div>
+        <div id="rekap-subtitle" style="font-size:11px;color:var(--mt);margin-top:1px"></div>
+      </div>
+      <button onclick="copyRekapWA()" style="background:none;border:1px solid var(--br);border-radius:8px;padding:4px 9px;font-size:12px;cursor:pointer;color:var(--tx);flex-shrink:0" title="Copy format WhatsApp">📲 WA</button>
+      <button onclick="printRekap()" style="background:none;border:1px solid var(--br);border-radius:8px;padding:4px 9px;font-size:12px;cursor:pointer;color:var(--tx);flex-shrink:0" title="Print / Cetak">🖨️</button>
+      <button onclick="copyRekapToClipboard()" style="background:none;border:1px solid var(--br);border-radius:8px;padding:4px 9px;font-size:12px;cursor:pointer;color:var(--tx);flex-shrink:0" title="Copy teks">📋</button>
+      <button onclick="closeModal('modal-rekap')" style="background:none;border:1px solid var(--br);border-radius:8px;width:30px;height:30px;font-size:18px;cursor:pointer;color:var(--tx);flex-shrink:0;padding:0;line-height:1">×</button>
+    </div>
+    <div id="rekap-body" style="overflow-y:auto;flex:1"></div>
   </div>
 </div>
 
@@ -1644,6 +1643,8 @@ function markDayReceived(di){
   its.forEach(s=>{s.isReceived=!allRecv;if(allRecv){s.isPaid=false;s.paidAt=null;}});
   save();renderPesanan();if(curPage==='dashboard')renderDashboard();
 }
+function closeDayMenus(){document.querySelectorAll('[id^="day-menu-"]').forEach(el=>el.style.display='none');}
+function toggleDayMenu(dayKey){const el=document.getElementById('day-menu-'+dayKey);if(!el)return;const vis=el.style.display==='block';closeDayMenus();el.style.display=vis?'none':'block';if(!vis){setTimeout(()=>{const fn=e=>{if(!el.contains(e.target)){closeDayMenus();document.removeEventListener('click',fn);}};document.addEventListener('click',fn);},0);}}
 function toggleDayCollapse(key){
   if(!window._pesCollapseDay)window._pesCollapseDay={};
   window._pesCollapseDay[key]=window._pesCollapseDay[key]===false?true:false;
@@ -1678,6 +1679,7 @@ function renderPesananByHari(items,dates){
     const ddY=deliveryDate.getFullYear();
     const isTodayDelivery=deliveryDate.getTime()===td.getTime();
     const ordN=dis.filter(s=>s.isOrdered).length;
+    const _paidN=dis.filter(s=>s.isPaid).length;const _recvN=dis.filter(s=>s.isReceived).length;const countColor=_paidN===dis.length&&dis.length>0?'#fde68a':_recvN===dis.length&&dis.length>0?'#a5b4fc':ordN===dis.length&&dis.length>0?'#6ee7a8':'rgba(255,255,255,0.35)';
     const dayKey=`day_${di}`;
     const dayOpen=window._pesCollapseDay[dayKey]!==false; // default open
     const chevron=dayOpen?'▾':'▸';
@@ -1695,9 +1697,16 @@ function renderPesananByHari(items,dates){
           <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:2px">Menu: ${DAYS[di]}, ${String(nd.getDate()).padStart(2,'0')}/${String(nd.getMonth()+1).padStart(2,'0')}</div>
         </div>
       </div>
-      <div style="display:flex;align-items:center;gap:6px" onclick="event.stopPropagation()">
-        ${(()=>{const recvN=dis.filter(s=>s.isReceived).length;const paidN=dis.filter(s=>s.isPaid).length;return `<button onclick="markDayOrdered(${di})" style="background:none;border:1px solid ${ordN===dis.length?'#6ee7a8':'rgba(255,255,255,0.3)'};border-radius:7px;padding:3px 8px;font-size:11px;font-weight:700;color:${ordN===dis.length?'#6ee7a8':'rgba(255,255,255,0.6)'};cursor:pointer;white-space:nowrap">✓ Pesan</button><button onclick="markDayReceived(${di})" style="background:none;border:1px solid ${recvN===dis.filter(s=>s.isOrdered).length&&recvN>0?'rgba(110,231,168,0.6)':'rgba(129,140,248,0.5)'};border-radius:7px;padding:3px 8px;font-size:11px;font-weight:700;color:${recvN>0&&recvN===dis.filter(s=>s.isOrdered).length?'#a5f3b8':'rgba(180,180,255,0.8)'};cursor:pointer;white-space:nowrap">✓ Datang</button><button onclick="markDayPaid(${di})" style="background:none;border:1px solid rgba(255,220,80,0.4);border-radius:7px;padding:3px 8px;font-size:11px;font-weight:700;color:rgba(255,220,80,0.8);cursor:pointer;white-space:nowrap">✓ Bayar</button>`})()}
-        <span style="font-size:11px;color:rgba(255,255,255,0.35)">${ordN}/${dis.length}</span>
+      <div style="display:flex;align-items:center;gap:8px" onclick="event.stopPropagation()">
+        <span style="font-size:11px;font-weight:700;color:${countColor}">${ordN}/${dis.length}</span>
+        <div style="position:relative;display:inline-block">
+          <button onclick="event.stopPropagation();toggleDayMenu('${dayKey}')" style="background:none;border:1px solid rgba(255,255,255,0.3);border-radius:7px;width:26px;height:26px;font-size:15px;cursor:pointer;color:rgba(255,255,255,0.6);display:inline-flex;align-items:center;justify-content:center;line-height:1">⋮</button>
+          <div id="day-menu-${dayKey}" style="display:none;position:absolute;right:0;top:30px;background:#fff;border:1px solid var(--br);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.18);z-index:400;min-width:165px;overflow:hidden">
+            <div onclick="event.stopPropagation();closeDayMenus();markDayOrdered(${di})" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">Tandai Semua Pesan</div>
+            <div onclick="event.stopPropagation();closeDayMenus();markDayReceived(${di})" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">Tandai Semua Datang</div>
+            <div onclick="event.stopPropagation();closeDayMenus();markDayPaid(${di})" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">Tandai Semua Bayar</div>
+          </div>
+        </div>
       </div>
     </div>`;
 
@@ -2320,17 +2329,8 @@ function openRekap(){
     </tr>`;
   });
 
+  (()=>{const _k=S.kitchens.find(k=>k.id===(document.getElementById('pesanan-kitchen')?.value||curKitchen));const _sub=document.getElementById('rekap-subtitle');if(_sub)_sub.textContent=(_k?.name||'Dapur')+' · '+totalBahan+' bahan';})();
   document.getElementById('rekap-body').innerHTML=`
-    <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--br);position:sticky;top:0;background:#fff;z-index:10">
-      <div style="flex:1;min-width:0">
-        <div style="font-size:14px;font-weight:800">Rekap Bahan</div>
-        <div style="font-size:11px;color:var(--mt);margin-top:1px">${(()=>{const _k=S.kitchens.find(k=>k.id===(document.getElementById('pesanan-kitchen')?.value||curKitchen));return (_k?.name||'Dapur')})()}  ·  ${totalBahan} bahan</div>
-      </div>
-      <button onclick="copyRekapWA()" style="background:none;border:1px solid var(--br);border-radius:8px;padding:4px 9px;font-size:12px;cursor:pointer;color:var(--tx);flex-shrink:0" title="Copy format WhatsApp">📲 WA</button>
-      <button onclick="printRekap()" style="background:none;border:1px solid var(--br);border-radius:8px;padding:4px 9px;font-size:12px;cursor:pointer;color:var(--tx);flex-shrink:0" title="Print / Cetak">🖨️</button>
-      <button onclick="copyRekapToClipboard()" style="background:none;border:1px solid var(--br);border-radius:8px;padding:4px 9px;font-size:12px;cursor:pointer;color:var(--tx);flex-shrink:0" title="Copy teks">📋</button>
-      <button onclick="closeModal('modal-rekap')" style="background:none;border:1px solid var(--br);border-radius:8px;width:30px;height:30px;font-size:18px;cursor:pointer;color:var(--mt);flex-shrink:0;display:flex;align-items:center;justify-content:center;line-height:1">×</button>
-    </div>
     <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
       <table style="width:100%;border-collapse:collapse;min-width:320px">
         <thead><tr>
