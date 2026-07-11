@@ -331,7 +331,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div class="nav-item" onclick="navigate('master-barang')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1L14.5 4.5V11.5L8 15L1.5 11.5V4.5L8 1Z"/><path d="M1.5 4.5L8 8L14.5 4.5"/><path d="M8 8V15"/></svg></span>Master Barang</div>
     <div class="nav-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M1 7l2-5h10l2 5"/><path d="M6 15V11h4v4"/><path d="M1 7h14"/></svg></span>Master Dapur</div>
   </nav>
-  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260711-v11</div>
+  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260711-v12</div>
 </aside>
 
 <!-- MOBILE HEADER -->
@@ -373,7 +373,6 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
       <button class="btn btn-ol btn-sm" style="color:var(--rd)" onclick="deleteWeekSchedule()" title="Hapus semua jadwal minggu ini">🗑️ Hapus Minggu</button>
     </div>
     <div id="jadwal-week-summary"></div>
-    <div class="dtabs" id="jadwal-day-tabs"></div>
     <div class="card" id="jadwal-content"></div>
   </div>
 
@@ -408,6 +407,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
       </select>
     </div>
     <div id="rapel-notif"></div>
+    <div class="dtabs" id="pesanan-day-tabs"></div>
     <div class="card" id="pesanan-content"></div>
   </div>
 
@@ -1061,7 +1061,7 @@ function handleMenuKey(e,kitId,wk,day){
 // ═══════════════════════════════════════
 //  ROUTING
 // ═══════════════════════════════════════
-let curPage='dashboard',curKitchen='',curWeek='',curDay=0,pesananWeek='',dashWeek='',menuWeek='',pesananView='hari',editItemId=null;
+let curPage='dashboard',curKitchen='',curWeek='',curDay=0,pesananWeek='',pesananDay=0,dashWeek='',menuWeek='',pesananView='hari',editItemId=null;
 
 function navigate(page){
   curPage=page;
@@ -1376,8 +1376,10 @@ function renderWeekLabel(){
 }
 
 function renderDayTabs(){
+  const el=document.getElementById('jadwal-day-tabs');
+  if(!el)return;
   const td=today0(),dates=getWeekDates(curWeek);
-  document.getElementById('jadwal-day-tabs').innerHTML=dates.map((d,i)=>{
+  el.innerHTML=dates.map((d,i)=>{
     const isToday=d.getTime()===td.getTime();
     const cnt=S.scheduleItems.filter(s=>s.weekKey===curWeek&&s.kitchenId===curKitchen&&s.day===i).length;
     return `<div class="dtab${curDay===i?' active':''}" onclick="selectDay(${i})">${DAYS[i]}<span class="ds">${fmtShort(d)}${isToday?' ★':''} ${cnt?`(${cnt})`:'—'}</span></div>`;
@@ -1576,9 +1578,27 @@ function renderPesanan(){
   else if(filter==='unpaid')items=items.filter(s=>!s.isPaid);
   else if(filter==='paid')items=items.filter(s=>s.isPaid);
 
+  renderPesananDayTabs(items,dates);
   if(pesananView==='hari')renderPesananByHari(items,dates);
   else renderPesananByBahan(items,dates);
 }
+
+function renderPesananDayTabs(items,dates){
+  const el=document.getElementById('pesanan-day-tabs');
+  if(!el)return;
+  if(pesananView!=='hari'){el.style.display='none';el.innerHTML='';return;}
+  el.style.display='';
+  const td=today0();
+  el.innerHTML=dates.map((d,i)=>{
+    const isToday=d.getTime()===td.getTime();
+    const dis=items.filter(s=>s.day===i);
+    const cnt=dis.length;
+    const ordN=dis.filter(s=>s.isOrdered).length;
+    const badge=cnt?(ordN===cnt?`(${cnt} ✓)`:`(${ordN}/${cnt})`):'—';
+    return `<div class="dtab${pesananDay===i?' active':''}" onclick="selectPesananDay(${i})">${DAYS[i]}<span class="ds">${fmtShort(d)}${isToday?' ★':''} ${badge}</span></div>`;
+  }).join('');
+}
+function selectPesananDay(d){pesananDay=d;renderPesanan();}
 
 function renderSuggestions(kid,wk,dates){
   const td=today0();
@@ -1654,6 +1674,21 @@ function markDayReceived(di){
   save();renderPesanan();if(curPage==='dashboard')renderDashboard();
 }
 function closeDayMenus(){document.querySelectorAll('[id^="day-menu-"]').forEach(el=>el.style.display='none');}
+function closeTypeMenus(){document.querySelectorAll('[id^="type-menu-"]').forEach(el=>el.style.display='none');}
+function toggleTypeMenu(key){const el=document.getElementById('type-menu-'+key);if(!el)return;const vis=el.style.display==='block';closeTypeMenus();el.style.display=vis?'none':'block';if(!vis){setTimeout(()=>{const fn=e=>{if(!el.contains(e.target)){closeTypeMenus();document.removeEventListener('click',fn);}};document.addEventListener('click',fn);},0);}}
+function markTypeItems(ids,action){
+  let its=ids.map(id=>S.scheduleItems.find(s=>s.id===id)).filter(Boolean);
+  if(action==='receive'||action==='pay'){
+    its=its.filter(s=>s.isOrdered);
+    if(!its.length){alert(action==='receive'?'Tandai "Pesan" dulu sebelum menandai barang datang.':'Tandai "Pesan" dulu sebelum menandai bayar.');return;}
+  }
+  its.forEach(si=>{
+    if(action==='order'){si.isOrdered=true;si.orderedAt=fmtDate(new Date());}
+    else if(action==='receive'){si.isReceived=true;}
+    else if(action==='pay'){si.isPaid=true;si.paidAt=fmtDate(new Date());}
+  });
+  save();renderPesanan();if(curPage==='dashboard')renderDashboard();
+}
 function toggleDayMenu(dayKey){const el=document.getElementById('day-menu-'+dayKey);if(!el)return;const vis=el.style.display==='block';closeDayMenus();el.style.display=vis?'none':'block';if(!vis){setTimeout(()=>{const fn=e=>{if(!el.contains(e.target)){closeDayMenus();document.removeEventListener('click',fn);}};document.addEventListener('click',fn);},0);}}
 function toggleDayCollapse(key){
   if(!window._pesCollapseDay)window._pesCollapseDay={};
@@ -1678,8 +1713,10 @@ function renderPesananByHari(items,dates){
   if(!window._pesCollapseDay)window._pesCollapseDay={};
   if(!window._pesCopyCollapseType)window._pesCopyCollapseType={};
 
-  [0,1,2,3,4].forEach(di=>{
+  let _pesRenderedDay=false;
+  [pesananDay].forEach(di=>{
     const dis=items.filter(s=>s.day===di);if(!dis.length)return;
+    _pesRenderedDay=true;
     const nd=dates[di];
     // Delivery day = menu day - 1
     const deliveryDate=addDays(nd,-1);
@@ -1735,11 +1772,21 @@ function renderPesananByHari(items,dates){
         const _ck=`tc_${di}_${typ.replace(/\W/g,'_')}`;
         window[_ck]={label:`Pengiriman ${deliveryDayName} ${ddd}/${ddm}`,items:byType[typ].map(({si,m})=>({name:m.name,qty:si.qty,unit:m.unit,ord:si.isOrdered}))};
 
+        const typeIds=byType[typ].map(({si})=>si.id);
+        const typeMenuKey=catKey;
         html+=`<div style="border-bottom:1px solid var(--br)">
           <div onclick="toggleCatCollapse('${catKey}')" style="display:flex;align-items:center;gap:6px;padding:7px 16px;background:#fafafa;cursor:pointer;user-select:none">
             ${typeBadge(typ)}
             <span style="font-size:11px;color:var(--mt);margin-left:auto">${byType[typ].length} item</span>
             <button onclick="event.stopPropagation();copyTypeKey('${_ck}')" style="background:none;border:none;cursor:pointer;font-size:12px;opacity:.4;padding:0 2px" title="Copy">📋</button>
+            <div style="position:relative;display:inline-block" onclick="event.stopPropagation()">
+              <button onclick="toggleTypeMenu('${typeMenuKey}')" style="background:none;border:1px solid var(--br);border-radius:6px;width:22px;height:22px;font-size:13px;cursor:pointer;color:var(--mt);display:inline-flex;align-items:center;justify-content:center;line-height:1" title="Aksi Massal">⋮</button>
+              <div id="type-menu-${typeMenuKey}" style="display:none;position:absolute;right:0;top:26px;background:#fff;border:1px solid var(--br);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.18);z-index:400;min-width:150px;overflow:hidden">
+                <div onclick="closeTypeMenus();markTypeItems(${JSON.stringify(typeIds)},'order')" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">Pesan Semua</div>
+                <div onclick="closeTypeMenus();markTypeItems(${JSON.stringify(typeIds)},'receive')" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">Datang Semua</div>
+                <div onclick="closeTypeMenus();markTypeItems(${JSON.stringify(typeIds)},'pay')" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">Bayar Semua</div>
+              </div>
+            </div>
             <span style="font-size:10px;color:var(--mt);width:14px;text-align:center">${catChev}</span>
           </div>`;
 
@@ -1778,6 +1825,9 @@ function renderPesananByHari(items,dates){
     }
     html+='</div>';  // close day card
   });
+  if(!_pesRenderedDay){
+    html+='<div class="empty"><div class="ei">🛒</div><div class="et">Tidak ada item untuk hari ini</div><div class="ed">Pilih tab hari lain atau tambahkan bahan di Jadwal Menu.</div></div>';
+  }
   const ordTotal=items.filter(s=>s.isOrdered).length;
   const paidTotal=items.filter(s=>s.isPaid).length;
   html+=`<div style="background:#f5f5f5;border:1px solid var(--br);border-radius:10px;padding:12px 16px;margin-top:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
@@ -1822,9 +1872,19 @@ function renderPesananByBahan(items,dates){
   orderedTypes.forEach(type=>{
     const typeMids=byType[type]||[];
     const emoji=TYPE_EMOJI[type]||'📦';
+    const typeAllIds=typeMids.flatMap(mid=>matGroups[mid].map(s=>s.id));
+    const typeMenuKey2='bahan_'+type.replace(/\W/g,'_');
     html+=`<div style="display:flex;align-items:center;gap:10px;margin:18px 0 8px">
       ${typeBadge(type,{size:"12px"})}
       <div style="flex:1;height:1px;background:var(--br)"></div>
+      <div style="position:relative;display:inline-block">
+        <button onclick="toggleTypeMenu('${typeMenuKey2}')" style="background:none;border:1px solid var(--br);border-radius:6px;width:22px;height:22px;font-size:13px;cursor:pointer;color:var(--mt);display:inline-flex;align-items:center;justify-content:center;line-height:1" title="Aksi Massal">⋮</button>
+        <div id="type-menu-${typeMenuKey2}" style="display:none;position:absolute;right:0;top:26px;background:#fff;border:1px solid var(--br);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.18);z-index:400;min-width:150px;overflow:hidden">
+          <div onclick="closeTypeMenus();markTypeItems(${JSON.stringify(typeAllIds)},'order')" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">Pesan Semua</div>
+          <div onclick="closeTypeMenus();markTypeItems(${JSON.stringify(typeAllIds)},'receive')" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">Datang Semua</div>
+          <div onclick="closeTypeMenus();markTypeItems(${JSON.stringify(typeAllIds)},'pay')" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">Bayar Semua</div>
+        </div>
+      </div>
     </div>`;
 
     typeMids.forEach(mid=>{
@@ -2871,7 +2931,7 @@ function renderWizStep(step){
     });
     const result=processImport();
     IMP.importResult=result;
-    const{newMats,newItems,skipItems,dryGroups,priceUpdates=[]}=result;
+    const{newMats,newItems,skipItems,dryGroups,priceUpdates=[],newMenus=[]}=result;
 
     let matHtml=newMats.length
       ?newMats.map(m=>`<div class="import-review-item"><b>${m.name}</b> — ${typeBadge(m.type)} · ${m.unit} · ${fmtRp(m.price)}${m.stockType==='rapel'?' 📦':m.stockType==='h1'?' ⏰':''}</div>`).join('')
@@ -2890,14 +2950,19 @@ function renderWizStep(step){
       <div class="import-review-title" style="color:#166534">💰 Update Harga Master (${priceUpdates.length} item)</div>
       ${priceUpdates.map(p=>`<div class="import-review-item"><b>${p.name}</b> — ${fmtRp(p.oldPrice)} → <b>${fmtRp(p.newPrice)}</b></div>`).join('')}</div>`:'';
 
+    let menuHtml=newMenus.length?`<div class="import-review-group" style="background:#f0fdf4;border:1px solid #bbf7d0">
+      <div class="import-review-title" style="color:#166534">🍽️ Menu Masakan Otomatis (${newMenus.length})</div>
+      <div style="max-height:140px;overflow-y:auto">${newMenus.map(nm=>`<div class="import-review-item"><span class="badge bg-bl">${DAYS[nm.day]}</span> <b>${nm.name}</b></div>`).join('')}</div></div>`:'';
+
     body.innerHTML=`
       ${skipItems.length?`<div class="alert warning"><span class="ai">⚠️</span><div><div class="at">${skipItems.length} baris dilewati</div></div></div>`:''}
       ${priceHtml}
       <div class="import-review-group"><div class="import-review-title">📦 Bahan Baku Baru ke Master (${newMats.length})</div>${matHtml}</div>
       <div class="import-review-group"><div class="import-review-title">📅 Item Jadwal (${newItems.length})</div>
         <div style="max-height:160px;overflow-y:auto">${itemHtml||'<div style="color:var(--mt);font-size:13px">Tidak ada</div>'}</div></div>
+      ${menuHtml}
       ${dryHtml}`;
-    acts.innerHTML=`<button class="btn btn-ol" onclick="renderWizStep(3)">← Kembali</button><button class="btn btn-pr" onclick="confirmImport()">✅ Import Sekarang (${newItems.length} item · ${priceUpdates.length} harga diupdate)</button>`;
+    acts.innerHTML=`<button class="btn btn-ol" onclick="renderWizStep(3)">← Kembali</button><button class="btn btn-pr" onclick="confirmImport()">✅ Import Sekarang (${newItems.length} item${newMenus.length?` · ${newMenus.length} menu`:''} · ${priceUpdates.length} harga diupdate)</button>`;
   }
 }
 
@@ -2944,8 +3009,10 @@ function loadSheet(sheetName){
     IMP.structure='A';
     IMP.mapping=autoMap(IMP.headers,IMP.structure);
     IMP.blockFormatDetected=true;
+    IMP.menusByDate=blockFlat.menusByDate||{};
   } else {
     IMP.blockFormatDetected=false;
+    IMP.menusByDate={};
     // Find first non-empty row as header (skip blank leading rows)
     let hi=0;while(hi<raw.length&&raw[hi].every(c=>c===''||c===null||c===undefined))hi++;
     // Only keep columns with non-empty headers (trim trailing empty columns)
@@ -2974,6 +3041,15 @@ function shiftAllDates(delta){
   const hariIdx=IMP.headers.indexOf('Hari');
   if(hariIdx<0)return;
   IMP.rows.forEach(r=>{ if(r[hariIdx])r[hariIdx]=shiftDateStr(r[hariIdx],delta); });
+  // Ikut geser key tanggal di menusByDate supaya menu masakan hasil deteksi
+  // tetap nyambung dengan tanggal bahan yang baru digeser.
+  if(IMP.menusByDate){
+    const shifted={};
+    Object.entries(IMP.menusByDate).forEach(([dateStr,names])=>{
+      shifted[shiftDateStr(dateStr,delta)]=names;
+    });
+    IMP.menusByDate=shifted;
+  }
   renderExcelPreview();
 }
 // Forward-fill: kalau ada baris dengan Hari kosong (mis. auto-deteksi gagal
@@ -3113,6 +3189,9 @@ function tryFlattenDailyBlockFormat(raw){
   const skipLabels=['total','pagu anggaran belanja harian','sisa'];
   let curDate='',curMenu=null;
   const out=[];
+  // Kumpulkan nama menu masakan (kolom MENU) unik per tanggal, urut kemunculan,
+  // supaya bisa dipakai untuk mengisi otomatis fitur "Menu Masakan" per hari.
+  const menusByDate={};
   raw.forEach(r=>{
     const c0raw=r[0];
     const c0=norm(c0raw);
@@ -3133,19 +3212,28 @@ function tryFlattenDailyBlockFormat(raw){
         // supaya HARI tidak pernah kosong.
         curDate=(d&&!isNaN(d.getTime()))?`${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`:c0;
         curMenu=null;
+        if(!menusByDate[curDate])menusByDate[curDate]=[];
       }
       return;
     }
 
     if(isHeaderRow(r))return;
     if(skipLabels.includes(c0.toLowerCase()))return;
-    if(c0)curMenu=c0;
+    if(c0){
+      curMenu=c0;
+      if(curDate){
+        if(!menusByDate[curDate])menusByDate[curDate]=[];
+        if(!menusByDate[curDate].some(n=>n.toLowerCase()===curMenu.toLowerCase())){
+          menusByDate[curDate].push(curMenu);
+        }
+      }
+    }
     const bahan=c1;
     const qty=r[2],satuan=r[3],harga=r[4];
     out.push([curDate,bahan,norm(satuan),harga||'',qty||'']);
   });
   if(out.length===0)return null;
-  return{headers:['Hari','Nama Bahan','Satuan','Harga','Jumlah'],rows:out};
+  return{headers:['Hari','Nama Bahan','Satuan','Harga','Jumlah'],rows:out,menusByDate};
 }
 
 function detectStructure(headers){
@@ -3311,10 +3399,29 @@ function processImport(){
     const newP=choice==='new'?r.newPrice:r.avgPrice;
     if(newP>0&&newP!==r.masterPrice)priceUpdates.push({materialId:r.masterMat.id,newPrice:newP,oldPrice:r.masterPrice,name:r.corrected});
   });
-  return{newMats,newItems,skipItems,dryGroups,sameMatGroups,kitId,weekKey,priceUpdates};
+
+  // Menu Masakan otomatis: kalau file-nya format rekap harian dan punya kolom
+  // MENU, pakai itu untuk mengisi fitur Menu Masakan per hari sekaligus.
+  const newMenus=[];
+  if(IMP.menusByDate){
+    Object.entries(IMP.menusByDate).forEach(([dateStr,names])=>{
+      const dayIdx=parseDayIdx(dateStr);
+      if(dayIdx<0)return;
+      const parsedDate=parseDateFromRaw(dateStr);
+      const menuWeekKey=parsedDate?getWeekKey(parsedDate):weekKey;
+      const existing=(S.menus||[]).filter(m=>m.kitchenId===kitId&&m.weekKey===menuWeekKey&&m.day===dayIdx);
+      names.forEach(name=>{
+        const dupExisting=existing.some(m=>m.name.toLowerCase()===name.toLowerCase());
+        const dupNew=newMenus.some(m=>m.weekKey===menuWeekKey&&m.day===dayIdx&&m.name.toLowerCase()===name.toLowerCase());
+        if(!dupExisting&&!dupNew)newMenus.push({id:uid(),kitchenId:kitId,weekKey:menuWeekKey,day:dayIdx,name});
+      });
+    });
+  }
+
+  return{newMats,newItems,skipItems,dryGroups,sameMatGroups,kitId,weekKey,priceUpdates,newMenus};
 }
 function confirmImport(){
-  const{newMats,newItems,priceUpdates=[]}=IMP.importResult;
+  const{newMats,newItems,priceUpdates=[],newMenus=[]}=IMP.importResult;
   newMats.forEach(m=>S.materials.push(m));
   newItems.forEach(si=>{
     const dup=S.scheduleItems.find(s=>s.weekKey===si.weekKey&&s.kitchenId===si.kitchenId&&s.day===si.day&&s.materialId===si.materialId);
@@ -3324,8 +3431,12 @@ function confirmImport(){
     const m=getMat(pu.materialId);
     if(m)m.price=pu.newPrice;
   });
+  if(newMenus.length){
+    if(!S.menus)S.menus=[];
+    newMenus.forEach(nm=>S.menus.push(nm));
+  }
   save();closeModal('modal-import');
-  alert(`✅ Import berhasil!\n• ${newMats.length} bahan baku baru ditambahkan ke master\n• ${newItems.length} item jadwal ditambahkan`);
+  alert(`✅ Import berhasil!\n• ${newMats.length} bahan baku baru ditambahkan ke master\n• ${newItems.length} item jadwal ditambahkan${newMenus.length?`\n• ${newMenus.length} menu masakan ditambahkan`:''}`);
   renderMasterBarang();
 }
 
@@ -3350,6 +3461,7 @@ function applyState(state){
   curKitchen=S.kitchens[0]?.id||'';
   const dayOfWeek=today.getDay();
   curDay=(dayOfWeek===0||dayOfWeek===6)?0:dayOfWeek-1;
+  pesananDay=curDay;
   document.getElementById('dash-date').textContent=fmt(today);
   document.getElementById('mob-date').textContent=`${today.getDate()} ${MONTHS[today.getMonth()].slice(0,3)}`;
   renderDashboard();
