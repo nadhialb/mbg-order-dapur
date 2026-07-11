@@ -2697,7 +2697,6 @@ function renderWizStep(step){
         <div style="font-size:12px;color:var(--mt);line-height:1.7">
           <b>Format A (Baris per Item):</b> Kolom: Hari | Nama Bahan | Satuan | Jumlah | Harga (+ Jenis opsional)<br>
           <b>Format B (Hari sebagai Kolom):</b> Kolom: Nama Bahan | Satuan | Harga | Senin | Selasa | Rabu | Kamis | Jumat<br>
-          <b>Format Rekap Harian:</b> Blok per tanggal (mis. "13 Juli 2026") dengan kolom MENU | BAHAN | Kebutuhan | SATUAN | HARGA PER KG | TOTAL BIAYA — terdeteksi otomatis, tinggal upload apa adanya<br>
           <span style="color:var(--pr)">Nama kolom tidak harus persis sama. Jenis akan dideteksi otomatis jika tidak ada kolomnya.</span>
         </div>
       </div>
@@ -2928,173 +2927,24 @@ function onSheetChange(){
 function loadSheet(sheetName){
   const ws=IMP.wb.Sheets[sheetName];
   const raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+  // Find first non-empty row as header (skip blank leading rows)
+  let hi=0;while(hi<raw.length&&raw[hi].every(c=>c===''||c===null||c===undefined))hi++;
+  // Only keep columns with non-empty headers (trim trailing empty columns)
+  const rawHeaders=(raw[hi]||[]).map(h=>String(h||'').trim());
+  const lastNonEmpty=rawHeaders.reduce((a,h,i)=>h?i:a,-1);
+  IMP.headers=rawHeaders.slice(0,lastNonEmpty+1);
+  // All subsequent non-empty rows are data (repeated header rows handled in processImport)
+  IMP.rows=raw.slice(hi+1).filter(r=>r.some(c=>c!==''&&c!==null&&c!==undefined));
+  IMP.structure=detectStructure(IMP.headers);
+  IMP.mapping=autoMap(IMP.headers,IMP.structure);
 
-  const blockFlat=tryFlattenDailyBlockFormat(raw);
-  if(blockFlat){
-    IMP.headers=blockFlat.headers;
-    IMP.rows=blockFlat.rows;
-    IMP.structure='A';
-    IMP.mapping=autoMap(IMP.headers,IMP.structure);
-    IMP.blockFormatDetected=true;
-  } else {
-    IMP.blockFormatDetected=false;
-    // Find first non-empty row as header (skip blank leading rows)
-    let hi=0;while(hi<raw.length&&raw[hi].every(c=>c===''||c===null||c===undefined))hi++;
-    // Only keep columns with non-empty headers (trim trailing empty columns)
-    const rawHeaders=(raw[hi]||[]).map(h=>String(h||'').trim());
-    const lastNonEmpty=rawHeaders.reduce((a,h,i)=>h?i:a,-1);
-    IMP.headers=rawHeaders.slice(0,lastNonEmpty+1);
-    // All subsequent non-empty rows are data (repeated header rows handled in processImport)
-    IMP.rows=raw.slice(hi+1).filter(r=>r.some(c=>c!==''&&c!==null&&c!==undefined));
-    IMP.structure=detectStructure(IMP.headers);
-    IMP.mapping=autoMap(IMP.headers,IMP.structure);
-  }
-
-  renderExcelPreview();
-}
-
-// Geser SEMUA tanggal yang ada di kolom Hari saat ini sebanyak `delta` hari
-// (untuk mengoreksi salah ketik tanggal di file aslinya). Bekerja langsung di
-// atas IMP.rows yang sedang tampil, jadi tidak menghapus editan manual lain.
-function shiftDateStr(s,days){
-  const d=parseDateFromRaw(s);
-  if(!d)return s;
-  d.setDate(d.getDate()+days);
-  return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
-}
-function shiftAllDates(delta){
-  const hariIdx=IMP.headers.indexOf('Hari');
-  if(hariIdx<0)return;
-  IMP.rows.forEach(r=>{ if(r[hariIdx])r[hariIdx]=shiftDateStr(r[hariIdx],delta); });
-  renderExcelPreview();
-}
-// Forward-fill: kalau ada baris dengan Hari kosong (mis. auto-deteksi gagal
-// baca tanggal blok tertentu), isi manual di baris pertama blok itu lalu
-// tombol ini akan menurunkan nilainya ke baris-baris kosong di bawahnya
-// sampai ketemu baris yang sudah punya tanggal sendiri.
-function fillDatesDown(){
-  const hariIdx=IMP.headers.indexOf('Hari');
-  if(hariIdx<0)return;
-  let last='';
-  IMP.rows.forEach(r=>{
-    if(r[hariIdx])last=r[hariIdx];
-    else if(last)r[hariIdx]=last;
-  });
-  renderExcelPreview();
-}
-
-// ── Preview & Edit table: seluruh baris hasil baca file bisa diedit/dihapus/
-// ditambah langsung di sini sebelum lanjut ke step berikutnya. Ini jadi jaring
-// pengaman kalau auto-deteksi format salah baca sebagian data.
-function updatePreviewCell(ri,ci,val){
-  if(IMP.rows[ri])IMP.rows[ri][ci]=val;
-}
-function deletePreviewRow(ri){
-  IMP.rows.splice(ri,1);
-  renderExcelPreview();
-}
-function addPreviewRow(){
-  IMP.rows.push(IMP.headers.map(()=>''));
-  renderExcelPreview();
-}
-
-function renderExcelPreview(){
-  const cols=IMP.headers;
-  const hariIdx=cols.indexOf('Hari');
-  const fmtLabel=IMP.blockFormatDetected?'Rekap Harian per Tanggal (auto-terdeteksi) \u2713':IMP.structure;
-
-  let shiftHtml='';
-  if(hariIdx>=0){
-    shiftHtml=`<div class="fg" style="background:var(--bg);border-radius:10px;padding:12px 14px;margin-bottom:12px">
-      <label class="fl">Geser Tanggal (kalau tanggal di file aslinya salah ketik)</label>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <button type="button" class="btn btn-ol btn-sm" onclick="shiftAllDates(-1)">− 1 hari (semua baris)</button>
-        <button type="button" class="btn btn-ol btn-sm" onclick="shiftAllDates(1)">+ 1 hari (semua baris)</button>
-        <button type="button" class="btn btn-ol btn-sm" onclick="fillDatesDown()" style="background:#e8f0fe;border-color:#2f6fb5;color:#2f6fb5">⬇ Isi Tanggal Kosong ke Bawah</button>
-      </div>
-      <div class="fh">Kalau ada baris HARI yang kosong (gagal terbaca): ketik tanggal yang benar di baris pertama blok itu, lalu klik "Isi Tanggal Kosong ke Bawah" — otomatis turun ke baris-baris kosong di bawahnya. Tiap sel juga bisa diedit langsung satu-satu.</div>
-    </div>`;
-  }
-
-  const rowsHtml=IMP.rows.map((r,ri)=>{
-    const cells=cols.map((_,ci)=>`<td style="padding:2px 3px"><input type="text" value="${String(r[ci]??'').replace(/"/g,'&quot;')}" oninput="updatePreviewCell(${ri},${ci},this.value)" style="width:100%;min-width:80px;padding:4px 6px;font-size:12px;border:1px solid var(--br);border-radius:5px"></td>`).join('');
-    return `<tr>${cells}<td style="padding:2px 3px;text-align:center"><button type="button" onclick="deletePreviewRow(${ri})" title="Hapus baris" style="border:none;background:none;color:var(--rd);cursor:pointer;font-size:13px">🗑</button></td></tr>`;
-  }).join('');
-
-  const tbl=`<div class="tbl-wrap" style="max-height:320px;overflow-y:auto;border:1px solid var(--br);border-radius:10px">
-    <table style="width:100%;border-collapse:collapse">
-      <thead><tr style="position:sticky;top:0;background:#f4f4f4">
-        ${cols.map(h=>`<th style="padding:6px 8px;font-size:11px;text-align:left;white-space:nowrap">${h}</th>`).join('')}
-        <th style="width:32px"></th>
-      </tr></thead>
-      <tbody>${rowsHtml}</tbody>
-    </table>
-  </div>`;
-
-  document.getElementById('excel-preview').innerHTML=`${shiftHtml}
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;gap:8px;flex-wrap:wrap">
-      <div style="font-size:13px;font-weight:700;color:var(--mt)">Preview & Edit (${IMP.rows.length} baris, ${IMP.headers.length} kolom, Format ${fmtLabel})</div>
-      <button type="button" class="btn btn-ol btn-sm" onclick="addPreviewRow()">＋ Tambah Baris</button>
-    </div>
-    ${tbl}
-    <div class="fh" style="margin-top:6px">Kalau ada baris yang salah baca, langsung edit sel-nya di sini sebelum klik Lanjut.</div>`;
-}
-
-// Detect the "rekap harian" layout: repeating blocks of
-//   [Tanggal]
-//   MENU | BAHAN | Kebutuhan | SATUAN | HARGA PER KG | TOTAL BIAYA
-//   ...bahan rows (MENU hanya terisi di baris pertama tiap menu)...
-//   Total / Pagu Anggaran Belanja Harian / Sisa
-// dan meratakannya jadi baris standar Hari|Nama Bahan|Satuan|Harga|Jumlah.
-// Nama menu masakan disertakan sebagai catatan: "Bahan (Menu)".
-function tryFlattenDailyBlockFormat(raw){
-  // Normalisasi: buang non-breaking space & rapikan whitespace ganda supaya
-  // variasi kecil dari Excel (spasi tak biasa, dsb) tidak bikin deteksi gagal.
-  const norm=s=>String(s??'').replace(/\u00A0/g,' ').replace(/\s+/g,' ').trim();
-  const isHeaderRow=r=>{
-    const c0=norm(r[0]).toLowerCase();
-    const c1=norm(r[1]).toLowerCase();
-    // Longgar dengan sengaja: cukup salah satu kolom persis "menu" atau "bahan"
-    // supaya tetap kedeteksi walau ada pergeseran/merge kolom di file tertentu.
-    return (c0==='menu'&&c1==='bahan')||c1==='bahan'||c0==='menu';
-  };
-  if(!raw.some(isHeaderRow))return null;
-
-  // Baris tanggal bisa berupa TEKS ("13 Juli 2026") ATAU cell ber-format Date
-  // asli di Excel (yang oleh SheetJS dibaca sebagai angka serial, mis. 46216,
-  // atau kadang objek Date). parseDateFromRaw sudah menangani semua kasus ini.
-  const parseBlockDate=v=>{
-    if(v instanceof Date)return v;
-    return parseDateFromRaw(String(v??'').trim());
-  };
-  const skipLabels=['total','pagu anggaran belanja harian','sisa'];
-  let curDate='',curMenu=null;
-  const out=[];
-  raw.forEach(r=>{
-    const c0raw=r[0];
-    const c0=norm(c0raw);
-    const c1=norm(r[1]);
-    if(!c0&&!c1)return; // blank row
-    // Baris tanggal: kolom BAHAN & sekitarnya kosong, kolom pertama valid sebagai tanggal
-    const restBlank=!c1&&!norm(r[2])&&!norm(r[3])&&!norm(r[4]);
-    if(restBlank){
-      const d=parseBlockDate(c0raw);
-      if(d&&!isNaN(d.getTime())){
-        curDate=`${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
-        curMenu=null;
-        return;
-      }
-    }
-    if(isHeaderRow(r))return;
-    if(skipLabels.includes(c0.toLowerCase()))return;
-    if(c0)curMenu=c0;
-    const bahan=c1;
-    if(!bahan)return;
-    const qty=r[2],satuan=r[3],harga=r[4];
-    out.push([curDate,bahan,norm(satuan),harga||'',qty||'']);
-  });
-  if(out.length===0)return null;
-  return{headers:['Hari','Nama Bahan','Satuan','Harga','Jumlah'],rows:out};
+  // Show preview
+  const cols=IMP.headers.slice(0,8);
+  const previewRows=IMP.rows.slice(0,5);
+  let tbl=`<div class="preview-table"><table><thead><tr>${cols.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>`;
+  previewRows.forEach(r=>tbl+=`<tr>${cols.map((_,i)=>`<td>${r[i]||''}</td>`).join('')}</tr>`);
+  tbl+=`</tbody></table></div>`;
+  document.getElementById('excel-preview').innerHTML=`<div style="font-size:13px;font-weight:700;color:var(--mt);margin-bottom:6px">Preview (${IMP.rows.length} baris, ${IMP.headers.length} kolom, Format ${IMP.structure})</div>${tbl}`;
 }
 
 function detectStructure(headers){
