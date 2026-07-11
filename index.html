@@ -3074,23 +3074,30 @@ function tryFlattenDailyBlockFormat(raw){
     const c0raw=r[0];
     const c0=norm(c0raw);
     const c1=norm(r[1]);
-    if(!c0&&!c1)return; // blank row
-    // Baris tanggal: kolom BAHAN & sekitarnya kosong, kolom pertama valid sebagai tanggal
-    const restBlank=!c1&&!norm(r[2])&&!norm(r[3])&&!norm(r[4]);
-    if(restBlank&&c0){
-      const d=parseBlockDate(c0raw);
-      // Kalau berhasil di-parse jadi tanggal valid, normalisasi ke "D Bulan YYYY".
-      // Kalau tidak (format aneh/tidak dikenali), tetap pakai teks apa adanya
-      // supaya HARI tidak pernah kosong — user bisa lihat & benerin manual kalau perlu.
-      curDate=(d&&!isNaN(d.getTime()))?`${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`:c0;
-      curMenu=null;
+    if(!c0&&!c1)return; // baris benar-benar kosong
+
+    // Baris TANPA nama bahan (kolom B kosong) selalu dianggap baris "penanda"
+    // (tanggal / header MENU-BAHAN / Total-Pagu-Sisa) — bukan baris data,
+    // dan TIDAK bergantung pada isi kolom C/D/E sama sekali (beda file Excel
+    // bisa punya sisa nilai di kolom-kolom itu untuk baris tanggal).
+    if(!c1){
+      if(isHeaderRow(r))return;
+      if(skipLabels.includes(c0.toLowerCase()))return;
+      if(c0){
+        const d=parseBlockDate(c0raw);
+        // Kalau berhasil di-parse jadi tanggal valid, normalisasi ke "D Bulan YYYY".
+        // Kalau tidak (format aneh/tidak dikenali), tetap pakai teks apa adanya
+        // supaya HARI tidak pernah kosong.
+        curDate=(d&&!isNaN(d.getTime()))?`${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`:c0;
+        curMenu=null;
+      }
       return;
     }
+
     if(isHeaderRow(r))return;
     if(skipLabels.includes(c0.toLowerCase()))return;
     if(c0)curMenu=c0;
     const bahan=c1;
-    if(!bahan)return;
     const qty=r[2],satuan=r[3],harga=r[4];
     out.push([curDate,bahan,norm(satuan),harga||'',qty||'']);
   });
