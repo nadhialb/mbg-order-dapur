@@ -3077,13 +3077,14 @@ function tryFlattenDailyBlockFormat(raw){
     if(!c0&&!c1)return; // blank row
     // Baris tanggal: kolom BAHAN & sekitarnya kosong, kolom pertama valid sebagai tanggal
     const restBlank=!c1&&!norm(r[2])&&!norm(r[3])&&!norm(r[4]);
-    if(restBlank){
+    if(restBlank&&c0){
       const d=parseBlockDate(c0raw);
-      if(d&&!isNaN(d.getTime())){
-        curDate=`${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
-        curMenu=null;
-        return;
-      }
+      // Kalau berhasil di-parse jadi tanggal valid, normalisasi ke "D Bulan YYYY".
+      // Kalau tidak (format aneh/tidak dikenali), tetap pakai teks apa adanya
+      // supaya HARI tidak pernah kosong — user bisa lihat & benerin manual kalau perlu.
+      curDate=(d&&!isNaN(d.getTime()))?`${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`:c0;
+      curMenu=null;
+      return;
     }
     if(isHeaderRow(r))return;
     if(skipLabels.includes(c0.toLowerCase()))return;
