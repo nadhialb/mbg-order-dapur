@@ -14,7 +14,7 @@
   --bg:#f5f5f5;--card:#fff;--tx:#111111;--mt:#888;--br:#e5e5e5;
   --sw:240px;
 }
-body{font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;font-size:14px;line-height:1.5}
+body{font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;font-size:14px;line-height:1.5;overflow-x:hidden}
 
 /* ── SIDEBAR ── */
 .sidebar{position:fixed;top:0;left:0;width:var(--sw);height:100vh;background:#181818;color:#fff;display:flex;flex-direction:column;z-index:100}
@@ -47,7 +47,7 @@ body{font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif
 /* ── MAIN ── */
 .main{margin-left:var(--sw);min-height:100vh;padding:20px 24px}
 .page{display:none}.page.active{display:block}
-.page-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+.page-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px}
 .page-title{font-size:17px;font-weight:800;letter-spacing:-.4px;font-family:'Plus Jakarta Sans','Outfit',sans-serif}.page-sub{font-size:12px;color:var(--mt);margin-top:2px}
 
 /* ── CARDS ── */
@@ -96,6 +96,7 @@ body{font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif
 .btn-sm{padding:5px 11px;font-size:12px;border-radius:7px}
 .btn-xs{padding:3px 8px;font-size:11px;border-radius:6px}
 .btn-gh{background:transparent;color:var(--mt);border:none;padding:5px;cursor:pointer;border-radius:6px}.btn-gh:hover{color:var(--tx);background:var(--prp)}
+.mat-edit-btn{color:var(--mt);font-size:15px;padding:3px 6px}
 
 /* ── TABLE ── */
 .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -118,6 +119,14 @@ input[type=checkbox]{width:17px;height:17px;padding:0;cursor:pointer;flex-shrink
 input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shadow:0 0 0 3px rgba(0,0,0,.07)}
 .fr2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
 .fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px}
+.jadwal-2col{display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:start}
+#jadwal-menu-col,#jadwal-items-col{min-width:0}
+#jadwal-menu-col{position:sticky;top:20px}
+.pesanan-2col{display:grid;grid-template-columns:180px 1fr;gap:16px;align-items:start}
+#pesanan-day-tabs,#pesanan-content{min-width:0}
+.pesanan-2col #pesanan-day-tabs{flex-direction:column;position:sticky;top:20px;overflow-x:visible}
+.pesanan-2col .dtab{width:100%;box-sizing:border-box}
+.pesanan-2col.pesanan-2col-single{grid-template-columns:1fr}
 .tw{display:flex;align-items:flex-start;gap:10px;padding:8px 0}
 .tw label{font-size:14px;font-weight:500;cursor:pointer;line-height:1.4}
 
@@ -137,8 +146,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
 .bg-pu{background:#f3e8ff;color:#6b21a8}.bg-pr{background:#fde8d8;color:#b85c1a}
 
 /* ── WEEK NAV ── */
-.wnav{display:flex;align-items:center;gap:10px}
-.wlbl{font-weight:700;font-size:14px;min-width:160px;text-align:center}
+.wnav{display:flex;align-items:center;gap:10px;min-width:0}
+.wlbl{font-weight:700;font-size:14px;min-width:130px;text-align:center;white-space:nowrap}
 
 /* ── DAY TABS ── */
 .dtabs{display:flex;gap:5px;margin-bottom:16px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px}
@@ -188,7 +197,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
 .sumbar .sv{font-size:16px;font-weight:800;color:var(--tx)}
 
 /* ── FILTER BAR ── */
-.fbar{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+.fbar{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;min-width:0}
+.btn-icon{padding:7px;width:34px;height:34px;justify-content:center}
+.fbar-divider{width:1px;align-self:stretch;background:var(--br);margin:0 2px}
+.fbar-tight{margin-bottom:8px}
 .fbar label{font-size:13px;font-weight:700;color:var(--mt);white-space:nowrap}
 .fbar select{width:auto;flex:1;max-width:240px}
 .fbar .wnav{flex-shrink:0}
@@ -234,6 +246,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
   .sidebar{display:none}.mob-hdr{display:flex}.bot-nav{display:block}.fab{display:block}
   .main{margin-left:0;padding:12px;padding-top:64px;padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}
   .fr2,.fr3{grid-template-columns:1fr}
+  .jadwal-2col{grid-template-columns:1fr;gap:0}
+  #jadwal-menu-col{position:static;top:auto}
+  .pesanan-2col{grid-template-columns:1fr;gap:0}
+  .pesanan-2col #pesanan-day-tabs{flex-direction:row;position:static;top:auto;overflow-x:auto}
+  .pesanan-2col .dtab{width:auto}
   .page-hdr{flex-direction:column;align-items:flex-start}
   .k-dash-hdr{padding:12px 16px}.k-dash-body{padding:14px 16px}
   .tbl-wrap table{min-width:0}
@@ -252,7 +269,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
   .k-stat .kv{font-size:20px}
 
   /* ── Fbar: stack on mobile ── */
-  .fbar{gap:8px}
+  .fbar{gap:6px}
+  .fbar-divider{display:none}
+  .wlbl{min-width:100px;font-size:13px}
+  .wnav{gap:6px}
   .fbar select{max-width:100%}
 
   /* ── Menu row: horizontal scroll ── */
@@ -267,6 +287,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
   /* ── Mob header select style ── */
   #jadwal-kitchen{font-size:14px;padding:6px 28px 6px 10px}
   .mbg{align-items:flex-start;padding:8px}
+
+  /* -- Master Barang: pensil edit lebih kecil di HP -- */
+  .mat-edit-btn{font-size:12px;padding:3px 5px}
 }
 @media(max-width:480px){
   .k-stat-row{grid-template-columns:1fr 1fr}
@@ -285,11 +308,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
 .mat-sug-empty{padding:14px;text-align:center;color:var(--mt);font-size:13px}
 
 /* ── MENU MASAKAN ── */
-.day-menus{background:linear-gradient(135deg,#fafafa 0%,#f5f5f5 100%);border:1px solid var(--br);border-radius:12px;padding:12px 14px;margin-bottom:12px}
-.day-menus-hdr{display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
+.day-menus{background:linear-gradient(135deg,#fafafa 0%,#f5f5f5 100%);border:1px solid var(--br);border-radius:12px;padding:8px 10px;margin-bottom:10px}
+.day-menus-hdr{display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
 .menu-list-empty{font-size:12px;color:var(--mt);font-style:italic;padding:6px 0 8px;text-align:center}
-.menu-chip-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
-.menu-chip{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--br);border-radius:99px;padding:5px 6px 5px 12px;font-size:12px;font-weight:600;color:var(--tx);transition:background .1s}
+.menu-chip-row{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px}
+.menu-chip{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1px solid var(--br);border-radius:99px;padding:3px 4px 3px 10px;font-size:12px;font-weight:600;color:var(--tx);transition:background .1s}
 .menu-chip:hover{background:#f8f9ff}
 .menu-chip-del{border:none;background:none;color:var(--mt);cursor:pointer;font-size:10px;opacity:.45;padding:3px 6px;border-radius:50%;line-height:1}
 .menu-chip-del:hover{opacity:1;color:var(--rd);background:#fee2e2}
@@ -313,8 +336,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
 .td-inp:focus,.td-sel:focus{outline:none;border-color:var(--prl)}
 
 /* ── KITCHEN SELECTORS ── */
-#jadwal-kitchen,#pesanan-kitchen{background:#1a1a1a;color:#fff;border-color:#1a1a1a;font-weight:600;font-size:13px;padding:7px 32px 7px 12px;border-radius:8px;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%23fff' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
-#jadwal-kitchen option,#pesanan-kitchen option{background:#222;color:#fff}
+#jadwal-kitchen,#pesanan-kitchen{background:#fff;color:var(--tx);border:1.5px solid var(--br);font-weight:600;font-size:13px;padding:7px 32px 7px 12px;border-radius:8px;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+#jadwal-kitchen:hover,#pesanan-kitchen:hover{border-color:#d0d0d0;background-color:var(--prp)}
+#jadwal-kitchen option,#pesanan-kitchen option{background:#fff;color:var(--tx)}
 
 
 </style>
@@ -331,7 +355,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div class="nav-item" onclick="navigate('master-barang')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1L14.5 4.5V11.5L8 15L1.5 11.5V4.5L8 1Z"/><path d="M1.5 4.5L8 8L14.5 4.5"/><path d="M8 8V15"/></svg></span>Master Barang</div>
     <div class="nav-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M1 7l2-5h10l2 5"/><path d="M6 15V11h4v4"/><path d="M1 7h14"/></svg></span>Master Dapur</div>
   </nav>
-  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260711-v14</div>
+  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260711-v22</div>
 </aside>
 
 <!-- MOBILE HEADER -->
@@ -361,19 +385,26 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
         <button class="btn btn-or" onclick="openAddItem()">＋ Tambah Bahan</button>
       </div>
     </div>
-    <div class="fbar">
+    <div class="fbar fbar-tight">
       <label>Dapur:</label>
       <select id="jadwal-kitchen" onchange="onKitchenChange()"></select>
+    </div>
+    <div class="fbar">
       <div class="wnav">
         <button class="btn btn-ol btn-sm" onclick="changeWeek(-1)">◀</button>
         <span class="wlbl" id="jadwal-week-label"></span>
         <button class="btn btn-ol btn-sm" onclick="changeWeek(1)">▶</button>
       </div>
       <button class="btn btn-ol btn-sm" onclick="goToCurrentWeek()">Minggu Ini</button>
-      <button class="btn btn-ol btn-sm" style="color:var(--rd)" onclick="deleteWeekSchedule()" title="Hapus semua jadwal minggu ini">🗑️ Hapus Minggu</button>
+      <div class="fbar-divider"></div>
+      <button class="btn btn-ol btn-icon" style="color:var(--rd)" onclick="deleteWeekSchedule()" title="Hapus semua jadwal minggu ini" aria-label="Hapus Minggu">🗑️</button>
     </div>
     <div id="jadwal-week-summary"></div>
-    <div class="card" id="jadwal-content"></div>
+    <div id="jadwal-date-hdr" style="font-weight:800;font-size:15px;margin-bottom:14px"></div>
+    <div class="jadwal-2col" id="jadwal-2col">
+      <div id="jadwal-menu-col"></div>
+      <div class="card" id="jadwal-items-col"></div>
+    </div>
   </div>
 
   <!-- PESANAN -->
@@ -381,23 +412,26 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div class="page-hdr">
       <div><div class="page-title">Daftar Pesanan</div><div class="page-sub">Kelola status order dan pembayaran</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <button class="btn btn-ol" onclick="openRekap()" title="Tabel rekapitulasi semua bahan per hari">📊 Rekap</button>
-        <button class="btn btn-ol" onclick="copyPesananByHari()" title="Copy semua hari dalam format WhatsApp">📋 Copy Per Hari</button>
+        <button class="btn btn-ol btn-icon" onclick="openRekap()" title="Rekap: tabel rekapitulasi semua bahan per hari" aria-label="Rekap">📊</button>
+        <button class="btn btn-ol btn-icon" onclick="copyPesananByHari()" title="Copy Per Hari: copy semua hari dalam format WhatsApp" aria-label="Copy Per Hari">📋</button>
         <div class="view-toggle">
           <button class="vt-btn active" id="vt-hari" onclick="setPesananView('hari')">📅 Per Hari</button>
           <button class="vt-btn" id="vt-bahan" onclick="setPesananView('bahan')">📦 Per Bahan</button>
         </div>
       </div>
     </div>
-    <div class="fbar">
+    <div class="fbar fbar-tight">
       <label>Dapur:</label>
       <select id="pesanan-kitchen" onchange="renderPesanan()"></select>
+    </div>
+    <div class="fbar">
       <div class="wnav">
         <button class="btn btn-ol btn-sm" onclick="changePesananWeek(-1)">◀</button>
         <span class="wlbl" id="pesanan-week-label"></span>
         <button class="btn btn-ol btn-sm" onclick="changePesananWeek(1)">▶</button>
       </div>
       <button class="btn btn-ol btn-sm" onclick="goToCurrentPesananWeek()">Minggu Ini</button>
+      <div class="fbar-divider"></div>
       <select id="pesanan-filter" onchange="renderPesanan()" style="width:auto;max-width:160px;font-size:13px">
         <option value="all">Semua Status</option>
         <option value="unordered">Belum Dipesan</option>
@@ -407,8 +441,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
       </select>
     </div>
     <div id="rapel-notif"></div>
-    <div class="dtabs" id="pesanan-day-tabs"></div>
-    <div class="card" id="pesanan-content"></div>
+    <div id="pesanan-day-summary"></div>
+    <div class="pesanan-2col" id="pesanan-2col">
+      <div class="dtabs" id="pesanan-day-tabs"></div>
+      <div class="card" id="pesanan-content"></div>
+    </div>
   </div>
 
   <!-- MASTER BARANG -->
@@ -420,9 +457,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
         <div style="display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap">
           <div style="display:flex;flex-direction:column;gap:3px">
             <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-              <button class="btn btn-ol" id="sync-btn" style="background:#e8f5e9;border-color:#2d7a4f;color:#2d7a4f" onclick="manualSync()">☁ Simpan</button>
-              <button class="btn btn-ol" id="pull-btn" style="background:#e8f0fe;border-color:#2f6fb5;color:#2f6fb5" onclick="pullFromCloud()">⬇ Ambil</button>
-              <button class="btn btn-ol" onclick="openImportWizard()" title="Import bahan baku + menu masakan otomatis dari Excel">📊 Import Excel (Bahan + Menu)</button>
+              <button class="btn btn-ol" id="sync-btn" onclick="manualSync()">☁ Simpan</button>
+              <button class="btn btn-ol" id="pull-btn" onclick="pullFromCloud()">⬇ Ambil</button>
+              <button class="btn btn-ol" onclick="openImportWizard()">📊 Import Excel</button>
               <div style="position:relative;display:inline-block">
                 <button class="btn btn-ol" onclick="toggleLainnyaMenu()" id="lainnya-btn" style="padding:6px 10px">⋮ Lainnya</button>
                 <div id="lainnya-menu" style="display:none;position:absolute;top:calc(100% + 4px);right:0;background:#fff;border:1px solid var(--br);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:300;min-width:180px;overflow:hidden">
@@ -764,10 +801,10 @@ function updateSyncTimestamp(ts){
 function setSyncBtn(state){
   const btn=document.getElementById('sync-btn');
   if(!btn)return;
-  if(state==='loading'){btn.textContent='☁ Syncing...';btn.style.opacity='0.6';btn.disabled=true;}
+  if(state==='loading'){btn.textContent='☁ Syncing...';btn.style.background='';btn.style.color='';btn.style.borderColor='';btn.style.opacity='0.6';btn.disabled=true;}
   else if(state==='ok'){btn.textContent='✓ Tersync';btn.style.background='#e8f5e9';btn.style.color='#2d7a4f';btn.style.borderColor='#2d7a4f';btn.disabled=false;btn.style.opacity='1';updateSyncTimestamp(Date.now());}
   else if(state==='error'){btn.textContent='✗ Sync Gagal';btn.style.background='#fff0f0';btn.style.color='#d94f4f';btn.style.borderColor='#d94f4f';btn.disabled=false;btn.style.opacity='1';}
-  else{btn.textContent='☁ Sync ke Cloud';btn.style.background='#e8f5e9';btn.style.color='#2d7a4f';btn.style.borderColor='#2d7a4f';btn.disabled=false;btn.style.opacity='1';}
+  else{btn.textContent='☁ Simpan';btn.style.background='';btn.style.color='';btn.style.borderColor='';btn.disabled=false;btn.style.opacity='1';}
 }
 
 async function manualSync(){
@@ -868,6 +905,7 @@ function getDefaultWeek(){
 function today0(){const t=new Date();t.setHours(0,0,0,0);return t;}
 function fmt(d){return `${DAYS[(d.getDay()||7)-1]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;}
 function fmtShort(d){return `${d.getDate()} ${MONTHS[d.getMonth()].slice(0,3)}`;}
+function fmtWeekRange(d1,d2){return `${fmtShort(d1)}\u2013${fmtShort(d2)} '${String(d2.getFullYear()).slice(-2)}`;}
 function fmtDate(d){return d.toISOString().slice(0,10);}
 function fmtRp(n){return 'Rp '+Number(n||0).toLocaleString('id-ID');}
 function uid(){return 'id'+Date.now()+Math.random().toString(36).slice(2,7);}
@@ -1061,7 +1099,7 @@ function handleMenuKey(e,kitId,wk,day){
 // ═══════════════════════════════════════
 //  ROUTING
 // ═══════════════════════════════════════
-let curPage='dashboard',curKitchen='',curWeek='',curDay=0,pesananWeek='',pesananDay=0,dashWeek='',menuWeek='',pesananView='hari',editItemId=null,jadwalMenuOpen=true;
+let curPage='dashboard',curKitchen='',curWeek='',curDay=0,pesananWeek='',pesananDay=0,dashWeek='',menuWeek='',pesananView='hari',editItemId=null,jadwalMenuOpen=true,jadwalSummaryOpen=true,jadwalItemsOpen=true,pesananSummaryOpen=true;
 
 function navigate(page){
   curPage=page;
@@ -1121,7 +1159,7 @@ function renderDashboard(){
   const dates=getWeekDates(wk);
   const d1=dates[0],d2=dates[4];
   document.getElementById('dash-date').textContent=fmt(td);
-  document.getElementById('dash-week-label').textContent=`${fmtShort(d1)}–${fmtShort(d2)} ${d2.getFullYear()}`;
+  document.getElementById('dash-week-label').textContent=fmtWeekRange(d1,d2);
   document.getElementById('mob-date').textContent=`${td.getDate()} ${MONTHS[td.getMonth()].slice(0,3)}`;
 
   if(!S.kitchens.length){
@@ -1372,7 +1410,7 @@ function renderJadwal(){
 }
 function renderWeekLabel(){
   const d=getWeekDates(curWeek);
-  document.getElementById('jadwal-week-label').innerHTML=`${fmtShort(d[0])}–${fmtShort(d[4])} ${d[4].getFullYear()}`;
+  document.getElementById('jadwal-week-label').innerHTML=fmtWeekRange(d[0],d[4]);
 }
 
 function renderDayTabs(){
@@ -1411,8 +1449,20 @@ function renderJadwalContent(){
     </div>
     ${menuBody}
   </div>`;
-  let html=`<div style="font-weight:800;font-size:15px;margin-bottom:14px">${fmt(nd)}</div>${menuHtml}`;
-  if(!items.length){
+  document.getElementById('jadwal-date-hdr').textContent=fmt(nd);
+  document.getElementById('jadwal-menu-col').innerHTML=menuHtml;
+  const dayTotal=items.reduce((a,si)=>a+si.qty*effPrice(si),0);
+  const itemsChevron=jadwalItemsOpen?'▾':'▸';
+  let html=`<div onclick="toggleJadwalItems()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;${jadwalItemsOpen?'padding-bottom:10px;border-bottom:1px solid var(--br);margin-bottom:10px':''}">
+    <span style="font-weight:700;font-size:13px;color:var(--tx)">📋 Bahan yang Digunakan</span>
+    <span style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:14px;font-weight:800;color:var(--pr)">${fmtRp(dayTotal)}</span>
+      <button class="day-menus-toggle" onclick="event.stopPropagation();toggleJadwalItems()" title="${jadwalItemsOpen?'Ciutkan':'Buka'}">${itemsChevron}</button>
+    </span>
+  </div>`;
+  if(!jadwalItemsOpen){
+    // ciutkan: cuma header + total yang tampil
+  } else if(!items.length){
     html+=`<div class="empty"><div class="ei">📋</div><div class="et">Belum ada bahan untuk hari ini</div><div class="ed">Klik "Tambah Bahan" untuk menambahkan.</div></div>`;
   } else {
     let total=0;
@@ -1445,10 +1495,11 @@ function renderJadwalContent(){
         </div>`;
       });
     });
-    html+=`<div class="sumbar"><span class="sl">Total ${DAYS[curDay]}</span><span class="sv">${fmtRp(total)}</span></div>`;
   }
-  document.getElementById('jadwal-content').innerHTML=html;
+  document.getElementById('jadwal-items-col').innerHTML=html;
 }
+function toggleJadwalItems(){jadwalItemsOpen=!jadwalItemsOpen;renderJadwalContent();}
+function toggleJadwalSummary(){jadwalSummaryOpen=!jadwalSummaryOpen;renderWeeklySummary();}
 function renderWeeklySummary(){
   const dates=getWeekDates(curWeek);
   const td=today0();
@@ -1457,23 +1508,25 @@ function renderWeeklySummary(){
     const dayItems=S.scheduleItems.filter(s=>s.weekKey===curWeek&&s.kitchenId===curKitchen&&s.day===i);
     const dayTotal=dayItems.reduce((a,si)=>a+si.qty*effPrice(si),0);
     weekTotal+=dayTotal;
-    const ordCount=dayItems.filter(s=>s.isOrdered).length;
+    const total=dayItems.length;
     const isToday=d.getTime()===td.getTime();
     const isActive=i===curDay;
-    return `<div onclick="selectDay(${i})" style="flex:1;min-width:90px;padding:10px 12px;border-radius:10px;cursor:pointer;text-align:center;border:2px solid ${isActive?'var(--pr)':'var(--br)'};background:${isActive?'var(--prp)':'#fff'};transition:all .15s">
+    return `<div onclick="selectDay(${i})" style="flex:1;min-width:80px;padding:8px 10px;border-radius:10px;cursor:pointer;text-align:center;border:2px solid ${isActive?'var(--pr)':'var(--br)'};background:${isActive?'var(--prp)':'#fff'};transition:all .15s">
       <div style="font-size:12px;font-weight:700;color:${isActive?'var(--pr)':'var(--mt)'}">${DAYS[i]}${isToday?' ★':''}</div>
-      <div style="font-size:11px;color:var(--mt);margin-bottom:5px">${fmtShort(d)}</div>
-      <div style="font-size:14px;font-weight:800;color:${dayTotal>0?(isActive?'var(--pr)':'var(--tx)'):'var(--mt)'}">${dayTotal>0?fmtRp(dayTotal):'—'}</div>
-      <div style="font-size:11px;color:var(--mt);margin-top:2px">${dayItems.length} item${dayItems.length?` · ${ordCount} pesan`:''}</div>
+      <div style="font-size:11px;color:var(--mt);margin-top:2px">${total?`${total} item`:'—'}</div>
     </div>`;
   }).join('');
+  const chevron=jadwalSummaryOpen?'▾':'▸';
   document.getElementById('jadwal-week-summary').innerHTML=`
-    <div style="background:var(--card);border:1px solid var(--br);border-radius:14px;padding:14px 16px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.05)">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px">
+    <div style="background:var(--card);border:1px solid var(--br);border-radius:14px;padding:10px 14px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.05)">
+      <div onclick="toggleJadwalSummary()" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;cursor:pointer;user-select:none;${jadwalSummaryOpen?'margin-bottom:8px':''}">
         <span style="font-size:12px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.5px">Ringkasan Minggu Ini</span>
-        <span style="font-size:14px;font-weight:800;color:var(--pr)">Total: ${fmtRp(weekTotal)}</span>
+        <span style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:11px;font-weight:600;color:var(--mt)">${fmtRp(weekTotal)}</span>
+          <button class="day-menus-toggle" onclick="event.stopPropagation();toggleJadwalSummary()" title="${jadwalSummaryOpen?'Ciutkan':'Buka'}">${chevron}</button>
+        </span>
       </div>
-      <div style="display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px">${dayCols}</div>
+      ${jadwalSummaryOpen?`<div style="display:flex;gap:7px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px">${dayCols}</div>`:''}
     </div>`;
 }
 function onKitchenChange(){curKitchen=document.getElementById('jadwal-kitchen').value;renderWeeklySummary();renderDayTabs();renderJadwalContent();}
@@ -1577,7 +1630,7 @@ function renderPesanan(){
   populateKitchenSelect('pesanan-kitchen',document.getElementById('pesanan-kitchen').value||curKitchen);
   const kid=document.getElementById('pesanan-kitchen').value;
   const dates=getWeekDates(pesananWeek);
-  document.getElementById('pesanan-week-label').textContent=`${fmtShort(dates[0])}–${fmtShort(dates[4])} ${dates[4].getFullYear()}`;
+  document.getElementById('pesanan-week-label').textContent=fmtWeekRange(dates[0],dates[4]);
 
   const filter=document.getElementById('pesanan-filter').value;
   let items=S.scheduleItems.filter(s=>s.weekKey===pesananWeek&&s.kitchenId===kid);
@@ -1587,15 +1640,51 @@ function renderPesanan(){
   else if(filter==='paid')items=items.filter(s=>s.isPaid);
 
   renderPesananDayTabs(items,dates);
+  renderPesananDaySummary(items);
   if(pesananView==='hari')renderPesananByHari(items,dates);
   else renderPesananByBahan(items,dates);
 }
 
+function renderPesananDaySummary(items){
+  const el=document.getElementById('pesanan-day-summary');
+  if(!el)return;
+  if(pesananView!=='hari'){el.innerHTML='';return;}
+  const dis=items.filter(s=>s.day===pesananDay);
+  const total=dis.length;
+  const ordN=dis.filter(s=>s.isOrdered).length;
+  const recvN=dis.filter(s=>s.isReceived).length;
+  const paidN=dis.filter(s=>s.isPaid).length;
+  const chevron=pesananSummaryOpen?'▾':'▸';
+  const pct=n=>total?Math.round(n/total*100):0;
+  const bar=total?`<div style="display:flex;height:6px;border-radius:99px;overflow:hidden;background:var(--bg);margin-top:8px">
+    <div style="width:${pct(paidN)}%;background:#166534"></div>
+    <div style="width:${pct(recvN-paidN)}%;background:#1e40af"></div>
+    <div style="width:${pct(ordN-recvN)}%;background:#c49a00"></div>
+  </div>`:'';
+  el.innerHTML=`<div style="background:var(--card);border:1px solid var(--br);border-radius:14px;padding:10px 14px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.05)">
+    <div onclick="togglePesananSummary()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none">
+      <span style="font-size:12px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.5px">Progress ${DAYS[pesananDay]}</span>
+      <span style="display:flex;align-items:center;gap:8px">
+        ${!pesananSummaryOpen&&total?`<span style="font-size:11px;font-weight:600;color:var(--mt)">🛒${ordN}/${total} 📦${recvN}/${total} 💰${paidN}/${total}</span>`:''}
+        <button class="day-menus-toggle" onclick="event.stopPropagation();togglePesananSummary()" title="${pesananSummaryOpen?'Ciutkan':'Buka'}">${chevron}</button>
+      </span>
+    </div>
+    ${pesananSummaryOpen?`<div style="display:flex;justify-content:space-between;gap:10px;margin-top:8px;font-size:11px;font-weight:600">
+      <span style="color:#166534">🛒 Pesan ${ordN}/${total}</span>
+      <span style="color:#1e40af">📦 Datang ${recvN}/${total}</span>
+      <span style="color:#713f12">💰 Bayar ${paidN}/${total}</span>
+    </div>${bar}`:''}
+  </div>`;
+}
+function togglePesananSummary(){pesananSummaryOpen=!pesananSummaryOpen;renderPesanan();}
+
 function renderPesananDayTabs(items,dates){
   const el=document.getElementById('pesanan-day-tabs');
   if(!el)return;
-  if(pesananView!=='hari'){el.style.display='none';el.innerHTML='';return;}
+  const grid=document.getElementById('pesanan-2col');
+  if(pesananView!=='hari'){el.style.display='none';el.innerHTML='';if(grid)grid.classList.add('pesanan-2col-single');return;}
   el.style.display='';
+  if(grid)grid.classList.remove('pesanan-2col-single');
   const td=today0();
   el.innerHTML=dates.map((d,i)=>{
     const isToday=d.getTime()===td.getTime();
@@ -1734,28 +1823,28 @@ function renderPesananByHari(items,dates){
     const ddY=deliveryDate.getFullYear();
     const isTodayDelivery=deliveryDate.getTime()===td.getTime();
     const ordN=dis.filter(s=>s.isOrdered).length;
-    const _paidN=dis.filter(s=>s.isPaid).length;const _recvN=dis.filter(s=>s.isReceived).length;const countColor=_paidN===dis.length&&dis.length>0?'#fde68a':_recvN===dis.length&&dis.length>0?'#a5b4fc':ordN===dis.length&&dis.length>0?'#6ee7a8':'rgba(255,255,255,0.35)';
+    const _paidN=dis.filter(s=>s.isPaid).length;const _recvN=dis.filter(s=>s.isReceived).length;const countColor=_paidN===dis.length&&dis.length>0?'#713f12':_recvN===dis.length&&dis.length>0?'#1e40af':ordN===dis.length&&dis.length>0?'#166534':'var(--mt)';
     const dayKey=`day_${di}`;
     const dayOpen=window._pesCollapseDay[dayKey]!==false; // default open
     const chevron=dayOpen?'▾':'▸';
 
     html+=`${di>0?'<div style="height:10px"></div>':''}
     <div style="background:#fff;border:1px solid var(--br);border-radius:12px;overflow:hidden;margin-bottom:2px">
-    <div onclick="toggleDayCollapse('${dayKey}')" style="padding:11px 16px;border-bottom:${dayOpen?'1px solid var(--br)':'none'};display:flex;align-items:center;justify-content:space-between;background:#1a1a1a;border-radius:0;cursor:pointer;user-select:none">
+    <div onclick="toggleDayCollapse('${dayKey}')" style="padding:11px 16px;border-bottom:${dayOpen?'1px solid var(--br)':'none'};display:flex;align-items:center;justify-content:space-between;background:#fafafa;border-radius:0;cursor:pointer;user-select:none">
       <div style="display:flex;align-items:center;gap:10px">
-        <span style="font-size:13px;color:rgba(255,255,255,0.5)">${chevron}</span>
+        <span style="font-size:13px;color:var(--mt)">${chevron}</span>
         <div>
           <div style="display:flex;align-items:center;gap:7px">
-            <span style="font-size:15px;font-weight:800;font-family:'Plus Jakarta Sans','Outfit',sans-serif;letter-spacing:-.3px;color:#fff">${deliveryDayName}, ${ddd}/${ddm}/${ddY}</span>
-            ${isTodayDelivery?'<span class="badge" style="background:rgba(255,255,255,0.15);color:#fff">Hari Ini</span>':''}
+            <span style="font-size:15px;font-weight:800;font-family:'Plus Jakarta Sans','Outfit',sans-serif;letter-spacing:-.3px;color:var(--tx)">${deliveryDayName}, ${ddd}/${ddm}/${ddY}</span>
+            ${isTodayDelivery?'<span class="badge bg-or">Hari Ini</span>':''}
           </div>
-          <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:2px">Menu: ${DAYS[di]}, ${String(nd.getDate()).padStart(2,'0')}/${String(nd.getMonth()+1).padStart(2,'0')}</div>
+          <div style="font-size:11px;color:var(--mt);margin-top:2px">Menu: ${DAYS[di]}, ${String(nd.getDate()).padStart(2,'0')}/${String(nd.getMonth()+1).padStart(2,'0')}</div>
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px" onclick="event.stopPropagation()">
         <span style="font-size:11px;font-weight:700;color:${countColor}">${ordN}/${dis.length}</span>
         <div style="position:relative;display:inline-block">
-          <button onclick="event.stopPropagation();toggleDayMenu('${dayKey}')" style="background:none;border:1px solid rgba(255,255,255,0.3);border-radius:7px;width:26px;height:26px;font-size:15px;cursor:pointer;color:rgba(255,255,255,0.6);display:inline-flex;align-items:center;justify-content:center;line-height:1">⋮</button>
+          <button onclick="event.stopPropagation();toggleDayMenu('${dayKey}')" style="background:none;border:1px solid var(--br);border-radius:7px;width:26px;height:26px;font-size:15px;cursor:pointer;color:var(--mt);display:inline-flex;align-items:center;justify-content:center;line-height:1">⋮</button>
           <div id="day-menu-${dayKey}" style="display:none;position:absolute;right:0;top:30px;background:#fff;border:1px solid var(--br);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.18);z-index:400;min-width:165px;overflow:hidden">
             <div onclick="event.stopPropagation();closeDayMenus();markDayOrdered(${di})" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">Tandai Semua Pesan</div>
             <div onclick="event.stopPropagation();closeDayMenus();markDayReceived(${di})" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">Tandai Semua Datang</div>
@@ -2084,7 +2173,7 @@ function renderMasterBarang(){
         </select>
       </td>
       <td id="mat-act-${m.id}" style="text-align:right;white-space:nowrap;position:sticky;right:0;background:${hasSimilar?'#fffbeb':'#fff'};box-shadow:-2px 0 4px rgba(0,0,0,.04)">
-        <button class="btn-gh btn-xs" onclick="openEditMaterial('${m.id}')" style="color:var(--mt);font-size:15px;padding:3px 6px" title="Edit bahan">✏️</button>
+        <button class="btn-gh btn-xs mat-edit-btn" onclick="openEditMaterial('${m.id}')" title="Edit bahan">✏️</button>
       </td>
     </tr>`;
   }).join('');
@@ -3580,7 +3669,7 @@ document.addEventListener('click',function(e){
   if(menu&&btn&&!btn.contains(e.target)&&!menu.contains(e.target))menu.style.display='none';
 });
 function _editBtnHtml(id){
-  return '<button class="btn-gh btn-xs" onclick="openEditMaterial(\'' + id + '\')" style="color:var(--mt);font-size:15px;padding:3px 6px" title="Edit bahan">✏️</button>';
+  return '<button class="btn-gh btn-xs mat-edit-btn" onclick="openEditMaterial(\'' + id + '\')" title="Edit bahan">✏️</button>';
 }
 function _simpanBtnHtml(id){
   return '<button onclick="deactivateMatRow(\'' + id + '\')" style="font-size:12px;font-weight:600;padding:4px 10px;border-radius:7px;background:#E07B39;color:#fff;border:none;cursor:pointer;white-space:nowrap">Simpan ✓</button>';
