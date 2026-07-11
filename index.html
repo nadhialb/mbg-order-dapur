@@ -331,7 +331,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div class="nav-item" onclick="navigate('master-barang')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1L14.5 4.5V11.5L8 15L1.5 11.5V4.5L8 1Z"/><path d="M1.5 4.5L8 8L14.5 4.5"/><path d="M8 8V15"/></svg></span>Master Barang</div>
     <div class="nav-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M1 7l2-5h10l2 5"/><path d="M6 15V11h4v4"/><path d="M1 7h14"/></svg></span>Master Dapur</div>
   </nav>
-  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260711-v12</div>
+  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260711-v13</div>
 </aside>
 
 <!-- MOBILE HEADER -->
@@ -422,7 +422,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
             <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
               <button class="btn btn-ol" id="sync-btn" style="background:#e8f5e9;border-color:#2d7a4f;color:#2d7a4f" onclick="manualSync()">☁ Simpan</button>
               <button class="btn btn-ol" id="pull-btn" style="background:#e8f0fe;border-color:#2f6fb5;color:#2f6fb5" onclick="pullFromCloud()">⬇ Ambil</button>
-              <button class="btn btn-ol" onclick="openImportWizard()">📊 Import Excel</button>
+              <button class="btn btn-ol" onclick="openImportWizard()" title="Import bahan baku + menu masakan otomatis dari Excel">📊 Import Excel (Bahan + Menu)</button>
               <div style="position:relative;display:inline-block">
                 <button class="btn btn-ol" onclick="toggleLainnyaMenu()" id="lainnya-btn" style="padding:6px 10px">⋮ Lainnya</button>
                 <div id="lainnya-menu" style="display:none;position:absolute;top:calc(100% + 4px);right:0;background:#fff;border:1px solid var(--br);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:300;min-width:180px;overflow:hidden">
@@ -1774,6 +1774,8 @@ function renderPesananByHari(items,dates){
 
         const typeIds=byType[typ].map(({si})=>si.id);
         const typeMenuKey=catKey;
+        const _tik='tik_'+typeMenuKey;
+        window[_tik]=typeIds;
         html+=`<div style="border-bottom:1px solid var(--br)">
           <div onclick="toggleCatCollapse('${catKey}')" style="display:flex;align-items:center;gap:6px;padding:7px 16px;background:#fafafa;cursor:pointer;user-select:none">
             ${typeBadge(typ)}
@@ -1782,9 +1784,9 @@ function renderPesananByHari(items,dates){
             <div style="position:relative;display:inline-block" onclick="event.stopPropagation()">
               <button onclick="toggleTypeMenu('${typeMenuKey}')" style="background:none;border:1px solid var(--br);border-radius:6px;width:22px;height:22px;font-size:13px;cursor:pointer;color:var(--mt);display:inline-flex;align-items:center;justify-content:center;line-height:1" title="Aksi Massal">⋮</button>
               <div id="type-menu-${typeMenuKey}" style="display:none;position:absolute;right:0;top:26px;background:#fff;border:1px solid var(--br);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.18);z-index:400;min-width:150px;overflow:hidden">
-                <div onclick="closeTypeMenus();markTypeItems(${JSON.stringify(typeIds)},'order')" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">Pesan Semua</div>
-                <div onclick="closeTypeMenus();markTypeItems(${JSON.stringify(typeIds)},'receive')" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">Datang Semua</div>
-                <div onclick="closeTypeMenus();markTypeItems(${JSON.stringify(typeIds)},'pay')" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">Bayar Semua</div>
+                <div onclick="closeTypeMenus();markTypeItems(window['${_tik}'],'order')" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">Pesan Semua</div>
+                <div onclick="closeTypeMenus();markTypeItems(window['${_tik}'],'receive')" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">Datang Semua</div>
+                <div onclick="closeTypeMenus();markTypeItems(window['${_tik}'],'pay')" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">Bayar Semua</div>
               </div>
             </div>
             <span style="font-size:10px;color:var(--mt);width:14px;text-align:center">${catChev}</span>
@@ -1874,15 +1876,17 @@ function renderPesananByBahan(items,dates){
     const emoji=TYPE_EMOJI[type]||'📦';
     const typeAllIds=typeMids.flatMap(mid=>matGroups[mid].map(s=>s.id));
     const typeMenuKey2='bahan_'+type.replace(/\W/g,'_');
+    const _tik2='tik_'+typeMenuKey2;
+    window[_tik2]=typeAllIds;
     html+=`<div style="display:flex;align-items:center;gap:10px;margin:18px 0 8px">
       ${typeBadge(type,{size:"12px"})}
       <div style="flex:1;height:1px;background:var(--br)"></div>
       <div style="position:relative;display:inline-block">
         <button onclick="toggleTypeMenu('${typeMenuKey2}')" style="background:none;border:1px solid var(--br);border-radius:6px;width:22px;height:22px;font-size:13px;cursor:pointer;color:var(--mt);display:inline-flex;align-items:center;justify-content:center;line-height:1" title="Aksi Massal">⋮</button>
         <div id="type-menu-${typeMenuKey2}" style="display:none;position:absolute;right:0;top:26px;background:#fff;border:1px solid var(--br);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.18);z-index:400;min-width:150px;overflow:hidden">
-          <div onclick="closeTypeMenus();markTypeItems(${JSON.stringify(typeAllIds)},'order')" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">Pesan Semua</div>
-          <div onclick="closeTypeMenus();markTypeItems(${JSON.stringify(typeAllIds)},'receive')" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">Datang Semua</div>
-          <div onclick="closeTypeMenus();markTypeItems(${JSON.stringify(typeAllIds)},'pay')" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">Bayar Semua</div>
+          <div onclick="closeTypeMenus();markTypeItems(window['${_tik2}'],'order')" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">Pesan Semua</div>
+          <div onclick="closeTypeMenus();markTypeItems(window['${_tik2}'],'receive')" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">Datang Semua</div>
+          <div onclick="closeTypeMenus();markTypeItems(window['${_tik2}'],'pay')" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">Bayar Semua</div>
         </div>
       </div>
     </div>`;
