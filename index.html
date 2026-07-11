@@ -331,7 +331,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div class="nav-item" onclick="navigate('master-barang')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1L14.5 4.5V11.5L8 15L1.5 11.5V4.5L8 1Z"/><path d="M1.5 4.5L8 8L14.5 4.5"/><path d="M8 8V15"/></svg></span>Master Barang</div>
     <div class="nav-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M1 7l2-5h10l2 5"/><path d="M6 15V11h4v4"/><path d="M1 7h14"/></svg></span>Master Dapur</div>
   </nav>
-  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260711-v9</div>
+  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260711-v10</div>
 </aside>
 
 <!-- MOBILE HEADER -->
@@ -2701,7 +2701,14 @@ function renderWizStep(step){
           <span style="color:var(--pr)">Nama kolom tidak harus persis sama. Jenis akan dideteksi otomatis jika tidak ada kolomnya.</span>
         </div>
       </div>
-      <div id="excel-preview" style="margin-top:12px"></div>`;
+      <div id="excel-preview" style="margin-top:12px"></div>
+      <div style="margin-top:8px">
+        <button type="button" class="btn btn-ol btn-sm" onclick="showRawDebug()">🔍 Debug: Tampilkan Data Mentah</button>
+      </div>
+      <div id="raw-debug-box" style="display:none;margin-top:8px">
+        <div class="fh" style="margin-bottom:4px">Data mentah 15 baris pertama (untuk dikirim ke support kalau ada yang salah baca):</div>
+        <textarea readonly style="width:100%;height:160px;font-family:monospace;font-size:11px;padding:8px;border:1.5px solid var(--br);border-radius:8px" onclick="this.select()"></textarea>
+      </div>`;
     acts.innerHTML=`<button class="btn btn-ol" onclick="closeModal('modal-import')">Batal</button><button class="btn btn-pr" onclick="wizNext()" id="wiz-next-1" disabled>Lanjut →</button>`;
     document.getElementById('excel-file').addEventListener('change',handleExcelUpload);
   }
@@ -2928,6 +2935,7 @@ function onSheetChange(){
 function loadSheet(sheetName){
   const ws=IMP.wb.Sheets[sheetName];
   const raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+  IMP.rawDebug=raw; // simpan untuk tombol debug
 
   const blockFlat=tryFlattenDailyBlockFormat(raw);
   if(blockFlat){
@@ -2996,6 +3004,23 @@ function deletePreviewRow(ri){
 function addPreviewRow(){
   IMP.rows.push(IMP.headers.map(()=>''));
   renderExcelPreview();
+}
+
+// Tombol debug: tampilkan 15 baris pertama data MENTAH hasil baca file
+// (sebelum diratakan), lengkap dengan tipe data tiap sel, di kotak teks yang
+// bisa di-copy. Dipakai untuk mendiagnosis kalau auto-deteksi meleset.
+function showRawDebug(){
+  const raw=IMP.rawDebug||[];
+  const lines=raw.slice(0,15).map((r,i)=>{
+    const cells=r.map(c=>`${JSON.stringify(c)}(${typeof c})`).join(' | ');
+    return `Baris ${i}: ${cells}`;
+  });
+  const text=lines.join('\n');
+  const box=document.getElementById('raw-debug-box');
+  if(box){
+    box.style.display='block';
+    box.querySelector('textarea').value=text;
+  }
 }
 
 function renderExcelPreview(){
