@@ -287,14 +287,14 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
 /* ── MENU MASAKAN ── */
 .day-menus{background:linear-gradient(135deg,#fafafa 0%,#f5f5f5 100%);border:1px solid var(--br);border-radius:12px;padding:12px 14px;margin-bottom:12px}
 .day-menus-hdr{display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
-.menu-list{display:flex;flex-direction:column;gap:4px;margin-bottom:8px}
 .menu-list-empty{font-size:12px;color:var(--mt);font-style:italic;padding:6px 0 8px;text-align:center}
-.menu-list-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:#fff;border:1px solid var(--br);border-radius:8px;transition:background .1s}
-.menu-list-item:hover{background:#f8f9ff}
-.menu-num{min-width:20px;height:20px;display:flex;align-items:center;justify-content:center;background:var(--or);color:#fff;border-radius:50%;font-size:10px;font-weight:800;flex-shrink:0}
-.menu-list-name{flex:1;font-size:13px;font-weight:600;color:var(--tx)}
-.menu-list-del{border:none;background:none;color:var(--mt);cursor:pointer;font-size:11px;opacity:.4;padding:2px 5px;border-radius:4px;line-height:1}
-.menu-list-del:hover{opacity:1;color:var(--rd);background:#fee2e2}
+.menu-chip-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.menu-chip{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--br);border-radius:99px;padding:5px 6px 5px 12px;font-size:12px;font-weight:600;color:var(--tx);transition:background .1s}
+.menu-chip:hover{background:#f8f9ff}
+.menu-chip-del{border:none;background:none;color:var(--mt);cursor:pointer;font-size:10px;opacity:.45;padding:3px 6px;border-radius:50%;line-height:1}
+.menu-chip-del:hover{opacity:1;color:var(--rd);background:#fee2e2}
+.day-menus-toggle{border:none;background:none;color:var(--mt);cursor:pointer;font-size:11px;padding:2px 4px;line-height:1;flex-shrink:0}
+.day-menus-toggle:hover{color:var(--tx)}
 .menu-add-row{display:flex;gap:7px;align-items:center}
 .menu-add-input{flex:1;padding:6px 12px;border-radius:99px;border:1.5px solid var(--br);font-size:13px;background:#fff;font-family:inherit;color:var(--tx);-webkit-appearance:none}
 .menu-add-input:focus{outline:none;border-color:var(--prl);box-shadow:none}
@@ -331,7 +331,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div class="nav-item" onclick="navigate('master-barang')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1L14.5 4.5V11.5L8 15L1.5 11.5V4.5L8 1Z"/><path d="M1.5 4.5L8 8L14.5 4.5"/><path d="M8 8V15"/></svg></span>Master Barang</div>
     <div class="nav-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M1 7l2-5h10l2 5"/><path d="M6 15V11h4v4"/><path d="M1 7h14"/></svg></span>Master Dapur</div>
   </nav>
-  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260711-v13</div>
+  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260711-v14</div>
 </aside>
 
 <!-- MOBILE HEADER -->
@@ -1061,7 +1061,7 @@ function handleMenuKey(e,kitId,wk,day){
 // ═══════════════════════════════════════
 //  ROUTING
 // ═══════════════════════════════════════
-let curPage='dashboard',curKitchen='',curWeek='',curDay=0,pesananWeek='',pesananDay=0,dashWeek='',menuWeek='',pesananView='hari',editItemId=null;
+let curPage='dashboard',curKitchen='',curWeek='',curDay=0,pesananWeek='',pesananDay=0,dashWeek='',menuWeek='',pesananView='hari',editItemId=null,jadwalMenuOpen=true;
 
 function navigate(page){
   curPage=page;
@@ -1385,23 +1385,31 @@ function renderDayTabs(){
     return `<div class="dtab${curDay===i?' active':''}" onclick="selectDay(${i})">${DAYS[i]}<span class="ds">${fmtShort(d)}${isToday?' ★':''} ${cnt?`(${cnt})`:'—'}</span></div>`;
   }).join('');
 }
+function toggleJadwalMenuBox(){jadwalMenuOpen=!jadwalMenuOpen;renderJadwalContent();}
 function renderJadwalContent(){
   const dates=getWeekDates(curWeek),nd=dates[curDay];
   const items=S.scheduleItems.filter(s=>s.weekKey===curWeek&&s.kitchenId===curKitchen&&s.day===curDay);
   // — Menu masakan section —
   const dayMen=getDayMenus(curKitchen,curWeek,curDay);
   const _kid=curKitchen.replace(/'/g,"\'"),_wk=curWeek.replace(/'/g,"\'");
-  const menuRows=dayMen.length
-    ? dayMen.map((m,i)=>`<div class="menu-list-item"><span class="menu-num">${i+1}</span><span class="menu-list-name">${m.name}</span><button class="menu-list-del" onclick="deleteMenu('${m.id}')" title="Hapus">✕</button></div>`).join('')
+  const menuChips=dayMen.length
+    ? `<div class="menu-chip-row">${dayMen.map(m=>`<span class="menu-chip">${m.name}<button class="menu-chip-del" onclick="deleteMenu('${m.id}')" title="Hapus">✕</button></span>`).join('')}</div>`
     : `<div class="menu-list-empty">Belum ada menu untuk hari ini</div>`;
-  const menuHtml=`<div class="day-menus">
-    <div class="day-menus-hdr"><span>🍽️ Menu Masakan</span><span style="font-size:10px;font-weight:600;background:var(--or);color:#fff;padding:2px 8px;border-radius:99px">${dayMen.length} menu</span></div>
-    <div class="menu-list">${menuRows}</div>
+  const menuBody=jadwalMenuOpen?`${menuChips}
     <div class="menu-add-row">
       <input class="menu-add-input" id="menu-input-${curDay}" type="text" placeholder="Tambah masakan... (Enter)" maxlength="60"
         onkeydown="handleMenuKey(event,'${_kid}','${_wk}',${curDay})">
       <button class="menu-add-btn" onclick="addMenu('${_kid}','${_wk}',${curDay})">＋</button>
+    </div>`:'';
+  const menuHtml=`<div class="day-menus">
+    <div class="day-menus-hdr" onclick="toggleJadwalMenuBox()" style="cursor:pointer;user-select:none">
+      <span>🍽️ Menu Masakan</span>
+      <span style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:10px;font-weight:600;background:var(--or);color:#fff;padding:2px 8px;border-radius:99px">${dayMen.length} menu</span>
+        <button class="day-menus-toggle" onclick="event.stopPropagation();toggleJadwalMenuBox()" title="${jadwalMenuOpen?'Ciutkan':'Buka'}">${jadwalMenuOpen?'▾':'▸'}</button>
+      </span>
     </div>
+    ${menuBody}
   </div>`;
   let html=`<div style="font-weight:800;font-size:15px;margin-bottom:14px">${fmt(nd)}</div>${menuHtml}`;
   if(!items.length){
