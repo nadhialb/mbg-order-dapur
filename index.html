@@ -357,7 +357,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div class="nav-item" onclick="navigate('master-barang')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1L14.5 4.5V11.5L8 15L1.5 11.5V4.5L8 1Z"/><path d="M1.5 4.5L8 8L14.5 4.5"/><path d="M8 8V15"/></svg></span>Master Barang</div>
     <div class="nav-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M1 7l2-5h10l2 5"/><path d="M6 15V11h4v4"/><path d="M1 7h14"/></svg></span>Master Dapur</div>
   </nav>
-  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260712-v30</div>
+  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260712-v32</div>
 </aside>
 
 <!-- MOBILE HEADER -->
@@ -960,9 +960,10 @@ function dlChip(mat,neededDate,weekDates,isOrdered,isReceived){
   const effDays=H_DAYS[st]||1;
   const deliveryDate=addDays(neededDate,-1);
   const orderDate=addDays(deliveryDate,-effDays);
-  const followUpDate=addDays(deliveryDate,-1);
   if(isOrdered){
-    if(td>=followUpDate)return `<span class="dl-chip dl-today">📞 Follow up ke supplier — datang ${fmtShort(deliveryDate)}</span>`;
+    const daysToDelivery=Math.round((deliveryDate-td)/864e5);
+    if(daysToDelivery===1)return `<span class="dl-chip dl-late">📞 Follow up ke supplier — datang ${fmtShort(deliveryDate)}</span>`;
+    if(daysToDelivery===2)return `<span class="dl-chip dl-soon">📞 Follow up ke supplier — datang ${fmtShort(deliveryDate)}</span>`;
     return `<span class="dl-chip dl-ok">✅ Sudah Dipesan — datang ${fmtShort(deliveryDate)}</span>`;
   }
   const label=`⏰ H-${effDays} — pesan ${fmtShort(orderDate)}`;
@@ -1119,7 +1120,7 @@ function handleMenuKey(e,kitId,wk,day){
 //  ROUTING
 // ═══════════════════════════════════════
 let curPage='dashboard',curKitchen='',curWeek='',curDay=0,pesananWeek='',pesananDay=0,dashWeek='',menuWeek='',pesananView='hari',editItemId=null,jadwalMenuOpen=true,jadwalSummaryOpen=true,jadwalItemsOpen=true,pesananSummaryOpen=true;
-let dashKitchenOpen={},dashNotifOpen={};
+let dashKitchenOpen={},dashBarangOpen={},dashSupplierOpen={};
 
 function navigate(page){
   curPage=page;
@@ -1151,10 +1152,11 @@ function renderCurrentPage(){
 // ═══════════════════════════════════════
 function getReminders(kitchenId,weekKey){
   const td=today0();
-  // poDue/poOverdue = kategori terpisah khusus Barang PO (rapel).
-  // followUp = bahan H-N yang SUDAH dipesan tapi belum datang, dan sudah masuk
-  // window "cek ke supplier" (H-1 sebelum tanggal datang).
-  const result={poDue:[],poOverdue:[],overdue:[],today:[],soon:[],followUp:[]};
+  // poDue/poOverdue = kategori Barang PO (rapel) — masuk grup "Notifikasi Barang".
+  // followUpH2/followUpH1 = notifikasi ke SUPPLIER soal kedatangan barang yang sudah dipesan —
+  // masuk grup "Notifikasi Supplier" terpisah. H-2 sebelum datang = kuning (semi-urgent),
+  // H-1 sebelum datang (atau lebih dekat/sudah lewat & belum datang) = merah (urgent).
+  const result={poDue:[],poOverdue:[],overdue:[],today:[],soon:[],followUpH2:[],followUpH1:[]};
   const weeks=[...new Set([weekKey,getWeekKey(addDays(td,7))])];
   weeks.forEach(wk=>{
     const dates=getWeekDates(wk);
@@ -1179,18 +1181,20 @@ function getReminders(kitchenId,weekKey){
       }
 
       // Barang H-N (non-PO): hampir semua barang DATANG H-1 sebelum dipakai (tetap, semua stockType).
-      // Yang beda cuma jarak ORDER ke tanggal DATANG itu (H-1/H-2/H-3/H-4). Follow up ke supplier
-      // dilakukan H-1 sebelum tanggal datang, supaya sempat dicek/dikejar sebelum kedatangan.
+      // Yang beda cuma jarak ORDER ke tanggal DATANG itu (H-1/H-2/H-3/H-4).
       const effDays2=H_DAYS[mat.stockType]||1;
       const deliveryDate=addDays(neededDate,-1);
       const orderDate=addDays(deliveryDate,-effDays2);
-      const followUpDate=addDays(deliveryDate,-1);
 
       if(si.isOrdered){
         if(si.isReceived)return; // sudah datang, tidak perlu direminder lagi
-        if(td>=followUpDate){
-          result.followUp.push({...si,mat,neededDate,deliveryDate,followUpDate,kitchenName:kit?kit.name:'?',daysSince:Math.max(0,Math.round((td-followUpDate)/864e5))});
-        }
+        // Notifikasi ke supplier: PERSIS H-2 sebelum tanggal datang = kuning, PERSIS H-1 sebelum
+        // tanggal datang = merah. Begitu masuk hari-H datang (atau lewat), berhenti muncul di
+        // Follow Up — dianggap sudah waktunya dicek manual via toggle "Datang", bukan ditelpon lagi.
+        const daysToDelivery=Math.round((deliveryDate-td)/864e5);
+        const entry={...si,mat,neededDate,deliveryDate,kitchenName:kit?kit.name:'?'};
+        if(daysToDelivery===1)result.followUpH1.push(entry);
+        else if(daysToDelivery===2)result.followUpH2.push(entry);
         return;
       }
 
@@ -1231,7 +1235,8 @@ function renderDashboard(){
     r.overdue.forEach(x=>urgentOverdue.push({...x,kitName:k.name}));
     r.poDue.forEach(x=>urgentToday.push({...x,kitName:k.name}));
     r.poOverdue.forEach(x=>urgentOverdue.push({...x,kitName:k.name}));
-    r.followUp.forEach(x=>urgentToday.push({...x,kitName:k.name}));
+    r.followUpH1.forEach(x=>urgentOverdue.push({...x,kitName:k.name}));
+    r.followUpH2.forEach(x=>urgentToday.push({...x,kitName:k.name}));
   });
   const totalUnordered=allWkItems.filter(s=>!s.isOrdered).length;
   const totalUnpaid=allWkItems.filter(s=>s.isOrdered&&!s.isPaid).length;
@@ -1266,44 +1271,51 @@ function renderDashboard(){
     const ordPct=items.length?Math.round(ordered/items.length*100):0;
     const rem=getReminders(kit.id,wk);
 
-    let reminderHtml='';
+    // Grup "Notifikasi Barang": Terlambat dipesan → Perlu dipesan HARI INI → Barang PO → Segera dipesan minggu ini.
+    let barangHtml='';
     const poCount=rem.poDue.length+rem.poOverdue.length;
-    if(poCount===0&&rem.overdue.length===0&&rem.today.length===0&&rem.soon.length===0&&rem.followUp.length===0){
-      reminderHtml='<div class="alert success"><span class="ai">🔔</span><div><div class="at">Semua pesanan teratur</div><div class="ab">Tidak ada item yang perlu ditindaklanjuti.</div></div></div>';
-    }
-    // Urutan berdasarkan prioritas urgensi: Terlambat dipesan → Perlu dipesan HARI INI →
-    // Barang PO → Follow Up ke Supplier → Segera dipesan minggu ini.
-    // Warna: merah = urgent, kuning = semi-urgent, hijau = tidak urgent.
     if(rem.overdue.length>0){
       const its=rem.overdue.map(r=>`<div class="ai-item"><span><b>${r.mat.name}</b> ${r.qty} ${r.mat.unit} (${DAYS[r.day]})</span><span class="kt">${r.daysLate}h terlambat</span></div>`).join('');
-      reminderHtml+=`<div class="alert danger"><span class="ai">🚨</span><div><div class="at">Terlambat dipesan (${rem.overdue.length})</div><div class="ai-list">${its}</div></div></div>`;
+      barangHtml+=`<div class="alert danger"><span class="ai">🚨</span><div><div class="at">Terlambat dipesan (${rem.overdue.length})</div><div class="ai-list">${its}</div></div></div>`;
     }
     if(rem.today.length>0){
       const its=rem.today.map(r=>`<div class="ai-item"><span><b>${r.mat.name}</b> ${r.qty} ${r.mat.unit} (${DAYS[r.day]})</span><span class="kt">Pesan sekarang!</span></div>`).join('');
-      reminderHtml+=`<div class="alert danger"><span class="ai">⏰</span><div><div class="at">Perlu dipesan HARI INI (${rem.today.length})</div><div class="ai-list">${its}</div></div></div>`;
+      barangHtml+=`<div class="alert danger"><span class="ai">⏰</span><div><div class="at">Perlu dipesan HARI INI (${rem.today.length})</div><div class="ai-list">${its}</div></div></div>`;
     }
     if(poCount>0){
-      // Barang PO (rapel): satu kategori sendiri, terpisah dari reminder harian biasa.
-      // Jumat–Minggu = "Perlu dipesan" (kuning/semi-urgent), Senin+ = "X hari terlambat" (merah/urgent).
+      // Barang PO (rapel): Jumat–Minggu = "Perlu dipesan" (kuning/semi-urgent), Senin+ = "X hari terlambat" (merah/urgent).
       const itsLate=rem.poOverdue.map(r=>`<div class="ai-item"><span><b>${r.mat.name}</b> ${r.qty} ${r.mat.unit} (${DAYS[r.day]})</span><span class="kt">${r.daysLate}h terlambat</span></div>`).join('');
       const itsDue=rem.poDue.map(r=>`<div class="ai-item"><span><b>${r.mat.name}</b> ${r.qty} ${r.mat.unit} (${DAYS[r.day]})</span><span class="kt">Perlu dipesan</span></div>`).join('');
       const poAlertClass=rem.poOverdue.length>0?'danger':'warning';
-      reminderHtml+=`<div class="alert ${poAlertClass}"><span class="ai">📦</span><div><div class="at">Barang PO (${poCount})</div><div class="ai-list">${itsLate}${itsDue}</div></div></div>`;
-    }
-    if(rem.followUp.length>0){
-      // Barang H-N yang sudah dipesan, sudah masuk window H-1 sebelum tanggal datang —
-      // waktunya cek/kejar ke supplier supaya kedatangannya sesuai jadwal.
-      const its=rem.followUp.map(r=>`<div class="ai-item"><span><b>${r.mat.name}</b> ${r.qty} ${r.mat.unit} (${DAYS[r.day]})</span><span class="kt">Datang ${fmtShort(r.deliveryDate)}</span></div>`).join('');
-      reminderHtml+=`<div class="alert warning"><span class="ai">📞</span><div><div class="at">Follow Up ke Supplier (${rem.followUp.length})</div><div class="ai-list">${its}</div></div></div>`;
+      barangHtml+=`<div class="alert ${poAlertClass}"><span class="ai">📦</span><div><div class="at">Barang PO (${poCount})</div><div class="ai-list">${itsLate}${itsDue}</div></div></div>`;
     }
     if(rem.soon.length>0){
       const its=rem.soon.slice(0,5).map(r=>`<div class="ai-item"><span><b>${r.mat.name}</b> ${r.qty} ${r.mat.unit}</span><span class="kt">${r.daysUntil}h lagi</span></div>`).join('');
       const more=rem.soon.length>5?`<div style="font-size:11px;color:var(--mt);margin-top:4px">+${rem.soon.length-5} item lainnya</div>`:'';
-      reminderHtml+=`<div class="alert success"><span class="ai">📋</span><div><div class="at">Segera dipesan minggu ini (${rem.soon.length})</div><div class="ai-list">${its}${more}</div></div></div>`;
+      barangHtml+=`<div class="alert success"><span class="ai">📋</span><div><div class="at">Segera dipesan minggu ini (${rem.soon.length})</div><div class="ai-list">${its}${more}</div></div></div>`;
+    }
+    if(!barangHtml){
+      barangHtml='<div class="alert success"><span class="ai">🔔</span><div><div class="at">Semua pesanan teratur</div><div class="ab">Tidak ada barang yang perlu ditindaklanjuti.</div></div></div>';
+    }
+
+    // Grup "Notifikasi Supplier": follow-up kedatangan barang yang sudah dipesan.
+    // H-1 sebelum datang (atau lebih dekat/sudah lewat) = merah, H-2 sebelum datang = kuning.
+    let supplierHtml='';
+    if(rem.followUpH1.length>0){
+      const its=rem.followUpH1.map(r=>`<div class="ai-item"><span><b>${r.mat.name}</b> ${r.qty} ${r.mat.unit} (${DAYS[r.day]})</span><span class="kt">Datang ${fmtShort(r.deliveryDate)}</span></div>`).join('');
+      supplierHtml+=`<div class="alert danger"><span class="ai">📞</span><div><div class="at">Follow Up H-1 (${rem.followUpH1.length})</div><div class="ai-list">${its}</div></div></div>`;
+    }
+    if(rem.followUpH2.length>0){
+      const its=rem.followUpH2.map(r=>`<div class="ai-item"><span><b>${r.mat.name}</b> ${r.qty} ${r.mat.unit} (${DAYS[r.day]})</span><span class="kt">Datang ${fmtShort(r.deliveryDate)}</span></div>`).join('');
+      supplierHtml+=`<div class="alert warning"><span class="ai">📞</span><div><div class="at">Follow Up H-2 (${rem.followUpH2.length})</div><div class="ai-list">${its}</div></div></div>`;
+    }
+    if(!supplierHtml){
+      supplierHtml='<div class="alert success"><span class="ai">🔔</span><div><div class="ab">Tidak ada barang yang perlu di-follow up ke supplier saat ini.</div></div></div>';
     }
 
     const kitOpen=dashKitchenOpen[kit.id]!==false;
-    const notifOpen=dashNotifOpen[kit.id]!==false;
+    const barangOpen=dashBarangOpen[kit.id]!==false;
+    const supplierOpen=dashSupplierOpen[kit.id]!==false;
     html2+=`<div class="k-dash">
       <div class="k-dash-hdr">
         <div>
@@ -1326,11 +1338,16 @@ function renderDashboard(){
           <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--mt);margin-bottom:3px"><span>Progress Pemesanan</span><span>${ordPct}%</span></div>
           <div class="prog-bar"><div class="prog-fill" style="width:${ordPct}%"></div></div>
         </div>
-        <div onclick="toggleDashNotif('${kit.id}')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;${notifOpen?'margin-bottom:8px':''}">
-          <span style="font-size:12px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.5px">Notifikasi</span>
-          <button class="day-menus-toggle" onclick="event.stopPropagation();toggleDashNotif('${kit.id}')" title="${notifOpen?'Ciutkan':'Buka'}">${notifOpen?'▾':'▸'}</button>
+        ${items.length?`<div onclick="toggleDashBarang('${kit.id}')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;${barangOpen?'margin-bottom:8px':''}">
+          <span style="font-size:12px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.5px">Notifikasi Barang</span>
+          <button class="day-menus-toggle" onclick="event.stopPropagation();toggleDashBarang('${kit.id}')" title="${barangOpen?'Ciutkan':'Buka'}">${barangOpen?'▾':'▸'}</button>
         </div>
-        ${notifOpen?(items.length?`<div class="k-reminders">${reminderHtml}</div>`:'<div style="color:var(--mt);font-size:13px">Belum ada jadwal untuk minggu ini. <span style="cursor:pointer;color:var(--pr);font-weight:700" onclick="navigate(\'jadwal\')">Tambah Jadwal →</span></div>'):''}
+        ${barangOpen?`<div class="k-reminders" style="margin-bottom:12px">${barangHtml}</div>`:''}
+        <div onclick="toggleDashSupplier('${kit.id}')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;${supplierOpen?'margin-bottom:8px':''}">
+          <span style="font-size:12px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.5px">Notifikasi Supplier</span>
+          <button class="day-menus-toggle" onclick="event.stopPropagation();toggleDashSupplier('${kit.id}')" title="${supplierOpen?'Ciutkan':'Buka'}">${supplierOpen?'▾':'▸'}</button>
+        </div>
+        ${supplierOpen?`<div class="k-reminders">${supplierHtml}</div>`:''}`:'<div style="color:var(--mt);font-size:13px">Belum ada jadwal untuk minggu ini. <span style="cursor:pointer;color:var(--pr);font-weight:700" onclick="navigate(\'jadwal\')">Tambah Jadwal →</span></div>'}
       </div>`:''}
     </div>`;
   });
@@ -1339,7 +1356,8 @@ function renderDashboard(){
 function changeDashWeek(dir){const d=getWeekDates(dashWeek);dashWeek=getWeekKey(addDays(d[0],dir*7));renderDashboard();}
 function goToDashThisWeek(){dashWeek=getDefaultWeek();renderDashboard();}
 function toggleDashKitchen(kid){dashKitchenOpen[kid]=dashKitchenOpen[kid]===false?true:false;renderDashboard();}
-function toggleDashNotif(kid){dashNotifOpen[kid]=dashNotifOpen[kid]===false?true:false;renderDashboard();}
+function toggleDashBarang(kid){dashBarangOpen[kid]=dashBarangOpen[kid]===false?true:false;renderDashboard();}
+function toggleDashSupplier(kid){dashSupplierOpen[kid]=dashSupplierOpen[kid]===false?true:false;renderDashboard();}
 
 // ═══════════════════════════════════════
 //  JADWAL
