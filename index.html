@@ -76,7 +76,7 @@ body{font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif
 .alert{padding:11px 14px;border-radius:10px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start}
 .alert.danger{background:#fff3f0;border:1px solid #ffd3cc}
 .alert.warning{background:#fffbeb;border:1px solid #fde68a}
-.alert.success{background:#fff7ed;border:1px solid #fed7aa}
+.alert.success{background:#f0fdf4;border:1px solid #bbf7d0}
 .alert.info{background:#eff6ff;border:1px solid #bfdbfe}
 .alert .ai{font-size:17px;flex-shrink:0;margin-top:1px}
 .alert .at{font-weight:700;font-size:13px;margin-bottom:2px}
@@ -288,8 +288,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
   #jadwal-kitchen{font-size:14px;padding:6px 28px 6px 10px}
   .mbg{align-items:flex-start;padding:8px}
 
-  /* -- Master Barang: pensil edit lebih kecil di HP -- */
-  .mat-edit-btn{font-size:12px;padding:3px 5px}
+  /* -- Master Barang: pensil edit lebih kecil & rapat di HP (kotak tetap, emoji tidak melebar) -- */
+  .mat-edit-btn{width:16px;height:16px;padding:0;font-size:9px;line-height:1;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+  .mb-act-cell{padding:9px 6px!important}
 }
 @media(max-width:480px){
   .k-stat-row{grid-template-columns:1fr 1fr}
@@ -333,6 +334,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
 /* ── INLINE TABLE CONTROLS ── */
 .td-sel{width:auto;padding:4px 6px;font-size:12px;border-radius:6px;border:1.5px solid var(--br);cursor:pointer;background:#fff;color:var(--tx);font-family:inherit;-webkit-appearance:auto;appearance:auto}
 .td-inp{padding:4px 7px;font-size:13px;border-radius:6px;border:1.5px solid var(--br);background:#fff;color:var(--tx);font-family:inherit}
+.td-inp:disabled{background:var(--bg);color:var(--mt);cursor:not-allowed}
 .td-inp:focus,.td-sel:focus{outline:none;border-color:var(--prl)}
 
 /* ── KITCHEN SELECTORS ── */
@@ -355,7 +357,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div class="nav-item" onclick="navigate('master-barang')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1L14.5 4.5V11.5L8 15L1.5 11.5V4.5L8 1Z"/><path d="M1.5 4.5L8 8L14.5 4.5"/><path d="M8 8V15"/></svg></span>Master Barang</div>
     <div class="nav-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M1 7l2-5h10l2 5"/><path d="M6 15V11h4v4"/><path d="M1 7h14"/></svg></span>Master Dapur</div>
   </nav>
-  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260711-v22</div>
+  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260712-v30</div>
 </aside>
 
 <!-- MOBILE HEADER -->
@@ -483,12 +485,24 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
         </div>
       </div>
     </div>
+    <div class="alert info" id="mb-legend" style="cursor:pointer" onclick="this.querySelector('.mb-legend-body').style.display=this.querySelector('.mb-legend-body').style.display==='none'?'block':'none';this.querySelector('.mb-legend-arrow').textContent=this.querySelector('.mb-legend-body').style.display==='none'?'▸':'▾'">
+      <div class="ai">ℹ️</div>
+      <div style="flex:1">
+        <div class="at" style="display:flex;justify-content:space-between;align-items:center">Beda Tipe Stok Rapel &amp; H- <span class="mb-legend-arrow">▾</span></div>
+        <div class="mb-legend-body" style="display:block">
+          <div class="ab" style="margin-top:4px;line-height:1.6">
+            <b>⏰ H-N (otomatis)</b> — bahan dipesan N hari sebelum dibutuhkan. Pilih H-1 untuk bahan segar harian, H-4 untuk bahan seperti <b>Pisang</b> yang perlu dipesan lebih awal, dst.<br>
+            <b>📦 Rapel (Jumat mingguan)</b> — bahan yang dipesan sekaligus tiap Jumat–Sabtu untuk kebutuhan minggu depan (biasanya bahan kering/tahan lama).
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="card">
       <div class="tbl-wrap"><table>
         <thead><tr>
           <th onclick="sortMaster('name')" style="cursor:pointer;user-select:none">Nama Bahan <span id="sort-name">↕</span></th>
           <th onclick="sortMaster('type')" style="cursor:pointer;user-select:none">Jenis <span id="sort-type">↕</span></th>
-          <th>Satuan</th><th>Harga Ref.</th><th class="mb-col-hide">H-</th><th class="mb-col-hide">Tipe Stok</th><th style="position:sticky;right:0;background:#fff;box-shadow:-2px 0 4px rgba(0,0,0,.04)"></th>
+          <th>Satuan</th><th>Harga Ref.</th><th class="mb-col-hide" title="H-1 s/d H-4: otomatis dipesan N hari sebelum dibutuhkan. Rapel: dipesan sekaligus tiap Jumat–Sabtu untuk minggu depan.">Tipe Stok ⓘ</th><th style="position:sticky;right:0;background:#fff;box-shadow:-2px 0 4px rgba(0,0,0,.04)"></th>
         </tr></thead>
         <tbody id="material-tbody"></tbody>
       </table></div>
@@ -577,17 +591,16 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
       <div class="fg"><label class="fl">Satuan</label><select id="mat-unit" style="width:100%"><option>kg</option></select></div>
       <div class="fg"><label class="fl">Harga Referensi (Rp)</label><input type="number" id="mat-price" min="0" placeholder="0"></div>
     </div>
-    <div class="fr2">
-      <div class="fg"><label class="fl">Pesan H- (opsional)</label><input type="number" id="mat-days" min="0" max="14" placeholder="0 = tidak ada tenggat"><div class="fh">Isi jika perlu pesan lebih awal, kosongkan atau isi 0 jika tidak ada tenggat</div></div>
-      <div class="fg">
-        <label class="fl">Tipe Stok</label>
-        <select id="mat-stocktype">
-          <option value="normal">Normal (harian)</option>
-          <option value="rapel">📦 Rapel Mingguan</option>
-          <option value="h1">⏰ Datang H-1</option>
-        </select>
-        <div class="fh">Rapel = diorder Jumat minggu sebelumnya · H-1 = barang tiba satu hari sebelum masak</div>
-      </div>
+    <div class="fg" style="margin-bottom:13px">
+      <label class="fl">Tipe Stok</label>
+      <select id="mat-stocktype">
+        <option value="h1">⏰ H-1 (otomatis)</option>
+        <option value="h2">⏰ H-2 (otomatis)</option>
+        <option value="h3">⏰ H-3 (otomatis)</option>
+        <option value="h4">🍌 H-4 (otomatis)</option>
+        <option value="rapel">📦 Rapel (Jumat mingguan)</option>
+      </select>
+      <div class="fh">Rapel = diorder Jumat–Sabtu minggu sebelumnya · H-N = otomatis dipesan N hari sebelum dibutuhkan</div>
     </div>
     <div id="mat-price-history" style="margin-bottom:8px"></div>
     <div class="fg" style="margin-bottom:12px">
@@ -673,6 +686,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
 // ═══════════════════════════════════════
 const DAYS=['Senin','Selasa','Rabu','Kamis','Jumat'];
 const ALL_DAYS=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+const H_DAYS={h1:1,h2:2,h3:3,h4:4};
 const MONTHS=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 const DRY_TYPES=['Karbohidrat','Bumbu','Minyak & Lemak'];
 
@@ -903,7 +917,7 @@ function getDefaultWeek(){
   return getWeekKey(now);
 }
 function today0(){const t=new Date();t.setHours(0,0,0,0);return t;}
-function fmt(d){return `${DAYS[(d.getDay()||7)-1]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;}
+function fmt(d){return `${ALL_DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;}
 function fmtShort(d){return `${d.getDate()} ${MONTHS[d.getMonth()].slice(0,3)}`;}
 function fmtWeekRange(d1,d2){return `${fmtShort(d1)}\u2013${fmtShort(d2)} '${String(d2.getFullYear()).slice(-2)}`;}
 function fmtDate(d){return d.toISOString().slice(0,10);}
@@ -929,24 +943,29 @@ function tsStyle(type){
 }
 
 // Deadline chip
-function dlChip(mat,neededDate,weekDates,isOrdered){
-  if(isOrdered)return '<span class="dl-chip dl-ok">✅ Sudah Dipesan</span>';
-  // No deadline configured — show nothing
+function dlChip(mat,neededDate,weekDates,isOrdered,isReceived){
+  if(isReceived)return '<span class="dl-chip dl-ok">✅ Sudah Datang</span>';
   const st=mat.stockType||'normal';
-  const effDays=st==='h1'?1:(mat.days||0);
-  if(st==='normal'&&effDays<=0)return '';
   const td=today0();
-  let orderDate,label;
   if(st==='rapel'){
-    orderDate=weekDates[0]; // Monday of this week = order by previous Friday
-    // Show on Friday before
-    const fri=addDays(weekDates[0],-3);
-    orderDate=fri;
-    label=`📦 Rapel Mingguan — pesan ${fmtShort(fri)}`;
-  } else {
-    orderDate=addDays(neededDate,-effDays);
-    label=`⏰ Datang H-1 — pesan ${fmtShort(orderDate)}`;
+    if(isOrdered)return '<span class="dl-chip dl-ok">✅ Sudah Dipesan</span>';
+    const fri=addDays(weekDates[0],-3),sat=addDays(weekDates[0],-2),sun=addDays(weekDates[0],-1),mon=weekDates[0];
+    const label=`📦 Rapel Mingguan — pesan ${fmtShort(fri)}–${fmtShort(sun)}`;
+    if(td<fri)return `<span class="dl-chip dl-ok">${label}</span>`;
+    if(td<mon)return `<span class="dl-chip dl-today">${label} ← Pesan sekarang!</span>`;
+    const daysLate=Math.round((td-sun)/864e5);
+    return `<span class="dl-chip dl-late">⚠️ ${label} — TERLAMBAT ${daysLate}h</span>`;
   }
+  // Barang H-N: datang selalu H-1 sebelum dipakai. H-N = jarak pesan ke tanggal DATANG (bukan ke tanggal pakai).
+  const effDays=H_DAYS[st]||1;
+  const deliveryDate=addDays(neededDate,-1);
+  const orderDate=addDays(deliveryDate,-effDays);
+  const followUpDate=addDays(deliveryDate,-1);
+  if(isOrdered){
+    if(td>=followUpDate)return `<span class="dl-chip dl-today">📞 Follow up ke supplier — datang ${fmtShort(deliveryDate)}</span>`;
+    return `<span class="dl-chip dl-ok">✅ Sudah Dipesan — datang ${fmtShort(deliveryDate)}</span>`;
+  }
+  const label=`⏰ H-${effDays} — pesan ${fmtShort(orderDate)}`;
   const diff=Math.round((orderDate-td)/864e5);
   if(diff<0)return `<span class="dl-chip dl-late">⚠️ ${label} — TERLAMBAT ${-diff}h</span>`;
   if(diff===0)return `<span class="dl-chip dl-today">${label} ← HARI INI!</span>`;
@@ -1100,6 +1119,7 @@ function handleMenuKey(e,kitId,wk,day){
 //  ROUTING
 // ═══════════════════════════════════════
 let curPage='dashboard',curKitchen='',curWeek='',curDay=0,pesananWeek='',pesananDay=0,dashWeek='',menuWeek='',pesananView='hari',editItemId=null,jadwalMenuOpen=true,jadwalSummaryOpen=true,jadwalItemsOpen=true,pesananSummaryOpen=true;
+let dashKitchenOpen={},dashNotifOpen={};
 
 function navigate(page){
   curPage=page;
@@ -1131,20 +1151,54 @@ function renderCurrentPage(){
 // ═══════════════════════════════════════
 function getReminders(kitchenId,weekKey){
   const td=today0();
-  const result={overdue:[],today:[],soon:[]};
-  const weeks=[weekKey,getWeekKey(addDays(td,7))];
+  // poDue/poOverdue = kategori terpisah khusus Barang PO (rapel).
+  // followUp = bahan H-N yang SUDAH dipesan tapi belum datang, dan sudah masuk
+  // window "cek ke supplier" (H-1 sebelum tanggal datang).
+  const result={poDue:[],poOverdue:[],overdue:[],today:[],soon:[],followUp:[]};
+  const weeks=[...new Set([weekKey,getWeekKey(addDays(td,7))])];
   weeks.forEach(wk=>{
     const dates=getWeekDates(wk);
-    S.scheduleItems.filter(si=>si.weekKey===wk&&si.kitchenId===kitchenId&&!si.isOrdered).forEach(si=>{
+    const isCurrentWeek=wk===weekKey;
+    S.scheduleItems.filter(si=>si.weekKey===wk&&si.kitchenId===kitchenId).forEach(si=>{
       const mat=getMat(si.materialId);if(!mat)return;
       const neededDate=dates[si.day];
-      const effDays2=mat.stockType==='h1'?1:(mat.days||0);const orderDate=mat.stockType==='rapel'?addDays(dates[0],-3):addDays(neededDate,-effDays2);
-      const diff=Math.round((orderDate-td)/864e5);
       const kit=getKit(si.kitchenId);
-      const entry={...si,mat,neededDate,orderDate,kitchenName:kit?kit.name:'?'};
+
+      if(mat.stockType==='rapel'){
+        if(si.isOrdered)return; // Barang PO: sekali dipesan, selesai (tidak ada follow-up terpisah).
+        // Barang PO/rapel: window pesan Jumat–Sabtu–Minggu minggu sebelumnya (untuk kebutuhan Senin).
+        // Jumat, Sabtu, DAN Minggu = masih "hari ini/perlu dipesan" (belum terlambat).
+        // Baru mulai Senin (belum juga dipesan) = terlambat. Kategori ini SELALU terpisah
+        // dari overdue/today/soon biasa, ditampilkan sebagai section "Barang PO" sendiri.
+        const fri=addDays(dates[0],-3),sat=addDays(dates[0],-2),sun=addDays(dates[0],-1),mon=dates[0];
+        const entry={...si,mat,neededDate,orderDate:sun,kitchenName:kit?kit.name:'?'};
+        if(td<fri){/* belum masuk window notifikasi, jangan tampilkan dulu */}
+        else if(td<mon){result.poDue.push(entry);}
+        else{result.poOverdue.push({...entry,daysLate:Math.round((td-sun)/864e5)});}
+        return;
+      }
+
+      // Barang H-N (non-PO): hampir semua barang DATANG H-1 sebelum dipakai (tetap, semua stockType).
+      // Yang beda cuma jarak ORDER ke tanggal DATANG itu (H-1/H-2/H-3/H-4). Follow up ke supplier
+      // dilakukan H-1 sebelum tanggal datang, supaya sempat dicek/dikejar sebelum kedatangan.
+      const effDays2=H_DAYS[mat.stockType]||1;
+      const deliveryDate=addDays(neededDate,-1);
+      const orderDate=addDays(deliveryDate,-effDays2);
+      const followUpDate=addDays(deliveryDate,-1);
+
+      if(si.isOrdered){
+        if(si.isReceived)return; // sudah datang, tidak perlu direminder lagi
+        if(td>=followUpDate){
+          result.followUp.push({...si,mat,neededDate,deliveryDate,followUpDate,kitchenName:kit?kit.name:'?',daysSince:Math.max(0,Math.round((td-followUpDate)/864e5))});
+        }
+        return;
+      }
+
+      const diff=Math.round((orderDate-td)/864e5);
+      const entry={...si,mat,neededDate,orderDate,deliveryDate,kitchenName:kit?kit.name:'?'};
       if(diff<0)result.overdue.push({...entry,daysLate:-diff});
       else if(diff===0)result.today.push(entry);
-      else if(diff<=4)result.soon.push({...entry,daysUntil:diff});
+      else if(isCurrentWeek)result.soon.push({...entry,daysUntil:diff});
     });
   });
   return result;
@@ -1175,6 +1229,9 @@ function renderDashboard(){
     const r=getReminders(k.id,wk);
     r.today.forEach(x=>urgentToday.push({...x,kitName:k.name}));
     r.overdue.forEach(x=>urgentOverdue.push({...x,kitName:k.name}));
+    r.poDue.forEach(x=>urgentToday.push({...x,kitName:k.name}));
+    r.poOverdue.forEach(x=>urgentOverdue.push({...x,kitName:k.name}));
+    r.followUp.forEach(x=>urgentToday.push({...x,kitName:k.name}));
   });
   const totalUnordered=allWkItems.filter(s=>!s.isOrdered).length;
   const totalUnpaid=allWkItems.filter(s=>s.isOrdered&&!s.isPaid).length;
@@ -1210,32 +1267,55 @@ function renderDashboard(){
     const rem=getReminders(kit.id,wk);
 
     let reminderHtml='';
-    if(rem.overdue.length===0&&rem.today.length===0&&rem.soon.length===0){
+    const poCount=rem.poDue.length+rem.poOverdue.length;
+    if(poCount===0&&rem.overdue.length===0&&rem.today.length===0&&rem.soon.length===0&&rem.followUp.length===0){
       reminderHtml='<div class="alert success"><span class="ai">🔔</span><div><div class="at">Semua pesanan teratur</div><div class="ab">Tidak ada item yang perlu ditindaklanjuti.</div></div></div>';
     }
+    // Urutan berdasarkan prioritas urgensi: Terlambat dipesan → Perlu dipesan HARI INI →
+    // Barang PO → Follow Up ke Supplier → Segera dipesan minggu ini.
+    // Warna: merah = urgent, kuning = semi-urgent, hijau = tidak urgent.
     if(rem.overdue.length>0){
       const its=rem.overdue.map(r=>`<div class="ai-item"><span><b>${r.mat.name}</b> ${r.qty} ${r.mat.unit} (${DAYS[r.day]})</span><span class="kt">${r.daysLate}h terlambat</span></div>`).join('');
       reminderHtml+=`<div class="alert danger"><span class="ai">🚨</span><div><div class="at">Terlambat dipesan (${rem.overdue.length})</div><div class="ai-list">${its}</div></div></div>`;
     }
     if(rem.today.length>0){
       const its=rem.today.map(r=>`<div class="ai-item"><span><b>${r.mat.name}</b> ${r.qty} ${r.mat.unit} (${DAYS[r.day]})</span><span class="kt">Pesan sekarang!</span></div>`).join('');
-      reminderHtml+=`<div class="alert warning"><span class="ai">⏰</span><div><div class="at">Harus dipesan HARI INI (${rem.today.length})</div><div class="ai-list">${its}</div></div></div>`;
+      reminderHtml+=`<div class="alert danger"><span class="ai">⏰</span><div><div class="at">Perlu dipesan HARI INI (${rem.today.length})</div><div class="ai-list">${its}</div></div></div>`;
+    }
+    if(poCount>0){
+      // Barang PO (rapel): satu kategori sendiri, terpisah dari reminder harian biasa.
+      // Jumat–Minggu = "Perlu dipesan" (kuning/semi-urgent), Senin+ = "X hari terlambat" (merah/urgent).
+      const itsLate=rem.poOverdue.map(r=>`<div class="ai-item"><span><b>${r.mat.name}</b> ${r.qty} ${r.mat.unit} (${DAYS[r.day]})</span><span class="kt">${r.daysLate}h terlambat</span></div>`).join('');
+      const itsDue=rem.poDue.map(r=>`<div class="ai-item"><span><b>${r.mat.name}</b> ${r.qty} ${r.mat.unit} (${DAYS[r.day]})</span><span class="kt">Perlu dipesan</span></div>`).join('');
+      const poAlertClass=rem.poOverdue.length>0?'danger':'warning';
+      reminderHtml+=`<div class="alert ${poAlertClass}"><span class="ai">📦</span><div><div class="at">Barang PO (${poCount})</div><div class="ai-list">${itsLate}${itsDue}</div></div></div>`;
+    }
+    if(rem.followUp.length>0){
+      // Barang H-N yang sudah dipesan, sudah masuk window H-1 sebelum tanggal datang —
+      // waktunya cek/kejar ke supplier supaya kedatangannya sesuai jadwal.
+      const its=rem.followUp.map(r=>`<div class="ai-item"><span><b>${r.mat.name}</b> ${r.qty} ${r.mat.unit} (${DAYS[r.day]})</span><span class="kt">Datang ${fmtShort(r.deliveryDate)}</span></div>`).join('');
+      reminderHtml+=`<div class="alert warning"><span class="ai">📞</span><div><div class="at">Follow Up ke Supplier (${rem.followUp.length})</div><div class="ai-list">${its}</div></div></div>`;
     }
     if(rem.soon.length>0){
       const its=rem.soon.slice(0,5).map(r=>`<div class="ai-item"><span><b>${r.mat.name}</b> ${r.qty} ${r.mat.unit}</span><span class="kt">${r.daysUntil}h lagi</span></div>`).join('');
       const more=rem.soon.length>5?`<div style="font-size:11px;color:var(--mt);margin-top:4px">+${rem.soon.length-5} item lainnya</div>`:'';
-      reminderHtml+=`<div class="alert info"><span class="ai">📋</span><div><div class="at">Segera dipesan dalam 4 hari (${rem.soon.length})</div><div class="ai-list">${its}${more}</div></div></div>`;
+      reminderHtml+=`<div class="alert success"><span class="ai">📋</span><div><div class="at">Segera dipesan minggu ini (${rem.soon.length})</div><div class="ai-list">${its}${more}</div></div></div>`;
     }
 
+    const kitOpen=dashKitchenOpen[kit.id]!==false;
+    const notifOpen=dashNotifOpen[kit.id]!==false;
     html2+=`<div class="k-dash">
       <div class="k-dash-hdr">
         <div>
           <h3>🍳 ${kit.name}</h3>
           <div class="k-loc">📍 ${kit.location||'—'}</div>
         </div>
-        <button class="btn btn-ol btn-sm" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3);color:#fff" onclick="navigate('pesanan');document.getElementById('pesanan-kitchen').value='${kit.id}';pesananWeek=curWeek;renderPesanan()">Lihat Pesanan →</button>
+        <div style="display:flex;align-items:center;gap:6px">
+          <button class="btn btn-ol btn-sm" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3);color:#fff" onclick="navigate('pesanan');document.getElementById('pesanan-kitchen').value='${kit.id}';pesananWeek=curWeek;renderPesanan()">Lihat Pesanan →</button>
+          <button class="btn btn-ol btn-icon" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3);color:#fff;width:30px;height:30px;padding:0" onclick="toggleDashKitchen('${kit.id}')" title="${kitOpen?'Ciutkan dapur':'Buka dapur'}">${kitOpen?'▾':'▸'}</button>
+        </div>
       </div>
-      <div class="k-dash-body">
+      ${kitOpen?`<div class="k-dash-body">
         <div class="k-stat-row">
           <div class="k-stat"><div class="kv">${items.length}</div><div class="kl">Total Item</div></div>
           <div class="k-stat"><div class="kv" style="color:var(--gn)">${ordered}/${items.length}</div><div class="kl">Dipesan</div></div>
@@ -1246,14 +1326,20 @@ function renderDashboard(){
           <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--mt);margin-bottom:3px"><span>Progress Pemesanan</span><span>${ordPct}%</span></div>
           <div class="prog-bar"><div class="prog-fill" style="width:${ordPct}%"></div></div>
         </div>
-        ${items.length?`<div class="k-reminders">${reminderHtml}</div>`:'<div style="color:var(--mt);font-size:13px">Belum ada jadwal untuk minggu ini. <span style="cursor:pointer;color:var(--pr);font-weight:700" onclick="navigate(\'jadwal\')">Tambah Jadwal →</span></div>'}
-      </div>
+        <div onclick="toggleDashNotif('${kit.id}')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;${notifOpen?'margin-bottom:8px':''}">
+          <span style="font-size:12px;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.5px">Notifikasi</span>
+          <button class="day-menus-toggle" onclick="event.stopPropagation();toggleDashNotif('${kit.id}')" title="${notifOpen?'Ciutkan':'Buka'}">${notifOpen?'▾':'▸'}</button>
+        </div>
+        ${notifOpen?(items.length?`<div class="k-reminders">${reminderHtml}</div>`:'<div style="color:var(--mt);font-size:13px">Belum ada jadwal untuk minggu ini. <span style="cursor:pointer;color:var(--pr);font-weight:700" onclick="navigate(\'jadwal\')">Tambah Jadwal →</span></div>'):''}
+      </div>`:''}
     </div>`;
   });
   document.getElementById('dash-body').innerHTML=html+html2;
 }
 function changeDashWeek(dir){const d=getWeekDates(dashWeek);dashWeek=getWeekKey(addDays(d[0],dir*7));renderDashboard();}
 function goToDashThisWeek(){dashWeek=getDefaultWeek();renderDashboard();}
+function toggleDashKitchen(kid){dashKitchenOpen[kid]=dashKitchenOpen[kid]===false?true:false;renderDashboard();}
+function toggleDashNotif(kid){dashNotifOpen[kid]=dashNotifOpen[kid]===false?true:false;renderDashboard();}
 
 // ═══════════════════════════════════════
 //  JADWAL
@@ -1482,14 +1568,14 @@ function renderJadwalContent(){
             <div class="oi-meta">
               <span style="color:var(--tx);font-weight:500">${si.qty} ${m.unit}</span>
               <span style="color:var(--br)">·</span>
-              ${m.stockType==='rapel'?'<span class="badge bg-gn">Rapel</span>':m.stockType==='h1'?'<span class="badge bg-bl">H-1</span>':''}
+              ${m.stockType==='rapel'?'<span class="badge bg-gn">Rapel</span>':H_DAYS[m.stockType]?`<span class="badge bg-bl">H-${H_DAYS[m.stockType]}</span>`:''}
               ${hasDiff?`<span style="color:var(--or);font-size:11px">≠ master</span>`:''}
             </div>
           </div>
           <div class="oi-right">
             <div class="oi-price">${fmtRp(sub)}</div>
             <div style="font-size:11px;color:var(--mt)">${fmtRp(ep)}/${m.unit}</div>
-            ${dlChip(m,nd,dates,si.isOrdered)}
+            ${dlChip(m,nd,dates,si.isOrdered,si.isReceived)}
           </div>
           <button class="btn btn-ol btn-xs" onclick="editItem('${si.id}')" style="flex-shrink:0">✏️</button>
         </div>`;
@@ -1508,13 +1594,9 @@ function renderWeeklySummary(){
     const dayItems=S.scheduleItems.filter(s=>s.weekKey===curWeek&&s.kitchenId===curKitchen&&s.day===i);
     const dayTotal=dayItems.reduce((a,si)=>a+si.qty*effPrice(si),0);
     weekTotal+=dayTotal;
-    const total=dayItems.length;
+    const cnt=dayItems.length;
     const isToday=d.getTime()===td.getTime();
-    const isActive=i===curDay;
-    return `<div onclick="selectDay(${i})" style="flex:1;min-width:80px;padding:8px 10px;border-radius:10px;cursor:pointer;text-align:center;border:2px solid ${isActive?'var(--pr)':'var(--br)'};background:${isActive?'var(--prp)':'#fff'};transition:all .15s">
-      <div style="font-size:12px;font-weight:700;color:${isActive?'var(--pr)':'var(--mt)'}">${DAYS[i]}${isToday?' ★':''}</div>
-      <div style="font-size:11px;color:var(--mt);margin-top:2px">${total?`${total} item`:'—'}</div>
-    </div>`;
+    return `<div class="dtab${curDay===i?' active':''}" onclick="selectDay(${i})">${DAYS[i]}<span class="ds">${fmtShort(d)}${isToday?' ★':''} ${cnt?`(${cnt})`:'—'}</span></div>`;
   }).join('');
   const chevron=jadwalSummaryOpen?'▾':'▸';
   document.getElementById('jadwal-week-summary').innerHTML=`
@@ -1526,7 +1608,7 @@ function renderWeeklySummary(){
           <button class="day-menus-toggle" onclick="event.stopPropagation();toggleJadwalSummary()" title="${jadwalSummaryOpen?'Ciutkan':'Buka'}">${chevron}</button>
         </span>
       </div>
-      ${jadwalSummaryOpen?`<div style="display:flex;gap:7px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px">${dayCols}</div>`:''}
+      ${jadwalSummaryOpen?`<div class="dtabs" style="margin-bottom:0">${dayCols}</div>`:''}
     </div>`;
 }
 function onKitchenChange(){curKitchen=document.getElementById('jadwal-kitchen').value;renderWeeklySummary();renderDayTabs();renderJadwalContent();}
@@ -1580,15 +1662,24 @@ function onItemMaterialChange(existingPrice){
     hintEl.textContent=`Harga referensi master: ${fmtRp(m.price)}/${m.unit}. Isi jika harga aktual berbeda.`;
     if(existingPrice==null)document.getElementById('item-price').value='';
     const dates=getWeekDates(curWeek),nd=dates[curDay];
-    const st2=m.stockType||'normal';const effD2=st2==='h1'?1:(m.days||0);
-    if(st2!=='normal'||effD2>0){
-      const orderDate2=st2==='rapel'?addDays(dates[0],-3):addDays(nd,-effD2);
-      const td=today0(),diff=Math.round((orderDate2-td)/864e5);
-      let note=st2==='rapel'?`📦 Rapel Mingguan — pesan ${fmt(orderDate2)}`:`⏰ Datang H-1 — pesan ${fmt(orderDate2)}`;
+    const st2=m.stockType||'normal';
+    const td=today0();
+    let note='';
+    if(st2==='rapel'){
+      const fri=addDays(dates[0],-3),sat=addDays(dates[0],-2),sun=addDays(dates[0],-1),mon=dates[0];
+      note=`📦 Rapel Mingguan — pesan ${fmt(fri)}–${fmt(sun)}`;
+      if(td>=mon)note+=` <b style="color:var(--rd)">⚠️ Sudah terlambat!</b>`;
+      else if(td>=fri)note+=` <b style="color:var(--or)">← Pesan sekarang!</b>`;
+    } else {
+      const effD2=H_DAYS[st2]||1;
+      const deliveryDate2=addDays(nd,-1);
+      const orderDate2=addDays(deliveryDate2,-effD2);
+      const diff=Math.round((orderDate2-td)/864e5);
+      note=`⏰ H-${effD2} — pesan ${fmt(orderDate2)}, datang ${fmt(deliveryDate2)}`;
       if(diff<0)note+=` <b style="color:var(--rd)">⚠️ Sudah terlambat!</b>`;
       else if(diff===0)note+=` <b style="color:var(--or)">← Pesan hari ini!</b>`;
-      infoEl.innerHTML=note;infoEl.style.display='block';
-    } else {infoEl.style.display='none';}
+    }
+    infoEl.innerHTML=note;infoEl.style.display='block';
   } else {unitEl.value='';infoEl.style.display='none';hintEl.textContent='';}
 }
 // autocomplete replaces select — see filterMatSuggest()
@@ -1975,9 +2066,15 @@ function renderPesananByBahan(items,dates){
     const typeMenuKey2='bahan_'+type.replace(/\W/g,'_');
     const _tik2='tik_'+typeMenuKey2;
     window[_tik2]=typeAllIds;
+    const _bck='bc_'+typeMenuKey2;
+    window[_bck]={label:`${type} (Minggu Ini)`,items:typeMids.flatMap(mid=>{
+      const mm2=getMat(mid);if(!mm2)return[];
+      return matGroups[mid].map(s2=>({name:`${mm2.name} (${DAYS[s2.day]})`,qty:s2.qty,unit:mm2.unit,ord:s2.isOrdered}));
+    })};
     html+=`<div style="display:flex;align-items:center;gap:10px;margin:18px 0 8px">
       ${typeBadge(type,{size:"12px"})}
       <div style="flex:1;height:1px;background:var(--br)"></div>
+      <button onclick="copyTypeKey('${_bck}')" style="background:none;border:none;cursor:pointer;font-size:12px;opacity:.4;padding:0 2px" title="Copy">📋</button>
       <div style="position:relative;display:inline-block">
         <button onclick="toggleTypeMenu('${typeMenuKey2}')" style="background:none;border:1px solid var(--br);border-radius:6px;width:22px;height:22px;font-size:13px;cursor:pointer;color:var(--mt);display:inline-flex;align-items:center;justify-content:center;line-height:1" title="Aksi Massal">⋮</button>
         <div id="type-menu-${typeMenuKey2}" style="display:none;position:absolute;right:0;top:26px;background:#fff;border:1px solid var(--br);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.18);z-index:400;min-width:150px;overflow:hidden">
@@ -2164,15 +2261,16 @@ function renderMasterBarang(){
       <td><div style="display:inline-flex;align-items:center;gap:4px"><span style="font-size:13px;line-height:1;flex-shrink:0">${TYPE_EMOJI[m.type]||'📦'}</span>${buildTypeSelect('td-sel',m.type,m.id)}</div></td>
       <td>${buildUnitCell(m.id,m.unit)}</td>
       <td><input class="td-inp" type="number" value="${m.price}" min="0" step="500" onchange="updateMatField('${m.id}','price',this.value)" style="width:90px"></td>
-      <td class="mb-col-hide"><input class="td-inp" type="number" value="${m.days||0}" min="0" max="30" onchange="updateMatField('${m.id}','days',this.value)" style="width:52px"></td>
       <td class="mb-col-hide">
-        <select onchange="updateStockType('${m.id}',this.value)" style="width:auto;min-width:120px;padding:4px 8px;font-size:13px;border-radius:6px;border:1.5px solid var(--br);cursor:pointer;-webkit-appearance:auto;appearance:auto">
-          <option value="normal" ${(m.stockType||'normal')==='normal'?'selected':''}>Normal</option>
-          <option value="rapel" ${m.stockType==='rapel'?'selected':''}>📦 Rapel</option>
-          <option value="h1" ${m.stockType==='h1'?'selected':''}>⏰ H-1</option>
+        <select onchange="updateStockType('${m.id}',this.value)" style="width:auto;min-width:130px;padding:4px 8px;font-size:13px;border-radius:6px;border:1.5px solid var(--br);cursor:pointer;-webkit-appearance:auto;appearance:auto">
+          <option value="h1" ${(m.stockType||'h1')==='h1'?'selected':''}>⏰ H-1 (otomatis)</option>
+          <option value="h2" ${m.stockType==='h2'?'selected':''}>⏰ H-2 (otomatis)</option>
+          <option value="h3" ${m.stockType==='h3'?'selected':''}>⏰ H-3 (otomatis)</option>
+          <option value="h4" ${m.stockType==='h4'?'selected':''}>🍌 H-4 (otomatis)</option>
+          <option value="rapel" ${m.stockType==='rapel'?'selected':''}>📦 Rapel (Jumat mingguan)</option>
         </select>
       </td>
-      <td id="mat-act-${m.id}" style="text-align:right;white-space:nowrap;position:sticky;right:0;background:${hasSimilar?'#fffbeb':'#fff'};box-shadow:-2px 0 4px rgba(0,0,0,.04)">
+      <td id="mat-act-${m.id}" class="mb-act-cell" style="text-align:right;white-space:nowrap;position:sticky;right:0;background:${hasSimilar?'#fffbeb':'#fff'};box-shadow:-2px 0 4px rgba(0,0,0,.04)">
         <button class="btn-gh btn-xs mat-edit-btn" onclick="openEditMaterial('${m.id}')" title="Edit bahan">✏️</button>
       </td>
     </tr>`;
@@ -2218,12 +2316,12 @@ function populateMatUnitSelect(selId,curVal){
 }
 function openAddMaterial(){
   document.getElementById('mat-modal-title').textContent='Tambah Bahan Baku';
-  ['mat-id','mat-name','mat-price','mat-days'].forEach(id=>document.getElementById(id).value='');
+  ['mat-id','mat-name','mat-price'].forEach(id=>document.getElementById(id).value='');
   const _suppSel2=document.getElementById('mat-supplier');
   if(_suppSel2){_suppSel2.innerHTML=renderSupplierOptions('');_suppSel2.dataset.current='';}
   populateMatTypeSelect('mat-type','Karbohidrat');
   populateMatUnitSelect('mat-unit','kg');
-  document.getElementById('mat-stocktype').value='normal';
+  document.getElementById('mat-stocktype').value='h1';
   const _ph3=document.getElementById('mat-price-history');
   if(_ph3){_ph3.style.display='none';_ph3.innerHTML='';}
   openModal('modal-material');
@@ -2236,8 +2334,7 @@ function openEditMaterial(id){
   populateMatTypeSelect('mat-type',m.type||'Karbohidrat');
   populateMatUnitSelect('mat-unit',m.unit||'kg');
   document.getElementById('mat-price').value=m.price||0;
-  document.getElementById('mat-days').value=m.days??1;
-  document.getElementById('mat-stocktype').value=m.stockType||'normal';
+  document.getElementById('mat-stocktype').value=m.stockType||'h1';
   const _suppSel=document.getElementById('mat-supplier');
   if(_suppSel){_suppSel.innerHTML=renderSupplierOptions(m.supplierId||'');_suppSel.dataset.current=m.supplierId||'';}
   const _dmrE=document.getElementById('del-mat-row');if(_dmrE)_dmrE.style.display='block';
@@ -2264,8 +2361,7 @@ function saveMaterial(){
   const type=document.getElementById('mat-type').value;
   const unit=document.getElementById('mat-unit').value.trim();
   const price=parseInt(document.getElementById('mat-price').value)||0;
-  const days=parseInt(document.getElementById('mat-days').value)||1;
-  const stockType=document.getElementById('mat-stocktype').value||'normal';
+  const stockType=document.getElementById('mat-stocktype').value||'h1';
   const supplierId=document.getElementById('mat-supplier')?.value||null;
   if(!name||!unit){alert('Nama dan satuan wajib diisi.');return;}
   const id=document.getElementById('mat-id').value;
@@ -2273,10 +2369,10 @@ function saveMaterial(){
     const m=getMat(id);
     if(m){
       if(m.price&&m.price!==price){if(!m.priceHistory)m.priceHistory=[];m.priceHistory.push({price:m.price,date:fmtDate(new Date())});if(m.priceHistory.length>10)m.priceHistory=m.priceHistory.slice(-10);}
-      Object.assign(m,{name,type,unit,price,days,stockType,supplierId:supplierId||null});
+      Object.assign(m,{name,type,unit,price,stockType,supplierId:supplierId||null});
     }
   }
-  else S.materials.push({id:uid(),name,type,unit,price,days,stockType,supplierId:supplierId||null});
+  else S.materials.push({id:uid(),name,type,unit,price,stockType,supplierId:supplierId||null});
   save();closeModal('modal-material');renderMasterBarang();
 }
 function clearDays(id){
@@ -2375,7 +2471,7 @@ function copyMatFromRekap(matId){
 }
 function updateStockType(id,val){
   const m=getMat(id);if(!m)return;
-  m.stockType=val;save();
+  m.stockType=val;save();renderMasterBarang();
 }
 function updateMatField(id,field,val){
   const m=getMat(id);if(!m)return;
@@ -3427,7 +3523,7 @@ function processImport(){
     if(!m){
       m=newMats.find(nm=>nm.name.toLowerCase()===finalName.toLowerCase());
       if(!m){
-        const autoStockType=DRY_TYPES.includes(typeToUse)?'rapel':'normal';
+        const autoStockType=DRY_TYPES.includes(typeToUse)?'rapel':'h1';
         m={id:uid(),name:finalName,type:typeToUse,unit:unit||'unit',price:price||0,days:0,stockType:autoStockType};
         newMats.push(m);
       }
@@ -3587,6 +3683,18 @@ function migrateState(state){
     if(!state.suppliers)state.suppliers=[];
     (state.materials||[]).forEach(m=>{if(m.supplierId===undefined)m.supplierId=null;});
     state._v=8;
+  }
+  if(state._v<9){
+    // v9: Tipe Stok "Manual" (custom H- angka bebas) dihapus, diganti preset H-1/H-2/H-3/H-4 saja.
+    // Bahan lama yang masih 'normal' (atau belum ada stockType) dikonversi ke preset terdekat
+    // berdasarkan nilai H- lama-nya (dibulatkan ke rentang 1-4).
+    (state.materials||[]).forEach(m=>{
+      if(!m.stockType||m.stockType==='normal'){
+        const d=m.days&&m.days>0?m.days:1;
+        m.stockType=d<=1?'h1':d===2?'h2':d===3?'h3':'h4';
+      }
+    });
+    state._v=9;
   }
   return state;
 }
