@@ -357,7 +357,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div class="nav-item" onclick="navigate('master-barang')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1L14.5 4.5V11.5L8 15L1.5 11.5V4.5L8 1Z"/><path d="M1.5 4.5L8 8L14.5 4.5"/><path d="M8 8V15"/></svg></span>Master Barang</div>
     <div class="nav-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M1 7l2-5h10l2 5"/><path d="M6 15V11h4v4"/><path d="M1 7h14"/></svg></span>Master Dapur</div>
   </nav>
-  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260712-v32</div>
+  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260716-v34</div>
 </aside>
 
 <!-- MOBILE HEADER -->
@@ -2821,25 +2821,47 @@ let IMP={wb:null,step:1,headers:[],rows:[],structure:'A',mapping:{},selectedShee
 // Robust day-name extractor: handles "Senin, 8 Juni 2026", " Jum'at, 12 Juni 2026", "senin", etc.
 // Parse date string (Indonesian or ISO) → JS Date or null
 function parseDateFromRaw(raw){
-  const s=String(raw||'').trim();
+  let s=String(raw??'').trim();
   if(!s)return null;
-  // Excel serial number (numeric date)
-  const num=parseFloat(s);
-  if(!isNaN(num)&&num>40000&&num<60000){
-    const d=new Date((num-25569)*86400*1000);
+  if(/^\d+(\.\d+)?$/.test(s)){
+    const num=parseFloat(s);
+    if(num>25569&&num<80000){
+      const d=new Date(Math.round((num-25569)*86400*1000));
+      if(!isNaN(d.getTime()))return d;
+    }
+  }
+  const dayPart="senin|sen|selasa|sel|rabu|rab|kamis|kam|jum'?at|jumaat|jum|jmt|sabtu|sab|minggu|ming|min|ahad";
+  s=s.replace(new RegExp('^(?:'+dayPart+')\\s*[,.\\-:]?\\s*','i'),'');
+  s=s.replace(new RegExp('\\s*[,.\\-:]?\\s*(?:'+dayPart+')$','i'),'');
+  s=s.trim();
+  if(!s)return null;
+  const IDmonth={'januari':0,'january':0,'jan':0,'februari':1,'february':1,'feb':1,'maret':2,'march':2,'mar':2,'april':3,'apr':3,'mei':4,'may':4,'juni':5,'june':5,'jun':5,'juli':6,'july':6,'jul':6,'agustus':7,'august':7,'agt':7,'aug':7,'september':8,'sep':8,'sept':8,'oktober':9,'october':9,'okt':9,'oct':9,'november':10,'nov':10,'desember':11,'december':11,'des':11,'dec':11};
+  const yr=y=>{const n=+y;return n<100?(n<70?2000+n:1900+n):n;};
+  let m=s.match(/^(\d{1,2})[\s\-.\/]+([a-zA-Z]+)\.?,?[\s\-.\/]+(\d{2,4})$/);
+  if(m){const mo=IDmonth[m[2].toLowerCase()];if(mo!==undefined){const d=new Date(yr(m[3]),mo,+m[1]);if(!isNaN(d.getTime()))return d;}}
+  m=s.match(/^([a-zA-Z]+)\.?[\s\-.\/]+(\d{1,2}),?[\s\-.\/]+(\d{2,4})$/);
+  if(m){const mo=IDmonth[m[1].toLowerCase()];if(mo!==undefined){const d=new Date(yr(m[3]),mo,+m[2]);if(!isNaN(d.getTime()))return d;}}
+  m=s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/);
+  if(m){const d=new Date(+m[1],+m[2]-1,+m[3]);if(!isNaN(d.getTime()))return d;}
+  m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if(m){
+    let a=+m[1],b=+m[2];
+    const y=yr(m[3]);
+    let day,month;
+    if(a>12){day=a;month=b;}
+    else if(b>12){day=b;month=a;}
+    else{day=a;month=b;}
+    const d=new Date(y,month-1,day);
     if(!isNaN(d.getTime()))return d;
   }
-  const IDmonth={'januari':0,'februari':1,'maret':2,'april':3,'mei':4,'juni':5,'juli':6,'agustus':7,'september':8,'oktober':9,'november':10,'desember':11,'jan':0,'feb':1,'mar':2,'apr':3,'jun':5,'jul':6,'agt':7,'aug':7,'sep':8,'okt':9,'nov':10,'des':11};
-  // "D/DD Bulan YYYY"
-  const m1=s.match(/^(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})$/);
-  if(m1){const mo=IDmonth[m1[2].toLowerCase()];if(mo!==undefined){const d=new Date(+m1[3],mo,+m1[1]);if(!isNaN(d.getTime()))return d;}}
-  // "DD/MM/YYYY"
-  const m2=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if(m2){const d=new Date(+m2[3],+m2[2]-1,+m2[1]);if(!isNaN(d.getTime()))return d;}
-  // "YYYY-MM-DD"
-  const m3=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if(m3){const d=new Date(+m3[1],+m3[2]-1,+m3[3]);if(!isNaN(d.getTime()))return d;}
   return null;
+}
+function parseDayNameOnly(raw){
+  const s=String(raw??'').trim().toLowerCase().replace(/[,.\-:]+$/,'').trim();
+  if(!s)return -1;
+  const map=[['senin',0],['sen',0],['selasa',1],['sel',1],['rabu',2],['rab',2],['kamis',3],['kam',3],["jum'at",4],['jumat',4],['jumaat',4],['jum',4],['jmt',4]];
+  for(const[name,idx]of map){if(s===name)return idx;}
+  return -1;
 }
 
 function parseDayIdx(raw){
@@ -3397,7 +3419,8 @@ function tryFlattenDailyBlockFormat(raw){
     const c0x=r[0];
     if(!norm(c0x))return false;
     const d=parseBlockDate(c0x);
-    return d&&!isNaN(d.getTime());
+    if(d&&!isNaN(d.getTime()))return true;
+    return parseDayNameOnly(c0x)>=0;
   });
   if(!hasStandaloneDateRow)return null;
 
@@ -3422,10 +3445,17 @@ function tryFlattenDailyBlockFormat(raw){
       if(skipLabels.includes(c0.toLowerCase()))return;
       if(c0){
         const d=parseBlockDate(c0raw);
-        // Kalau berhasil di-parse jadi tanggal valid, normalisasi ke "D Bulan YYYY".
-        // Kalau tidak (format aneh/tidak dikenali), tetap pakai teks apa adanya
-        // supaya HARI tidak pernah kosong.
-        curDate=(d&&!isNaN(d.getTime()))?`${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`:c0;
+        if(d&&!isNaN(d.getTime())){
+          curDate=`${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+        } else {
+          const dayIdx=parseDayNameOnly(c0raw);
+          if(dayIdx>=0){
+            const wkD=getWeekDates(getDefaultWeek())[dayIdx];
+            curDate=`${wkD.getDate()} ${MONTHS[wkD.getMonth()]} ${wkD.getFullYear()}`;
+          } else {
+            curDate=c0;
+          }
+        }
         curMenu=null;
         if(!menusByDate[curDate])menusByDate[curDate]=[];
       }
