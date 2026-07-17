@@ -357,7 +357,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div class="nav-item" onclick="navigate('master-barang')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1L14.5 4.5V11.5L8 15L1.5 11.5V4.5L8 1Z"/><path d="M1.5 4.5L8 8L14.5 4.5"/><path d="M8 8V15"/></svg></span>Master Barang</div>
     <div class="nav-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M1 7l2-5h10l2 5"/><path d="M6 15V11h4v4"/><path d="M1 7h14"/></svg></span>Master Dapur</div>
   </nav>
-  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260716-v34</div>
+  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260717-v35</div>
 </aside>
 
 <!-- MOBILE HEADER -->
@@ -609,6 +609,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
         <option value="">— Pilih Supplier —</option>
       </select>
       <div class="fh">Tambah supplier lewat ⋮ Lainnya → Kelola Supplier</div>
+    </div>
+    <div class="fg" style="margin-bottom:12px">
+      <label class="fl">Catatan <span style="font-weight:400;color:var(--mt)">— opsional, cth: ukuran/varian</span></label>
+      <input type="text" id="mat-notes" placeholder="cth: Potong 10, Besar">
     </div>
     <div id="del-mat-row" style="display:none;margin-bottom:4px">
       <button class="btn" onclick="deleteMaterialFromModal()" style="width:100%;color:#ef4444;border:1.5px solid #ef4444;background:#fff5f5;font-weight:700">🗑 Hapus Bahan Baku</button>
@@ -2004,8 +2008,6 @@ function renderPesananByHari(items,dates){
             const nameStyle=ord?'text-decoration:line-through;color:#94a3b8':'font-weight:600';
             const qtyStyle=ord?'color:#94a3b8':'color:var(--tx)';
             const rowBg=paid?'background:#f0fdf4':recv?'background:#fef9c3':ord?'background:#fafafa':'';
-            const detOpen=_detailOpen[si.id];
-            const hasNotes=si.notes&&si.notes.trim();
             html+=`<div style="border-top:1px solid var(--br)">`;
             html+=`<div style="display:flex;align-items:center;padding:9px 16px 9px 32px;gap:6px;flex-wrap:nowrap;${rowBg}">
               <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;${nameStyle}">${m.name}</span>
@@ -2020,10 +2022,6 @@ function renderPesananByHari(items,dates){
                   :`<button class="sc ${paid?'sc-bayar':'sc-off'}" onclick="togglePaid('${si.id}',${!paid})">${paid?'✓ Bayar':'Bayar'}</button>`
                 ):''
               }
-              <button onclick="toggleItemDetail('${si.id}')" style="background:none;border:none;cursor:pointer;font-size:13px;color:${hasNotes?'var(--or)':'#cbd5e1'};padding:2px 4px;flex-shrink:0;line-height:1" title="Catatan">${hasNotes?'📝':'⋮'}</button>
-            </div>`;
-            if(detOpen)html+=`<div style="background:#f8fafc;padding:8px 16px 8px 32px;border-top:1px solid var(--br)">
-              <textarea rows="2" placeholder="Catatan pesanan..." style="width:100%;font-size:12px;border:1px solid var(--br);border-radius:6px;padding:5px 8px;resize:none;font-family:inherit;background:#fff" onblur="updateItemNotes('${si.id}',this.value)">${si.notes||''}</textarea>
             </div>`;
             html+=`</div>`;
           });
@@ -2122,8 +2120,6 @@ function renderPesananByBahan(items,dates){
 
       sis.sort((a,b)=>a.day-b.day).forEach(si=>{
         const nd=dates[si.day];const ord=si.isOrdered;const paid=si.isPaid;const recv=si.isReceived||false;
-        const detOpen=_detailOpen[si.id];
-        const hasNotes=si.notes&&si.notes.trim();
         const _rowBg2=paid?'background:#f0fdf4':recv?'background:#fef9c3':ord?'background:#fafafa':'';
         html+=`<div style="border-top:1px solid var(--br)">`;
         html+=`<div class="mg-sub-row" style="${_rowBg2}">
@@ -2140,11 +2136,7 @@ function renderPesananByBahan(items,dates){
                 :`<button class="sc ${paid?'sc-bayar':'sc-off'}" onclick="togglePaid('${si.id}',${!paid})">${paid?'✓ Bayar':'Bayar'}</button>`
               ):''
             }
-            <button onclick="toggleItemDetail('${si.id}')" style="background:none;border:none;cursor:pointer;font-size:13px;color:${hasNotes?'var(--or)':'#cbd5e1'};padding:2px 4px;flex-shrink:0;line-height:1" title="Catatan">${hasNotes?'📝':'⋮'}</button>
           </div>
-        </div>`;
-        if(detOpen)html+=`<div style="background:#f8fafc;padding:8px 16px;border-top:1px solid var(--br)">
-          <textarea rows="2" placeholder="Catatan pesanan..." style="width:100%;font-size:12px;border:1px solid var(--br);border-radius:6px;padding:5px 8px;resize:none;font-family:inherit;background:#fff" onblur="updateItemNotes('${si.id}',this.value)">${si.notes||''}</textarea>
         </div>`;
         html+=`</div>`;
       });
@@ -2275,6 +2267,7 @@ function renderMasterBarang(){
           ${hasSimilar?`<span class="badge bg-yw" style="cursor:pointer" onclick="openMergeModal('${m.id}')" title="Mirip: ${similarTo}">⚠️ Mirip</span><span class="badge bg-gr" style="cursor:pointer;font-size:10px" onclick="ignoreMatPair('${m.id}','${ignoreIds[0]||''}')">Abaikan</span>`:''}
           ${(()=>{const _s=getSupp(m.supplierId);return _s?`<span style="font-size:10px;color:#6b21a8;background:#f3e8ff;border:1px solid #c084fc;border-radius:99px;padding:1px 7px;white-space:nowrap">🏪 ${_s.name}</span>`:''})()}
         </div>
+        ${m.notes?`<div style="font-size:11px;color:#888;font-style:italic;margin-top:2px">📝 ${m.notes}</div>`:''}
       </td>
       <td><div style="display:inline-flex;align-items:center;gap:4px"><span style="font-size:13px;line-height:1;flex-shrink:0">${TYPE_EMOJI[m.type]||'📦'}</span>${buildTypeSelect('td-sel',m.type,m.id)}</div></td>
       <td>${buildUnitCell(m.id,m.unit)}</td>
@@ -2334,7 +2327,7 @@ function populateMatUnitSelect(selId,curVal){
 }
 function openAddMaterial(){
   document.getElementById('mat-modal-title').textContent='Tambah Bahan Baku';
-  ['mat-id','mat-name','mat-price'].forEach(id=>document.getElementById(id).value='');
+  ['mat-id','mat-name','mat-price','mat-notes'].forEach(id=>document.getElementById(id).value='');
   const _suppSel2=document.getElementById('mat-supplier');
   if(_suppSel2){_suppSel2.innerHTML=renderSupplierOptions('');_suppSel2.dataset.current='';}
   populateMatTypeSelect('mat-type','Karbohidrat');
@@ -2353,6 +2346,7 @@ function openEditMaterial(id){
   populateMatUnitSelect('mat-unit',m.unit||'kg');
   document.getElementById('mat-price').value=m.price||0;
   document.getElementById('mat-stocktype').value=m.stockType||'h1';
+  document.getElementById('mat-notes').value=m.notes||'';
   const _suppSel=document.getElementById('mat-supplier');
   if(_suppSel){_suppSel.innerHTML=renderSupplierOptions(m.supplierId||'');_suppSel.dataset.current=m.supplierId||'';}
   const _dmrE=document.getElementById('del-mat-row');if(_dmrE)_dmrE.style.display='block';
@@ -2381,16 +2375,17 @@ function saveMaterial(){
   const price=parseInt(document.getElementById('mat-price').value)||0;
   const stockType=document.getElementById('mat-stocktype').value||'h1';
   const supplierId=document.getElementById('mat-supplier')?.value||null;
+  const notes=document.getElementById('mat-notes').value.trim();
   if(!name||!unit){alert('Nama dan satuan wajib diisi.');return;}
   const id=document.getElementById('mat-id').value;
   if(id){
     const m=getMat(id);
     if(m){
       if(m.price&&m.price!==price){if(!m.priceHistory)m.priceHistory=[];m.priceHistory.push({price:m.price,date:fmtDate(new Date())});if(m.priceHistory.length>10)m.priceHistory=m.priceHistory.slice(-10);}
-      Object.assign(m,{name,type,unit,price,stockType,supplierId:supplierId||null});
+      Object.assign(m,{name,type,unit,price,stockType,supplierId:supplierId||null,notes});
     }
   }
-  else S.materials.push({id:uid(),name,type,unit,price,stockType,supplierId:supplierId||null});
+  else S.materials.push({id:uid(),name,type,unit,price,stockType,supplierId:supplierId||null,notes});
   save();closeModal('modal-material');renderMasterBarang();
 }
 function clearDays(id){
@@ -3564,7 +3559,7 @@ function processImport(){
     return reviewLookup[key]||{finalName:capitalizeWords(rawName),finalType:autoDetectType(rawName)};
   }
 
-  function findOrCreateMat(rawName,rawType,unit,price){
+  function findOrCreateMat(rawName,rawType,unit,price,autoNotes){
     const{finalName,finalType}=resolveName(rawName);
     const typeToUse=finalType||rawType||autoDetectType(finalName)||'Lainnya';
     let m=S.materials.find(mat=>mat.name.toLowerCase()===finalName.toLowerCase());
@@ -3575,6 +3570,13 @@ function processImport(){
         m={id:uid(),name:finalName,type:typeToUse,unit:unit||'unit',price:price||0,days:0,stockType:autoStockType};
         newMats.push(m);
       }
+    }
+    // Catatan otomatis dari nama bahan di Excel (mis. "Wortel Besar" atau
+    // "Ayam (Paha Potong 10)") langsung ditempel ke Master Barang supaya
+    // tidak ketinggalan saat dicopas ke supplier.
+    if(autoNotes){
+      if(!m.notes)m.notes=autoNotes;
+      else if(!m.notes.toLowerCase().includes(autoNotes.toLowerCase()))m.notes+=', '+autoNotes;
     }
     return m;
   }
@@ -3592,8 +3594,8 @@ function processImport(){
       const parsedDate=parseDateFromRaw(hariRaw);
       const itemWeekKey=parsedDate?getWeekKey(parsedDate):weekKey;
       const{baseName:_bn,autoNotes:_an}=parseItemName(name);
-      const m=findOrCreateMat(_bn,type,unit,price);
-      newItems.push({id:uid(),kitchenId:kitId,weekKey:itemWeekKey,day:dayIdx,materialId:m.id,qty,unitPrice:price||null,isOrdered:false,orderedAt:null,isPaid:false,paidAt:null,notes:_an});
+      const m=findOrCreateMat(_bn,type,unit,price,_an);
+      newItems.push({id:uid(),kitchenId:kitId,weekKey:itemWeekKey,day:dayIdx,materialId:m.id,qty,unitPrice:price||null,isOrdered:false,orderedAt:null,isPaid:false,paidAt:null});
     });
   } else {
     // Structure B: days as columns
@@ -3609,10 +3611,10 @@ function processImport(){
       const unit=satuanIdx>=0?String(row[satuanIdx]||'').trim():'';
       const price=hargaIdx>=0?parseFloat(row[hargaIdx])||0:0;
       const{baseName:_bn2,autoNotes:_an2}=parseItemName(name);
-      const m=findOrCreateMat(_bn2,type,unit,price);
+      const m=findOrCreateMat(_bn2,type,unit,price,_an2);
       dayIdxMap.forEach(({ci,di})=>{
         const qty=parseFloat(row[ci])||0;if(qty<=0)return;
-        newItems.push({id:uid(),kitchenId:kitId,weekKey,day:di,materialId:m.id,qty,unitPrice:price||null,isOrdered:false,orderedAt:null,isPaid:false,paidAt:null,notes:_an2});
+        newItems.push({id:uid(),kitchenId:kitId,weekKey,day:di,materialId:m.id,qty,unitPrice:price||null,isOrdered:false,orderedAt:null,isPaid:false,paidAt:null});
       });
     });
   }
@@ -3744,6 +3746,19 @@ function migrateState(state){
     });
     state._v=9;
   }
+  if(state._v<10){
+    // v10: Fitur "Catatan" per baris di Jadwal/Pesanan dihapus, dipindah jadi
+    // catatan per Bahan Baku di Master Barang (supaya tidak ketinggalan saat
+    // dicopas ke supplier). Catatan lama yang masih nyantol di scheduleItems
+    // dipindahkan dulu ke Master Barang kalau bahan itu belum punya catatan.
+    (state.scheduleItems||[]).forEach(s=>{
+      if(s.notes&&s.notes.trim()){
+        const m=(state.materials||[]).find(x=>x.id===s.materialId);
+        if(m&&!m.notes)m.notes=s.notes.trim();
+      }
+    });
+    state._v=10;
+  }
   return state;
 }
 
@@ -3857,12 +3872,6 @@ function scheduleMatDeact(id,e){
     if(row&&!row.contains(document.activeElement))deactivateMatRow(id);
   },100);
 }
-let _detailOpen={};
-function toggleItemDetail(id){_detailOpen[id]=!_detailOpen[id];renderPesanan();}
-function updateItemNotes(id,val){
-  const si=S.scheduleItems.find(s=>s.id===id);
-  if(si){si.notes=val;save();}
-}
 function toggleConfirmed(id,val){
   const si=S.scheduleItems.find(s=>s.id===id);
   if(si){si.isConfirmed=val;if(!val)si.isReceived=false;save();renderPesanan();}
@@ -3896,7 +3905,7 @@ function copyRekapWA(){
       const _ws=getSupp(m.supplierId);
       txt+=(si.isOrdered?'✅':'⬜')+' '+(TYPE_EMOJI[m.type]||'•')+' '+m.name+': '+si.qty+' '+m.unit;
       if(_ws)txt+=' ['+_ws.name+']';
-      if(si.notes&&si.notes.trim())txt+=' _('+si.notes.trim()+'_)';
+      if(m.notes&&m.notes.trim())txt+=' _('+m.notes.trim()+'_)';
       txt+='\n';
     }));
     txt+='\n';
@@ -3930,7 +3939,7 @@ function printRekap(){
     sorted.forEach(typ=>byType[typ].forEach(({si,m},idx)=>{
       body+='<tr style="background:'+(idx%2?'#fff':'#f9f9f9')+'">';
       body+='<td style="padding:6px 10px;border-bottom:1px solid #eee;font-size:15px;width:24px">'+(TYPE_EMOJI[m.type]||'📦')+'</td>';
-      body+='<td style="padding:6px 4px;border-bottom:1px solid #eee;font-size:13px;font-weight:500">'+m.name+(si.notes?'<br><span style="font-size:11px;color:#888;font-style:italic">'+si.notes+'</span>':'')+'</td>';
+      body+='<td style="padding:6px 4px;border-bottom:1px solid #eee;font-size:13px;font-weight:500">'+m.name+(m.notes?'<br><span style="font-size:11px;color:#888;font-style:italic">'+m.notes+'</span>':'')+'</td>';
       body+='<td style="padding:6px 10px;border-bottom:1px solid #eee;font-size:13px;font-weight:700;text-align:right;white-space:nowrap">'+si.qty+' '+m.unit+'</td>';
       body+='<td style="padding:6px 10px;border-bottom:1px solid #eee;font-size:12px;color:#666;text-align:right">'+(m.price||si.unitPrice?fmtRp(si.qty*(si.unitPrice||m.price||0)):'')+'</td>';
       body+='<td style="padding:6px 10px;border-bottom:1px solid #eee;width:20px"><input type="checkbox"'+(si.isOrdered?' checked':'')+' style="width:16px;height:16px"></td>';
