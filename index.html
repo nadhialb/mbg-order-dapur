@@ -357,7 +357,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div class="nav-item" onclick="navigate('master-barang')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1L14.5 4.5V11.5L8 15L1.5 11.5V4.5L8 1Z"/><path d="M1.5 4.5L8 8L14.5 4.5"/><path d="M8 8V15"/></svg></span>Master Barang</div>
     <div class="nav-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M1 7l2-5h10l2 5"/><path d="M6 15V11h4v4"/><path d="M1 7h14"/></svg></span>Master Dapur</div>
   </nav>
-  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260717-v35</div>
+  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260717-v36</div>
 </aside>
 
 <!-- MOBILE HEADER -->
@@ -1586,7 +1586,7 @@ function renderJadwalContent(){
         const hasDiff=si.unitPrice!=null&&si.unitPrice!==m.price;
         html+=`<div class="oi" style="border-left-color:${typeColor(m.type)}">
           <div class="oi-info">
-            <div class="oi-name">${m.name}</div>
+            <div class="oi-name">${m.name}${m.notes?` <span style="font-weight:400;color:#888;font-style:italic;font-size:11px">(${m.notes})</span>`:''}</div>
             <div class="oi-meta">
               <span style="color:var(--tx);font-weight:500">${si.qty} ${m.unit}</span>
               <span style="color:var(--br)">·</span>
@@ -2023,6 +2023,7 @@ function renderPesananByHari(items,dates){
                 ):''
               }
             </div>`;
+            if(m.notes)html+=`<div style="padding:2px 16px 6px 32px;font-size:11px;color:#888;font-style:italic">📝 ${m.notes}</div>`;
             html+=`</div>`;
           });
         }
@@ -2110,7 +2111,7 @@ function renderPesananByBahan(items,dates){
 
       html+=`<div class="mg" style="border-left-color:${typeColor(m.type)}">
         <div class="mg-hdr">
-          <div class="mg-name">${m.name}</div>
+          <div class="mg-name">${m.name}${m.notes?` <span style="font-weight:400;color:#888;font-style:italic;font-size:12px">(${m.notes})</span>`:''}</div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             ${multiDay?`<span class="badge bg-bl">${sis.length} Hari</span>`:''}
             <span style="font-weight:800;color:var(--pr)">${totalQty} ${m.unit} total</span>
