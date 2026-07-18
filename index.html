@@ -357,7 +357,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div class="nav-item" onclick="navigate('master-barang')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1L14.5 4.5V11.5L8 15L1.5 11.5V4.5L8 1Z"/><path d="M1.5 4.5L8 8L14.5 4.5"/><path d="M8 8V15"/></svg></span>Master Barang</div>
     <div class="nav-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M1 7l2-5h10l2 5"/><path d="M6 15V11h4v4"/><path d="M1 7h14"/></svg></span>Master Dapur</div>
   </nav>
-  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260717-v37</div>
+  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260718-v38</div>
 </aside>
 
 <!-- MOBILE HEADER -->
@@ -2018,6 +2018,7 @@ function renderPesananByHari(items,dates){
                   :`<button class="sc ${paid?'sc-bayar':'sc-off'}" onclick="togglePaid('${si.id}',${!paid})">${paid?'✓ Bayar':'Bayar'}</button>`
                 ):''
               }
+              <button onclick="copySingleItem('${si.id}')" style="background:none;border:none;cursor:pointer;font-size:12px;opacity:.4;padding:2px 3px;flex-shrink:0;line-height:1" title="Copy">📋</button>
             </div>`;
             html+=`</div>`;
           });
@@ -2079,9 +2080,21 @@ function renderPesananByBahan(items,dates){
     const _tik2='tik_'+typeMenuKey2;
     window[_tik2]=typeAllIds;
     const _bck='bc_'+typeMenuKey2;
-    window[_bck]={label:`${type} (Minggu Ini)`,items:typeMids.flatMap(mid=>{
-      const mm2=getMat(mid);if(!mm2)return[];
-      return matGroups[mid].map(s2=>({name:`${mm2.name} (${DAYS[s2.day]})`,qty:s2.qty,unit:mm2.unit,ord:s2.isOrdered}));
+    const _dayGroups={};
+    typeMids.forEach(mid=>{
+      const mm2=getMat(mid);if(!mm2)return;
+      matGroups[mid].forEach(s2=>{
+        if(!_dayGroups[s2.day])_dayGroups[s2.day]=[];
+        _dayGroups[s2.day].push({name:mm2.name,qty:s2.qty,unit:mm2.unit,ord:s2.isOrdered});
+      });
+    });
+    const _sortedDays=Object.keys(_dayGroups).map(Number).sort((a,b)=>a-b);
+    window[_bck]={groups:_sortedDays.map(di=>{
+      const _delivDate=addDays(dates[di],-1);
+      const _ddn=ALL_DAYS[_delivDate.getDay()];
+      const _dd=String(_delivDate.getDate()).padStart(2,'0');
+      const _mm=String(_delivDate.getMonth()+1).padStart(2,'0');
+      return{label:`Pengiriman ${_ddn} ${_dd}/${_mm}`,items:_dayGroups[di]};
     })};
     html+=`<div style="display:flex;align-items:center;gap:10px;margin:18px 0 8px">
       ${typeBadge(type,{size:"12px"})}
@@ -2132,6 +2145,7 @@ function renderPesananByBahan(items,dates){
                 :`<button class="sc ${paid?'sc-bayar':'sc-off'}" onclick="togglePaid('${si.id}',${!paid})">${paid?'✓ Bayar':'Bayar'}</button>`
               ):''
             }
+            <button onclick="copySingleItem('${si.id}')" style="background:none;border:none;cursor:pointer;font-size:12px;opacity:.4;padding:2px 3px;flex-shrink:0;line-height:1" title="Copy">📋</button>
           </div>
         </div>`;
         html+=`</div>`;
@@ -2452,11 +2466,30 @@ function copyPesananByHari(){
 }
 function copyTypeKey(key){
   const d=window[key];if(!d)return;
-  let txt=`${d.label}\n`;
-  d.items.forEach(item=>{
-    txt+=`• ${item.name} ${item.qty} ${item.unit}${item.ord?' ✅':''}\n`;
-  });
+  let txt='';
+  if(d.groups){
+    d.groups.forEach(g=>{
+      txt+=`${g.label}\n`;
+      g.items.forEach(item=>{txt+=`• ${item.name} ${item.qty} ${item.unit}${item.ord?' ✅':''}\n`;});
+      txt+='\n';
+    });
+  } else {
+    txt+=`${d.label}\n`;
+    d.items.forEach(item=>{txt+=`• ${item.name} ${item.qty} ${item.unit}${item.ord?' ✅':''}\n`;});
+  }
   copyText(txt.trim());
+}
+function copySingleItem(id){
+  const si=S.scheduleItems.find(s=>s.id===id);if(!si)return;
+  const m=getMat(si.materialId);if(!m)return;
+  const dts=getWeekDates(si.weekKey);
+  const nd=dts[si.day];if(!nd)return;
+  const delivDate=addDays(nd,-1);
+  const ddn=ALL_DAYS[delivDate.getDay()];
+  const dd=String(delivDate.getDate()).padStart(2,'0');
+  const mm=String(delivDate.getMonth()+1).padStart(2,'0');
+  const txt=`Pengiriman ${ddn} ${dd}/${mm}\n• ${m.name} ${si.qty} ${m.unit}${si.isOrdered?' ✅':''}`;
+  copyText(txt);
 }
 function copyMatFromRekap(matId){
   const kid=document.getElementById('pesanan-kitchen')?.value||curKitchen;
