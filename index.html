@@ -332,6 +332,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
 .sc-bayar{background:#fef9c3;border-color:#c49a00;color:#854d0e}
 .sc-konfirm{background:#f3e8ff;border-color:#c084fc;color:#6b21a8}
 .sc-terima{background:#dcfce7;border-color:#4ade80;color:#166534}
+.sc-mini{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;min-width:22px;border-radius:99px;border:1.5px solid;cursor:pointer;font-size:11px;font-weight:800;flex-shrink:0;padding:0;user-select:none;-webkit-tap-highlight-color:transparent}
 
 
 /* ── INLINE TABLE CONTROLS ── */
@@ -360,7 +361,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div class="nav-item" onclick="navigate('master-barang')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1L14.5 4.5V11.5L8 15L1.5 11.5V4.5L8 1Z"/><path d="M1.5 4.5L8 8L14.5 4.5"/><path d="M8 8V15"/></svg></span>Master Barang</div>
     <div class="nav-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M1 7l2-5h10l2 5"/><path d="M6 15V11h4v4"/><path d="M1 7h14"/></svg></span>Master Dapur</div>
   </nav>
-  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260720-v42</div>
+  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260720-v43</div>
 </aside>
 
 <!-- MOBILE HEADER -->
@@ -2044,8 +2045,10 @@ function renderPesananByHari(items,dates){
               </span>
               <span style="font-size:13px;font-weight:600;flex-shrink:0;${qtyStyle}">${si.qty} ${m.unit}</span>
               ${!recv
-                ?`<button class="sc ${ord?'sc-pesan':'sc-off'}" onclick="toggleOrdered('${si.id}',${!ord})">${ord?'✓ Pesan':'Pesan'}</button>`
-                :`<button class="sc sc-terima" onclick="toggleReceived('${si.id}',false)">✓ Datang</button>`
+                ?(ord
+                  ?`<button class="sc-mini sc-pesan" onclick="toggleOrdered('${si.id}',${!ord})" title="Sudah dipesan — tap untuk batal">✓</button>`
+                  :`<button class="sc sc-off" onclick="toggleOrdered('${si.id}',${!ord})">Pesan</button>`)
+                :`<button class="sc-mini sc-terima" onclick="toggleReceived('${si.id}',false)" title="Sudah datang — tap untuk batal">✓</button>`
               }
               ${ord
                 ?(!recv
@@ -2154,8 +2157,10 @@ function renderPesananByBahan(items,dates){
           <div style="flex:1;font-size:14px;font-weight:600">${si.qty} ${m.unit}</div>
           <div style="display:flex;gap:5px;flex-shrink:0">
             ${!recv
-              ?`<button class="sc ${ord?'sc-pesan':'sc-off'}" onclick="toggleOrdered('${si.id}',${!ord})">${ord?'✓ Pesan':'Pesan'}</button>`
-              :`<button class="sc sc-terima" onclick="toggleReceived('${si.id}',false)">✓ Datang</button>`
+              ?(ord
+                ?`<button class="sc-mini sc-pesan" onclick="toggleOrdered('${si.id}',${!ord})" title="Sudah dipesan — tap untuk batal">✓</button>`
+                :`<button class="sc sc-off" onclick="toggleOrdered('${si.id}',${!ord})">Pesan</button>`)
+              :`<button class="sc-mini sc-terima" onclick="toggleReceived('${si.id}',false)" title="Sudah datang — tap untuk batal">✓</button>`
             }
             ${ord
               ?(!recv
@@ -2240,8 +2245,10 @@ function renderPesananBySupplier(items,dates){
           <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;${ord?'text-decoration:line-through;color:#94a3b8':'font-weight:600'}">${m.name}</span>
           <span style="font-size:13px;font-weight:600;flex-shrink:0;${ord?'color:#94a3b8':'color:var(--tx)'}">${si.qty} ${m.unit}</span>
           ${!recv
-            ?`<button class="sc ${ord?'sc-pesan':'sc-off'}" onclick="toggleOrdered('${si.id}',${!ord})">${ord?'✓ Pesan':'Pesan'}</button>`
-            :`<button class="sc sc-terima" onclick="toggleReceived('${si.id}',false)">✓ Datang</button>`
+            ?(ord
+              ?`<button class="sc-mini sc-pesan" onclick="toggleOrdered('${si.id}',${!ord})" title="Sudah dipesan — tap untuk batal">✓</button>`
+              :`<button class="sc sc-off" onclick="toggleOrdered('${si.id}',${!ord})">Pesan</button>`)
+            :`<button class="sc-mini sc-terima" onclick="toggleReceived('${si.id}',false)" title="Sudah datang — tap untuk batal">✓</button>`
           }
           ${ord
             ?(!recv
