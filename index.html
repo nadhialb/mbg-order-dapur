@@ -158,7 +158,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
 
 /* ── VIEW TOGGLE ── */
 .view-toggle{display:flex;background:var(--bg);border-radius:10px;padding:3px;border:1px solid var(--br);gap:2px}
-.vt-btn{padding:7px 14px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:transparent;color:var(--mt);transition:all .15s}
+.vt-btn{padding:7px 14px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:transparent;color:var(--mt);transition:all .15s;white-space:nowrap}
 .vt-btn.active{background:#fff;color:var(--tx);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 
 /* ── ORDER ITEMS ── */
@@ -291,6 +291,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
   /* -- Master Barang: pensil edit lebih kecil & rapat di HP (kotak tetap, emoji tidak melebar) -- */
   .mat-edit-btn{width:16px;height:16px;padding:0;font-size:9px;line-height:1;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
   .mb-act-cell{padding:9px 6px!important}
+
+  /* -- Pesanan: 3 tab (Hari/Bahan/Supplier) lebih rapat di HP -- */
+  .vt-btn{padding:6px 8px;font-size:12px}
 }
 @media(max-width:480px){
   .k-stat-row{grid-template-columns:1fr 1fr}
@@ -352,12 +355,12 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
   <div class="sb-logo"><div class="brand">🍱 MBG Order</div><div class="sub">Sistem Order Bahan Baku Dapur</div></div>
   <nav class="sb-nav">
     <div class="nav-item active" onclick="navigate('dashboard')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="14" height="9" rx="1.5"/><path d="M1 7L8 1l7 6"/><path d="M6 15v-5h4v5"/></svg></span>Dashboard</div>
-    <div class="nav-item" onclick="navigate('jadwal')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="2.5" width="14" height="12" rx="1.5"/><path d="M1 6.5h14"/><path d="M5 1v3M11 1v3"/><path d="M4 10h2M7 10h2"/></svg></span>Jadwal Menu</div>
+    <div class="nav-item" onclick="navigate('jadwal')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="2.5" width="14" height="12" rx="1.5"/><path d="M1 6.5h14"/><path d="M5 1v3M11 1v3"/><path d="M4 10h2M7 10h2"/></svg></span>Rencana Bahan</div>
     <div class="nav-item" onclick="navigate('pesanan')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 4h8M5.5 8h8M5.5 12h5"/><circle cx="2.5" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="2.5" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="2.5" cy="12" r="1" fill="currentColor" stroke="none"/></svg></span>Daftar Pesanan</div>
     <div class="nav-item" onclick="navigate('master-barang')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1L14.5 4.5V11.5L8 15L1.5 11.5V4.5L8 1Z"/><path d="M1.5 4.5L8 8L14.5 4.5"/><path d="M8 8V15"/></svg></span>Master Barang</div>
     <div class="nav-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M1 7l2-5h10l2 5"/><path d="M6 15V11h4v4"/><path d="M1 7h14"/></svg></span>Master Dapur</div>
   </nav>
-  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260718-v38</div>
+  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260720-v42</div>
 </aside>
 
 <!-- MOBILE HEADER -->
@@ -382,7 +385,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
   <!-- JADWAL -->
   <div class="page" id="page-jadwal">
     <div class="page-hdr">
-      <div><div class="page-title">Jadwal Menu</div><div class="page-sub">Atur kebutuhan bahan baku per hari</div></div>
+      <div><div class="page-title">Rencana Bahan</div><div class="page-sub">Atur kebutuhan bahan baku per hari</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btn-or" onclick="openAddItem()">＋ Tambah Bahan</button>
       </div>
@@ -415,10 +418,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
       <div><div class="page-title">Daftar Pesanan</div><div class="page-sub">Kelola status order dan pembayaran</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <button class="btn btn-ol btn-icon" onclick="openRekap()" title="Rekap: tabel rekapitulasi semua bahan per hari" aria-label="Rekap">📊</button>
-        <button class="btn btn-ol btn-icon" onclick="copyPesananByHari()" title="Copy Per Hari: copy semua hari dalam format WhatsApp" aria-label="Copy Per Hari">📋</button>
         <div class="view-toggle">
-          <button class="vt-btn active" id="vt-hari" onclick="setPesananView('hari')">📅 Per Hari</button>
-          <button class="vt-btn" id="vt-bahan" onclick="setPesananView('bahan')">📦 Per Bahan</button>
+          <button class="vt-btn active" id="vt-hari" onclick="setPesananView('hari')">📅 Hari</button>
+          <button class="vt-btn" id="vt-bahan" onclick="setPesananView('bahan')">📦 Bahan</button>
+          <button class="vt-btn" id="vt-supplier" onclick="setPesananView('supplier')">🏪 Supplier</button>
         </div>
       </div>
     </div>
@@ -565,6 +568,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
       <input type="number" id="item-price" min="0" placeholder="Kosongkan jika sama dengan harga master">
       <div class="fh" id="item-price-hint"></div>
     </div>
+    <div class="fg" id="item-supplier-wrap" style="display:none;margin-bottom:8px">
+      <label class="fl">Supplier <span style="font-weight:400;color:var(--mt)">— bahan ini punya beberapa supplier, pilih salah satu</span></label>
+      <select id="item-supplier" style="width:100%;padding:7px 10px;font-size:13px;border-radius:8px;border:1.5px solid var(--br)"></select>
+    </div>
     <div id="item-order-info" style="font-size:13px;color:var(--mt);padding:8px 12px;background:var(--bg);border-radius:8px;display:none"></div>
     <div id="del-item-row" style="display:none;margin-bottom:4px">
       <button class="btn" onclick="deleteItemFromModal()" style="width:100%;color:#ef4444;border:1.5px solid #ef4444;background:#fff5f5;font-weight:700">🗑 Hapus Bahan dari Jadwal</button>
@@ -604,10 +611,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     </div>
     <div id="mat-price-history" style="margin-bottom:8px"></div>
     <div class="fg" style="margin-bottom:12px">
-      <label class="fl">Supplier</label>
-      <select id="mat-supplier" style="width:100%;padding:7px 10px;font-size:13px;border-radius:8px;border:1.5px solid var(--br)">
-        <option value="">— Pilih Supplier —</option>
-      </select>
+      <label class="fl">Supplier <span style="font-weight:400;color:var(--mt)">— bisa pilih lebih dari satu</span></label>
+      <div id="mat-supplier-list" style="border:1.5px solid var(--br);border-radius:8px;max-height:150px;overflow-y:auto;padding:4px 10px"></div>
       <div class="fh">Tambah supplier lewat ⋮ Lainnya → Kelola Supplier</div>
     </div>
     <div id="del-mat-row" style="display:none;margin-bottom:4px">
@@ -666,7 +671,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
 <!-- MODAL: Import Excel Wizard -->
 <div class="mbg" id="modal-import">
   <div class="modal modal-lg">
-    <div class="mt">📂 Import Jadwal Menu dari Excel</div>
+    <div class="mt">📂 Import Rencana Bahan dari Excel</div>
     <!-- Stepper -->
     <div class="wiz-steps" id="wiz-steps">
       <div class="wiz-step active" id="ws1"><span class="wiz-step-num">1</span>Upload File</div>
@@ -1004,7 +1009,7 @@ function selectMat(id,name){
   document.getElementById('item-material-search').value=name;
   document.getElementById('item-material').value=id;
   document.getElementById('mat-suggestions').classList.remove('open');
-  onItemMaterialChange(null);
+  onItemMaterialChange(null,null);
   document.getElementById('item-qty').focus();
 }
 document.addEventListener('click',e=>{
@@ -1588,6 +1593,7 @@ function renderJadwalContent(){
               <span style="color:var(--br)">·</span>
               ${m.stockType==='rapel'?'<span class="badge bg-gn">Rapel</span>':H_DAYS[m.stockType]?`<span class="badge bg-bl">H-${H_DAYS[m.stockType]}</span>`:''}
               ${hasDiff?`<span style="color:var(--or);font-size:11px">≠ master</span>`:''}
+              ${si.supplierId?(()=>{const _sp=getSupp(si.supplierId);return _sp?`<span style="font-size:10px;color:#6b21a8;background:#f3e8ff;border:1px solid #c084fc;border-radius:99px;padding:1px 7px;white-space:nowrap">🏪 ${_sp.name}</span>`:'';})():''}
             </div>
           </div>
           <div class="oi-right">
@@ -1644,6 +1650,8 @@ function openAddItem(){
   document.getElementById('item-qty').value='';document.getElementById('item-unit').value='';
   document.getElementById('item-price').value='';document.getElementById('item-price-hint').textContent='';
   document.getElementById('item-order-info').style.display='none';
+  const _iSuppWrap=document.getElementById('item-supplier-wrap');
+  if(_iSuppWrap){_iSuppWrap.style.display='none';document.getElementById('item-supplier').innerHTML='';}
   document.getElementById('mat-suggestions').classList.remove('open');
   openModal('modal-add-item');
   setTimeout(()=>document.getElementById('item-material-search').focus(),100);
@@ -1658,7 +1666,7 @@ function editItem(id){
   document.getElementById('item-qty').value=si.qty;
   document.getElementById('item-price').value=si.unitPrice!=null?si.unitPrice:'';
   document.getElementById('mat-suggestions').classList.remove('open');
-  onItemMaterialChange(si.unitPrice);
+  onItemMaterialChange(si.unitPrice,si.supplierId||null);
   const _delRowE=document.getElementById('del-item-row');if(_delRowE)_delRowE.style.display='block';
   openModal('modal-add-item');
 }
@@ -1669,12 +1677,21 @@ function deleteItemFromModal(){
   closeModal('modal-add-item');
   deleteItem(_eid);
 }
-function onItemMaterialChange(existingPrice){
+function onItemMaterialChange(existingPrice,existingSupplierId){
   const mid=document.getElementById('item-material').value;
   const m=getMat(mid);
   const unitEl=document.getElementById('item-unit');
   const infoEl=document.getElementById('item-order-info');
   const hintEl=document.getElementById('item-price-hint');
+  const suppWrap=document.getElementById('item-supplier-wrap');
+  const suppSel=document.getElementById('item-supplier');
+  if(m&&m.supplierIds&&m.supplierIds.length>1){
+    suppSel.innerHTML=m.supplierIds.map(sid=>{const sp=getSupp(sid);return sp?`<option value="${sid}">${sp.name}</option>`:'';}).join('');
+    if(existingSupplierId&&m.supplierIds.includes(existingSupplierId))suppSel.value=existingSupplierId;
+    suppWrap.style.display='block';
+  } else {
+    suppWrap.style.display='none';suppSel.innerHTML='';
+  }
   if(m){
     unitEl.value=m.unit;
     hintEl.textContent=`Harga referensi master: ${fmtRp(m.price)}/${m.unit}. Isi jika harga aktual berbeda.`;
@@ -1709,13 +1726,21 @@ function saveItem(){
   const unitPrice=priceRaw!==''?parseFloat(priceRaw):null;
   if(!mid){alert('Pilih bahan baku dari daftar saran.');return;}
   if(!qty||qty<=0){alert('Masukkan jumlah yang valid.');return;}
+  const m=getMat(mid);
+  const suppWrap=document.getElementById('item-supplier-wrap');
+  let supplierId=null;
+  if(suppWrap&&suppWrap.style.display!=='none'){
+    supplierId=document.getElementById('item-supplier').value||null;
+  } else if(m&&m.supplierIds&&m.supplierIds.length===1){
+    supplierId=m.supplierIds[0];
+  }
   if(editItemId){
     const si=S.scheduleItems.find(s=>s.id===editItemId);
-    if(si){si.materialId=mid;si.qty=qty;si.unitPrice=unitPrice;}
+    if(si){si.materialId=mid;si.qty=qty;si.unitPrice=unitPrice;si.supplierId=supplierId;}
   } else {
     const dup=S.scheduleItems.find(s=>s.weekKey===curWeek&&s.kitchenId===curKitchen&&s.day===curDay&&s.materialId===mid);
     if(dup){alert('Bahan ini sudah ada di jadwal hari ini.');return;}
-    S.scheduleItems.push({id:uid(),kitchenId:curKitchen,weekKey:curWeek,day:curDay,materialId:mid,qty,unitPrice,isOrdered:false,orderedAt:null,isPaid:false,paidAt:null,isConfirmed:false,isReceived:false,notes:''});
+    S.scheduleItems.push({id:uid(),kitchenId:curKitchen,weekKey:curWeek,day:curDay,materialId:mid,qty,unitPrice,supplierId,isOrdered:false,orderedAt:null,isPaid:false,paidAt:null,isConfirmed:false,isReceived:false,notes:''});
   }
   save();closeModal('modal-add-item');renderWeeklySummary();renderDayTabs();renderJadwalContent();
 }
@@ -1731,6 +1756,7 @@ function setPesananView(v){
   pesananView=v;
   document.getElementById('vt-hari').classList.toggle('active',v==='hari');
   document.getElementById('vt-bahan').classList.toggle('active',v==='bahan');
+  document.getElementById('vt-supplier').classList.toggle('active',v==='supplier');
   renderPesanan();
 }
 
@@ -1751,7 +1777,8 @@ function renderPesanan(){
   renderPesananDayTabs(items,dates);
   renderPesananDaySummary(items);
   if(pesananView==='hari')renderPesananByHari(items,dates);
-  else renderPesananByBahan(items,dates);
+  else if(pesananView==='bahan')renderPesananByBahan(items,dates);
+  else renderPesananBySupplier(items,dates);
 }
 
 function renderPesananDaySummary(items){
@@ -1908,10 +1935,12 @@ function toggleCatCollapse(key){
 }
 function renderPesananByHari(items,dates){
   const td=today0();
+  const _pesKid=document.getElementById('pesanan-kitchen')?.value||curKitchen;
+  const _pesKitName=S.kitchens.find(k=>k.id===_pesKid)?.name||'';
   const typeOrder=['Karbohidrat','Protein','Sayuran','Bumbu','Minyak & Lemak','Buah','Minuman','Frozen Food','Lainnya'];
   // TYPE_PILL is now global
   if(!items.length){
-    document.getElementById('pesanan-content').innerHTML='<div class="empty"><div class="ei">🛒</div><div class="et">Tidak ada item pesanan</div><div class="ed">Tambahkan bahan baku di menu Jadwal Menu.</div></div>';
+    document.getElementById('pesanan-content').innerHTML='<div class="empty"><div class="ei">🛒</div><div class="et">Tidak ada item pesanan</div><div class="ed">Tambahkan bahan baku di menu Rencana Bahan.</div></div>';
     return;
   }
   let html='';
@@ -1958,6 +1987,8 @@ function renderPesananByHari(items,dates){
             <div onclick="event.stopPropagation();closeDayMenus();markDayOrdered(${di})" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">Tandai Semua Pesan</div>
             <div onclick="event.stopPropagation();closeDayMenus();markDayReceived(${di})" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">Tandai Semua Datang</div>
             <div onclick="event.stopPropagation();closeDayMenus();markDayPaid(${di})" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">Tandai Semua Bayar</div>
+            <div style="border-top:1px solid var(--br)"></div>
+            <div onclick="event.stopPropagation();closeDayMenus();copyPesananSingleDay()" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">📋 Copy Hari Ini</div>
           </div>
         </div>
       </div>
@@ -1976,7 +2007,7 @@ function renderPesananByHari(items,dates){
         const catOpen=window._pesCopyCollapseType[catKey]!==false;
         const catChev=catOpen?'▾':'▸';
         const _ck=`tc_${di}_${typ.replace(/\W/g,'_')}`;
-        window[_ck]={label:`Pengiriman ${deliveryDayName} ${ddd}/${ddm}`,items:byType[typ].map(({si,m})=>({name:m.name,qty:si.qty,unit:m.unit,ord:si.isOrdered}))};
+        window[_ck]={label:`Pengiriman ${deliveryDayName} ${ddd}/${ddm}${_pesKitName?' ('+_pesKitName+')':''}`,items:byType[typ].map(({si,m})=>({name:m.name,qty:si.qty,unit:m.unit,ord:si.isOrdered}))};
 
         const typeIds=byType[typ].map(({si})=>si.id);
         const typeMenuKey=catKey;
@@ -2004,9 +2035,13 @@ function renderPesananByHari(items,dates){
             const nameStyle=ord?'text-decoration:line-through;color:#94a3b8':'font-weight:600';
             const qtyStyle=ord?'color:#94a3b8':'color:var(--tx)';
             const rowBg=paid?'background:#f0fdf4':recv?'background:#fef9c3':ord?'background:#fafafa':'';
+            const _spBadge=si.supplierId?(()=>{const _sp2=getSupp(si.supplierId);return _sp2?`<div style="font-size:10px;line-height:1.2;color:#7c3aed;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px">🏪 ${_sp2.name}</div>`:'';})():'';
             html+=`<div style="border-top:1px solid var(--br)">`;
             html+=`<div style="display:flex;align-items:center;padding:9px 16px 9px 32px;gap:6px;flex-wrap:nowrap;${rowBg}">
-              <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;${nameStyle}">${m.name}</span>
+              <span style="flex:1;min-width:0;overflow:hidden">
+                <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;${nameStyle}">${m.name}</div>
+                ${_spBadge}
+              </span>
               <span style="font-size:13px;font-weight:600;flex-shrink:0;${qtyStyle}">${si.qty} ${m.unit}</span>
               ${!recv
                 ?`<button class="sc ${ord?'sc-pesan':'sc-off'}" onclick="toggleOrdered('${si.id}',${!ord})">${ord?'✓ Pesan':'Pesan'}</button>`
@@ -2029,7 +2064,7 @@ function renderPesananByHari(items,dates){
     html+='</div>';  // close day card
   });
   if(!_pesRenderedDay){
-    html+='<div class="empty"><div class="ei">🛒</div><div class="et">Tidak ada item untuk hari ini</div><div class="ed">Pilih tab hari lain atau tambahkan bahan di Jadwal Menu.</div></div>';
+    html+='<div class="empty"><div class="ei">🛒</div><div class="et">Tidak ada item untuk hari ini</div><div class="ed">Pilih tab hari lain atau tambahkan bahan di Rencana Bahan.</div></div>';
   }
   const ordTotal=items.filter(s=>s.isOrdered).length;
   const paidTotal=items.filter(s=>s.isPaid).length;
@@ -2079,27 +2114,9 @@ function renderPesananByBahan(items,dates){
     const typeMenuKey2='bahan_'+type.replace(/\W/g,'_');
     const _tik2='tik_'+typeMenuKey2;
     window[_tik2]=typeAllIds;
-    const _bck='bc_'+typeMenuKey2;
-    const _dayGroups={};
-    typeMids.forEach(mid=>{
-      const mm2=getMat(mid);if(!mm2)return;
-      matGroups[mid].forEach(s2=>{
-        if(!_dayGroups[s2.day])_dayGroups[s2.day]=[];
-        _dayGroups[s2.day].push({name:mm2.name,qty:s2.qty,unit:mm2.unit,ord:s2.isOrdered});
-      });
-    });
-    const _sortedDays=Object.keys(_dayGroups).map(Number).sort((a,b)=>a-b);
-    window[_bck]={groups:_sortedDays.map(di=>{
-      const _delivDate=addDays(dates[di],-1);
-      const _ddn=ALL_DAYS[_delivDate.getDay()];
-      const _dd=String(_delivDate.getDate()).padStart(2,'0');
-      const _mm=String(_delivDate.getMonth()+1).padStart(2,'0');
-      return{label:`Pengiriman ${_ddn} ${_dd}/${_mm}`,items:_dayGroups[di]};
-    })};
     html+=`<div style="display:flex;align-items:center;gap:10px;margin:18px 0 8px">
       ${typeBadge(type,{size:"12px"})}
       <div style="flex:1;height:1px;background:var(--br)"></div>
-      <button onclick="copyTypeKey('${_bck}')" style="background:none;border:none;cursor:pointer;font-size:12px;opacity:.4;padding:0 2px" title="Copy">📋</button>
       <div style="position:relative;display:inline-block">
         <button onclick="toggleTypeMenu('${typeMenuKey2}')" style="background:none;border:1px solid var(--br);border-radius:6px;width:22px;height:22px;font-size:13px;cursor:pointer;color:var(--mt);display:inline-flex;align-items:center;justify-content:center;line-height:1" title="Aksi Massal">⋮</button>
         <div id="type-menu-${typeMenuKey2}" style="display:none;position:absolute;right:0;top:26px;background:#fff;border:1px solid var(--br);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.18);z-index:400;min-width:150px;overflow:hidden">
@@ -2123,6 +2140,7 @@ function renderPesananByBahan(items,dates){
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             ${multiDay?`<span class="badge bg-bl">${sis.length} Hari</span>`:''}
             <span style="font-weight:800;color:var(--pr)">${totalQty} ${m.unit} total</span>
+            <button onclick="copyMatFromRekap('${mid}')" style="background:none;border:none;cursor:pointer;font-size:12px;opacity:.4;padding:0 2px" title="Copy">📋</button>
             ${multiDay?(()=>{const _k='mg_'+mid;window[_k]=sis.filter(s=>!s.isOrdered).map(s=>s.id);return `<button class="btn btn-xs btn-gn" onclick="markGroupOrdered(window['${_k}'])">✅ Pesan Semua</button>`;})():''}
           </div>
         </div>`;
@@ -2153,6 +2171,90 @@ function renderPesananByBahan(items,dates){
 
       html+=`</div>`;
     });
+  });
+
+  document.getElementById('pesanan-content').innerHTML=html;
+}
+
+// Kelompokkan item per supplier (lintas semua hari dalam minggu itu), lalu
+// di dalam tiap supplier dikelompokkan lagi per tanggal pengiriman — supaya
+// tombol copy per supplier langsung jadi list order siap kirim. Item yang
+// bahannya belum punya supplier terpilih masuk kelompok "Belum Pilih
+// Supplier" di paling bawah, biar kelihatan mana yang perlu dilengkapi.
+function renderPesananBySupplier(items,dates){
+  if(!items.length){
+    document.getElementById('pesanan-content').innerHTML='<div class="empty"><div class="ei">🏪</div><div class="et">Tidak ada item pesanan</div></div>';
+    return;
+  }
+  const _supKid=document.getElementById('pesanan-kitchen')?.value||curKitchen;
+  const _supKitName=S.kitchens.find(k=>k.id===_supKid)?.name||'';
+  const bySupplier={};
+  items.forEach(si=>{
+    const key=si.supplierId||'__none__';
+    if(!bySupplier[key])bySupplier[key]=[];
+    bySupplier[key].push(si);
+  });
+  const supplierIds=Object.keys(bySupplier).filter(k=>k!=='__none__').sort((a,b)=>{
+    const sa=getSupp(a),sb=getSupp(b);
+    return (sa?.name||'').localeCompare(sb?.name||'');
+  });
+  if(bySupplier['__none__'])supplierIds.push('__none__');
+
+  let html='';
+  supplierIds.forEach(sid=>{
+    const sis=bySupplier[sid];
+    const supp=sid==='__none__'?null:getSupp(sid);
+    const label=supp?supp.name:'Belum Pilih Supplier';
+    const byDay={};
+    sis.forEach(si=>{if(!byDay[si.day])byDay[si.day]=[];byDay[si.day].push(si);});
+    const sortedDays=Object.keys(byDay).map(Number).sort((a,b)=>a-b);
+    const _sk='sup_'+sid.replace(/\W/g,'_');
+    window[_sk]={groups:sortedDays.map(di=>{
+      const delivDate=addDays(dates[di],-1);
+      const ddn=ALL_DAYS[delivDate.getDay()];
+      const dd=String(delivDate.getDate()).padStart(2,'0');
+      const mm=String(delivDate.getMonth()+1).padStart(2,'0');
+      return{label:`Pengiriman ${ddn} ${dd}/${mm}${_supKitName?' ('+_supKitName+')':''}`,items:byDay[di].map(s=>{const mm2=getMat(s.materialId);return{name:mm2?.name||'?',qty:s.qty,unit:mm2?.unit||'',ord:s.isOrdered};})};
+    })};
+
+    html+=`<div class="mg" style="border-left-color:${supp?'#7c3aed':'#94a3b8'}">
+      <div class="mg-hdr">
+        <div class="mg-name">🏪 ${label}${supp?.phone?` <span style="font-weight:400;color:var(--mt);font-size:11px">${supp.phone}</span>`:''}</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-weight:800;color:var(--pr)">${sis.length} item</span>
+          <button onclick="copyTypeKey('${_sk}')" style="background:none;border:none;cursor:pointer;font-size:12px;opacity:.4;padding:0 2px" title="Copy">📋</button>
+        </div>
+      </div>`;
+
+    sortedDays.forEach(di=>{
+      const delivDate=addDays(dates[di],-1);
+      const ddn=ALL_DAYS[delivDate.getDay()];
+      const dd=String(delivDate.getDate()).padStart(2,'0');
+      const mm=String(delivDate.getMonth()+1).padStart(2,'0');
+      html+=`<div style="padding:6px 16px 4px;font-size:11px;font-weight:700;color:var(--mt);background:#fafafa;border-top:1px solid var(--br)">📦 ${ddn} ${dd}/${mm}</div>`;
+      byDay[di].forEach(si=>{
+        const m=getMat(si.materialId);if(!m)return;
+        const ord=si.isOrdered,paid=si.isPaid,recv=si.isReceived||false;
+        const rowBg=paid?'background:#f0fdf4':recv?'background:#fef9c3':ord?'background:#fafafa':'';
+        html+=`<div style="display:flex;align-items:center;padding:9px 16px;gap:6px;flex-wrap:nowrap;border-top:1px solid var(--br);${rowBg}">
+          <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;${ord?'text-decoration:line-through;color:#94a3b8':'font-weight:600'}">${m.name}</span>
+          <span style="font-size:13px;font-weight:600;flex-shrink:0;${ord?'color:#94a3b8':'color:var(--tx)'}">${si.qty} ${m.unit}</span>
+          ${!recv
+            ?`<button class="sc ${ord?'sc-pesan':'sc-off'}" onclick="toggleOrdered('${si.id}',${!ord})">${ord?'✓ Pesan':'Pesan'}</button>`
+            :`<button class="sc sc-terima" onclick="toggleReceived('${si.id}',false)">✓ Datang</button>`
+          }
+          ${ord
+            ?(!recv
+              ?`<button class="sc sc-off" onclick="toggleReceived('${si.id}',true)">Datang</button>`
+              :`<button class="sc ${paid?'sc-bayar':'sc-off'}" onclick="togglePaid('${si.id}',${!paid})">${paid?'✓ Bayar':'Bayar'}</button>`
+            ):''
+          }
+          <button onclick="copySingleItem('${si.id}')" style="background:none;border:none;cursor:pointer;font-size:12px;opacity:.4;padding:2px 3px;flex-shrink:0;line-height:1" title="Copy">📋</button>
+        </div>`;
+      });
+    });
+
+    html+=`</div>`;
   });
 
   document.getElementById('pesanan-content').innerHTML=html;
@@ -2275,7 +2377,7 @@ function renderMasterBarang(){
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
           <input class="td-inp" type="text" value="${m.name}" onchange="updateMatField('${m.id}','name',this.value)" style="min-width:90px;width:100%;font-weight:600;font-size:13px;border-left:3px solid ${typeColor(m.type)};padding-left:8px">
           ${hasSimilar?`<span class="badge bg-yw" style="cursor:pointer" onclick="openMergeModal('${m.id}')" title="Mirip: ${similarTo}">⚠️ Mirip</span><span class="badge bg-gr" style="cursor:pointer;font-size:10px" onclick="ignoreMatPair('${m.id}','${ignoreIds[0]||''}')">Abaikan</span>`:''}
-          ${(()=>{const _s=getSupp(m.supplierId);return _s?`<span style="font-size:10px;color:#6b21a8;background:#f3e8ff;border:1px solid #c084fc;border-radius:99px;padding:1px 7px;white-space:nowrap">🏪 ${_s.name}</span>`:''})()}
+          ${(m.supplierIds||[]).map(sid=>{const _s=getSupp(sid);return _s?`<span style="font-size:10px;color:#6b21a8;background:#f3e8ff;border:1px solid #c084fc;border-radius:99px;padding:1px 7px;white-space:nowrap">🏪 ${_s.name}</span>`:'';}).join('')}
         </div>
       </td>
       <td><div style="display:inline-flex;align-items:center;gap:4px"><span style="font-size:13px;line-height:1;flex-shrink:0">${TYPE_EMOJI[m.type]||'📦'}</span>${buildTypeSelect('td-sel',m.type,m.id)}</div></td>
@@ -2337,8 +2439,7 @@ function populateMatUnitSelect(selId,curVal){
 function openAddMaterial(){
   document.getElementById('mat-modal-title').textContent='Tambah Bahan Baku';
   ['mat-id','mat-name','mat-price'].forEach(id=>document.getElementById(id).value='');
-  const _suppSel2=document.getElementById('mat-supplier');
-  if(_suppSel2){_suppSel2.innerHTML=renderSupplierOptions('');_suppSel2.dataset.current='';}
+  renderMatSupplierCheckboxes([]);
   populateMatTypeSelect('mat-type','Karbohidrat');
   populateMatUnitSelect('mat-unit','kg');
   document.getElementById('mat-stocktype').value='h1';
@@ -2355,8 +2456,7 @@ function openEditMaterial(id){
   populateMatUnitSelect('mat-unit',m.unit||'kg');
   document.getElementById('mat-price').value=m.price||0;
   document.getElementById('mat-stocktype').value=m.stockType||'h1';
-  const _suppSel=document.getElementById('mat-supplier');
-  if(_suppSel){_suppSel.innerHTML=renderSupplierOptions(m.supplierId||'');_suppSel.dataset.current=m.supplierId||'';}
+  renderMatSupplierCheckboxes(m.supplierIds||[]);
   const _dmrE=document.getElementById('del-mat-row');if(_dmrE)_dmrE.style.display='block';
   const _phEl=document.getElementById('mat-price-history');
   if(_phEl){
@@ -2382,17 +2482,17 @@ function saveMaterial(){
   const unit=document.getElementById('mat-unit').value.trim();
   const price=parseInt(document.getElementById('mat-price').value)||0;
   const stockType=document.getElementById('mat-stocktype').value||'h1';
-  const supplierId=document.getElementById('mat-supplier')?.value||null;
+  const supplierIds=getCheckedMatSuppliers();
   if(!name||!unit){alert('Nama dan satuan wajib diisi.');return;}
   const id=document.getElementById('mat-id').value;
   if(id){
     const m=getMat(id);
     if(m){
       if(m.price&&m.price!==price){if(!m.priceHistory)m.priceHistory=[];m.priceHistory.push({price:m.price,date:fmtDate(new Date())});if(m.priceHistory.length>10)m.priceHistory=m.priceHistory.slice(-10);}
-      Object.assign(m,{name,type,unit,price,stockType,supplierId:supplierId||null});
+      Object.assign(m,{name,type,unit,price,stockType,supplierIds});
     }
   }
-  else S.materials.push({id:uid(),name,type,unit,price,stockType,supplierId:supplierId||null});
+  else S.materials.push({id:uid(),name,type,unit,price,stockType,supplierIds});
   save();closeModal('modal-material');renderMasterBarang();
 }
 function clearDays(id){
@@ -2442,27 +2542,23 @@ function fallbackCopy(txt){
   catch(e){alert('Tidak bisa menyalin otomatis. Salin manual:\n\n'+txt.slice(0,200));}
   document.body.removeChild(ta);
 }
-function buildDayText(day,date,items){
+function buildDayText(day,date,items,kitName){
   if(!items.length)return '';
   const delivDate=addDays(date,-1);
   const ddd=String(delivDate.getDate()).padStart(2,'0');
   const ddm=String(delivDate.getMonth()+1).padStart(2,'0');
   const ddn=ALL_DAYS[delivDate.getDay()];
-  let txt=`*Pengiriman ${ddn} ${ddd}/${ddm}*\n`;
+  let txt=`*Pengiriman ${ddn} ${ddd}/${ddm}${kitName?' ('+kitName+')':''}*\n`;
   items.forEach(si=>{const m=getMat(si.materialId);if(m)txt+=`• ${m.name} ${si.qty} ${m.unit}${si.isOrdered?' ✅':''}\n`;});
   return txt;
 }
-function copyPesananByHari(){
+function copyPesananSingleDay(){
   const kid=document.getElementById('pesanan-kitchen')?.value||curKitchen;
   const dates=getWeekDates(pesananWeek);
-  let parts=[];
-  for(let d=0;d<5;d++){
-    const items=S.scheduleItems.filter(s=>s.weekKey===pesananWeek&&s.kitchenId===kid&&s.day===d);
-    const txt=buildDayText(d,dates[d],items);
-    if(txt)parts.push(txt.trim());
-  }
-  if(!parts.length){alert('Tidak ada jadwal minggu ini.');return;}
-  copyText(parts.join('\n\n'));
+  const items=S.scheduleItems.filter(s=>s.weekKey===pesananWeek&&s.kitchenId===kid&&s.day===pesananDay);
+  if(!items.length){alert('Tidak ada item untuk hari ini.');return;}
+  const kit=S.kitchens.find(k=>k.id===kid);
+  copyText(buildDayText(pesananDay,dates[pesananDay],items,kit?.name).trim());
 }
 function copyTypeKey(key){
   const d=window[key];if(!d)return;
@@ -2488,7 +2584,8 @@ function copySingleItem(id){
   const ddn=ALL_DAYS[delivDate.getDay()];
   const dd=String(delivDate.getDate()).padStart(2,'0');
   const mm=String(delivDate.getMonth()+1).padStart(2,'0');
-  const txt=`Pengiriman ${ddn} ${dd}/${mm}\n• ${m.name} ${si.qty} ${m.unit}${si.isOrdered?' ✅':''}`;
+  const kit=S.kitchens.find(k=>k.id===si.kitchenId);
+  const txt=`Pengiriman ${ddn} ${dd}/${mm}${kit?' ('+kit.name+')':''}\n• ${m.name} ${si.qty} ${m.unit}${si.isOrdered?' ✅':''}`;
   copyText(txt);
 }
 function copyMatFromRekap(matId){
@@ -2497,6 +2594,7 @@ function copyMatFromRekap(matId){
   const sis=S.scheduleItems.filter(s=>s.materialId===matId&&s.weekKey===pesananWeek&&s.kitchenId===kid);
   if(!sis.length){alert('Tidak ada data.');return;}
   const m=getMat(matId);if(!m)return;
+  const kit=S.kitchens.find(k=>k.id===kid);
   let txt='';
   sis.sort((a,b)=>a.day-b.day).forEach(si=>{
     const nd=dates[si.day];
@@ -2504,7 +2602,7 @@ function copyMatFromRekap(matId){
     const dd=String(delivDate.getDate()).padStart(2,'0');
     const mm=String(delivDate.getMonth()+1).padStart(2,'0');
     const ddn=ALL_DAYS[delivDate.getDay()];
-    txt+=`Pengiriman ${ddn} ${dd}/${mm}\n• ${m.name} ${si.qty} ${m.unit}${si.isOrdered?' ✅':''}\n\n`;
+    txt+=`Pengiriman ${ddn} ${dd}/${mm}${kit?' ('+kit.name+')':''}\n• ${m.name} ${si.qty} ${m.unit}${si.isOrdered?' ✅':''}\n\n`;
   });
   copyText(txt.trim());
 }
@@ -3778,6 +3876,24 @@ function migrateState(state){
     });
     state._v=11;
   }
+  if(state._v<12){
+    // v12: satu bahan sekarang bisa punya lebih dari satu supplier.
+    // materials.supplierId (satu) diubah jadi materials.supplierIds (array).
+    // scheduleItems dapat supplierId sendiri per baris (supaya tiap jadwal
+    // bisa milih supplier mana yang dipakai). Data lama diisi otomatis kalau
+    // bahan itu cuma pernah punya 1 supplier, supaya tidak perlu pilih ulang.
+    (state.materials||[]).forEach(m=>{
+      m.supplierIds=m.supplierId?[m.supplierId]:[];
+      delete m.supplierId;
+    });
+    (state.scheduleItems||[]).forEach(s=>{
+      if(s.supplierId===undefined){
+        const m=(state.materials||[]).find(x=>x.id===s.materialId);
+        s.supplierId=(m&&m.supplierIds.length===1)?m.supplierIds[0]:null;
+      }
+    });
+    state._v=12;
+  }
   return state;
 }
 
@@ -3785,12 +3901,24 @@ function renderSupplierOptions(selectedId){
   const opts=(S.suppliers||[]).map(s=>`<option value="${s.id}"${s.id===selectedId?' selected':''}>${s.name}</option>`).join('');
   return `<option value="">— Pilih Supplier —</option>`+opts;
 }
+function renderMatSupplierCheckboxes(selectedIds){
+  const el=document.getElementById('mat-supplier-list');
+  if(!el)return;
+  if(!(S.suppliers||[]).length){el.innerHTML='<div style="font-size:12px;color:#94a3b8;padding:6px 0">Belum ada supplier. Tambah lewat ⋮ Lainnya → Kelola Supplier.</div>';return;}
+  el.innerHTML=S.suppliers.map(s=>`<label style="display:flex;align-items:center;gap:7px;padding:5px 0;font-size:13px;cursor:pointer">
+    <input type="checkbox" value="${s.id}"${selectedIds.includes(s.id)?' checked':''} style="width:15px;height:15px;flex-shrink:0">
+    <span>${s.name}</span>
+  </label>`).join('');
+}
+function getCheckedMatSuppliers(){
+  return Array.from(document.querySelectorAll('#mat-supplier-list input[type=checkbox]:checked')).map(el=>el.value);
+}
 function renderSupplierList(){
   const el=document.getElementById('supplier-list-body');
   if(!el)return;
   if(!(S.suppliers||[]).length){el.innerHTML='<div style="padding:16px;color:var(--mt);text-align:center;font-size:13px">Belum ada supplier. Tambah supplier di bawah.</div>';return;}
   el.innerHTML=(S.suppliers||[]).map(s=>{
-    const matCount=S.materials.filter(m=>m.supplierId===s.id).length;
+    const matCount=S.materials.filter(m=>(m.supplierIds||[]).includes(s.id)).length;
     return `<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--br)">
       <div style="flex:1">
         <div style="font-weight:600;font-size:13px">${s.name}</div>
@@ -3836,15 +3964,16 @@ function saveSupplier(){
   document.getElementById('supp-notes').value='';
   document.getElementById('supp-form-title').textContent='Tambah Supplier';
   save();renderSupplierList();
-  const suppSel=document.getElementById('mat-supplier');
-  if(suppSel){const cur=suppSel.dataset.current||'';suppSel.innerHTML=renderSupplierOptions(cur);}
+  if(document.getElementById('mat-supplier-list'))renderMatSupplierCheckboxes(getCheckedMatSuppliers());
 }
 function deleteSupplier(id){
   if(!confirm('Hapus supplier ini? Bahan yang terhubung akan menjadi tidak ber-supplier.'))return;
   S.suppliers=(S.suppliers||[]).filter(s=>s.id!==id);
-  S.materials.forEach(m=>{if(m.supplierId===id)m.supplierId=null;});
+  S.materials.forEach(m=>{if(m.supplierIds)m.supplierIds=m.supplierIds.filter(x=>x!==id);});
+  S.scheduleItems.forEach(s=>{if(s.supplierId===id)s.supplierId=null;});
   save();renderSupplierList();
   if(curPage==='master-barang')renderMasterBarang();
+  if(curPage==='pesanan')renderPesanan();
 }
 function toggleLainnyaMenu(){
   const m=document.getElementById('lainnya-menu');
@@ -3921,7 +4050,7 @@ function copyRekapWA(){
     const byType={};dayItems.forEach(si=>{const m=getMat(si.materialId);if(!m)return;const t=m.type||'Lainnya';if(!byType[t])byType[t]=[];byType[t].push({si,m});});
     const sorted=[...tOrder.filter(t=>byType[t]),...Object.keys(byType).filter(t=>!tOrder.includes(t))];
     sorted.forEach(typ=>byType[typ].forEach(({si,m})=>{
-      const _ws=getSupp(m.supplierId);
+      const _ws=getSupp(si.supplierId);
       txt+=(si.isOrdered?'✅':'⬜')+' '+(TYPE_EMOJI[m.type]||'•')+' '+m.name+': '+si.qty+' '+m.unit;
       if(_ws)txt+=' ['+_ws.name+']';
       txt+='\n';
