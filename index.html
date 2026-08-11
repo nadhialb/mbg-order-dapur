@@ -361,7 +361,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div class="nav-item" onclick="navigate('master-barang')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1L14.5 4.5V11.5L8 15L1.5 11.5V4.5L8 1Z"/><path d="M1.5 4.5L8 8L14.5 4.5"/><path d="M8 8V15"/></svg></span>Master Barang</div>
     <div class="nav-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M1 7l2-5h10l2 5"/><path d="M6 15V11h4v4"/><path d="M1 7h14"/></svg></span>Master Dapur</div>
   </nav>
-  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260720-v43</div>
+  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260721-v44</div>
 </aside>
 
 <!-- MOBILE HEADER -->
@@ -2018,7 +2018,7 @@ function renderPesananByHari(items,dates){
           <div onclick="toggleCatCollapse('${catKey}')" style="display:flex;align-items:center;gap:6px;padding:7px 16px;background:#fafafa;cursor:pointer;user-select:none">
             ${typeBadge(typ)}
             <span style="font-size:11px;color:var(--mt);margin-left:auto">${byType[typ].length} item</span>
-            <button onclick="event.stopPropagation();copyTypeKey('${_ck}')" style="background:none;border:none;cursor:pointer;font-size:12px;opacity:.4;padding:0 2px" title="Copy">📋</button>
+            <button onclick="event.stopPropagation();copyTypeKey('${_ck}')" style="background:none;border:none;cursor:pointer;font-size:11px;opacity:.4;padding:0 1px" title="Copy">📋</button>
             <div style="position:relative;display:inline-block" onclick="event.stopPropagation()">
               <button onclick="toggleTypeMenu('${typeMenuKey}')" style="background:none;border:1px solid var(--br);border-radius:6px;width:22px;height:22px;font-size:13px;cursor:pointer;color:var(--mt);display:inline-flex;align-items:center;justify-content:center;line-height:1" title="Aksi Massal">⋮</button>
               <div id="type-menu-${typeMenuKey}" style="display:none;position:absolute;right:0;top:26px;background:#fff;border:1px solid var(--br);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.18);z-index:400;min-width:150px;overflow:hidden">
@@ -2056,7 +2056,6 @@ function renderPesananByHari(items,dates){
                   :`<button class="sc ${paid?'sc-bayar':'sc-off'}" onclick="togglePaid('${si.id}',${!paid})">${paid?'✓ Bayar':'Bayar'}</button>`
                 ):''
               }
-              <button onclick="copySingleItem('${si.id}')" style="background:none;border:none;cursor:pointer;font-size:12px;opacity:.4;padding:2px 3px;flex-shrink:0;line-height:1" title="Copy">📋</button>
             </div>`;
             html+=`</div>`;
           });
@@ -2143,7 +2142,7 @@ function renderPesananByBahan(items,dates){
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             ${multiDay?`<span class="badge bg-bl">${sis.length} Hari</span>`:''}
             <span style="font-weight:800;color:var(--pr)">${totalQty} ${m.unit} total</span>
-            <button onclick="copyMatFromRekap('${mid}')" style="background:none;border:none;cursor:pointer;font-size:12px;opacity:.4;padding:0 2px" title="Copy">📋</button>
+            <button onclick="copyMatFromRekap('${mid}')" style="background:none;border:none;cursor:pointer;font-size:11px;opacity:.4;padding:0 1px" title="Copy">📋</button>
             ${multiDay?(()=>{const _k='mg_'+mid;window[_k]=sis.filter(s=>!s.isOrdered).map(s=>s.id);return `<button class="btn btn-xs btn-gn" onclick="markGroupOrdered(window['${_k}'])">✅ Pesan Semua</button>`;})():''}
           </div>
         </div>`;
@@ -2168,7 +2167,6 @@ function renderPesananByBahan(items,dates){
                 :`<button class="sc ${paid?'sc-bayar':'sc-off'}" onclick="togglePaid('${si.id}',${!paid})">${paid?'✓ Bayar':'Bayar'}</button>`
               ):''
             }
-            <button onclick="copySingleItem('${si.id}')" style="background:none;border:none;cursor:pointer;font-size:12px;opacity:.4;padding:2px 3px;flex-shrink:0;line-height:1" title="Copy">📋</button>
           </div>
         </div>`;
         html+=`</div>`;
@@ -2227,7 +2225,7 @@ function renderPesananBySupplier(items,dates){
         <div class="mg-name">🏪 ${label}${supp?.phone?` <span style="font-weight:400;color:var(--mt);font-size:11px">${supp.phone}</span>`:''}</div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <span style="font-weight:800;color:var(--pr)">${sis.length} item</span>
-          <button onclick="copyTypeKey('${_sk}')" style="background:none;border:none;cursor:pointer;font-size:12px;opacity:.4;padding:0 2px" title="Copy">📋</button>
+          <button onclick="copyTypeKey('${_sk}')" style="background:none;border:none;cursor:pointer;font-size:11px;opacity:.4;padding:0 1px" title="Copy">📋</button>
         </div>
       </div>`;
 
@@ -2256,7 +2254,6 @@ function renderPesananBySupplier(items,dates){
               :`<button class="sc ${paid?'sc-bayar':'sc-off'}" onclick="togglePaid('${si.id}',${!paid})">${paid?'✓ Bayar':'Bayar'}</button>`
             ):''
           }
-          <button onclick="copySingleItem('${si.id}')" style="background:none;border:none;cursor:pointer;font-size:12px;opacity:.4;padding:2px 3px;flex-shrink:0;line-height:1" title="Copy">📋</button>
         </div>`;
       });
     });
@@ -2581,19 +2578,6 @@ function copyTypeKey(key){
     d.items.forEach(item=>{txt+=`• ${item.name} ${item.qty} ${item.unit}${item.ord?' ✅':''}\n`;});
   }
   copyText(txt.trim());
-}
-function copySingleItem(id){
-  const si=S.scheduleItems.find(s=>s.id===id);if(!si)return;
-  const m=getMat(si.materialId);if(!m)return;
-  const dts=getWeekDates(si.weekKey);
-  const nd=dts[si.day];if(!nd)return;
-  const delivDate=addDays(nd,-1);
-  const ddn=ALL_DAYS[delivDate.getDay()];
-  const dd=String(delivDate.getDate()).padStart(2,'0');
-  const mm=String(delivDate.getMonth()+1).padStart(2,'0');
-  const kit=S.kitchens.find(k=>k.id===si.kitchenId);
-  const txt=`Pengiriman ${ddn} ${dd}/${mm}${kit?' ('+kit.name+')':''}\n• ${m.name} ${si.qty} ${m.unit}${si.isOrdered?' ✅':''}`;
-  copyText(txt);
 }
 function copyMatFromRekap(matId){
   const kid=document.getElementById('pesanan-kitchen')?.value||curKitchen;
