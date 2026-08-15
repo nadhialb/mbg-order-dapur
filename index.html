@@ -361,7 +361,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div class="nav-item" onclick="navigate('master-barang')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1L14.5 4.5V11.5L8 15L1.5 11.5V4.5L8 1Z"/><path d="M1.5 4.5L8 8L14.5 4.5"/><path d="M8 8V15"/></svg></span>Master Barang</div>
     <div class="nav-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M1 7l2-5h10l2 5"/><path d="M6 15V11h4v4"/><path d="M1 7h14"/></svg></span>Master Dapur</div>
   </nav>
-  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260815-v48</div>
+  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260815-v49</div>
 </aside>
 
 <!-- MOBILE HEADER -->
@@ -933,6 +933,16 @@ function uid(){return 'id'+Date.now()+Math.random().toString(36).slice(2,7);}
 function getMat(id){return S.materials.find(m=>m.id===id);}
 function getKit(id){return S.kitchens.find(k=>k.id===id);}
 function getSupp(id){return (S.suppliers||[]).find(s=>s.id===id);}
+// Kalau item belum punya supplier terpilih secara eksplisit, tapi bahannya
+// cuma punya 1 supplier terdaftar, anggap itu supplier-nya (auto-detect).
+// Begitu bahan itu punya 2+ supplier, auto-detect berhenti dan user harus
+// pilih manual (supaya tidak salah tebak).
+function effSupplierId(si){
+  if(si.supplierId)return si.supplierId;
+  const m=getMat(si.materialId);
+  if(m&&m.supplierIds&&m.supplierIds.length===1)return m.supplierIds[0];
+  return null;
+}
 function effPrice(si){const m=getMat(si.materialId);return si.unitPrice!=null?si.unitPrice:(m?m.price:0);}
 
 // Type style
@@ -1595,7 +1605,7 @@ function renderJadwalContent(){
               <span style="color:var(--br)">·</span>
               ${m.stockType==='rapel'?'<span class="badge bg-gn">Rapel</span>':H_DAYS[m.stockType]?`<span class="badge bg-bl">H-${H_DAYS[m.stockType]}</span>`:''}
               ${hasDiff?`<span style="color:var(--or);font-size:11px">≠ master</span>`:''}
-              ${si.supplierId?(()=>{const _sp=getSupp(si.supplierId);return _sp?`<span style="font-size:10px;color:#6b21a8;background:#f3e8ff;border:1px solid #c084fc;border-radius:99px;padding:1px 7px;white-space:nowrap">🏪 ${_sp.name}</span>`:'';})():''}
+              ${effSupplierId(si)?(()=>{const _sp=getSupp(effSupplierId(si));return _sp?`<span style="font-size:10px;color:#6b21a8;background:#f3e8ff;border:1px solid #c084fc;border-radius:99px;padding:1px 7px;white-space:nowrap">🏪 ${_sp.name}</span>`:'';})():''}
             </div>
           </div>
           <div class="oi-right">
@@ -2037,7 +2047,7 @@ function renderPesananByHari(items,dates){
             const nameStyle=ord?'text-decoration:line-through;color:#94a3b8':'font-weight:600';
             const qtyStyle=ord?'color:#94a3b8':'color:var(--tx)';
             const rowBg=paid?'background:#f0fdf4':recv?'background:#fef9c3':ord?'background:#fafafa':'';
-            const _spBadge=si.supplierId?(()=>{const _sp2=getSupp(si.supplierId);return _sp2?`<div style="font-size:10px;line-height:1.2;color:#7c3aed;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px">🏪 ${_sp2.name}</div>`:'';})():'';
+            const _spBadge=effSupplierId(si)?(()=>{const _sp2=getSupp(effSupplierId(si));return _sp2?`<div style="font-size:10px;line-height:1.2;color:#7c3aed;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px">🏪 ${_sp2.name}</div>`:'';})():'';
             html+=`<div style="border-top:1px solid var(--br)">`;
             html+=`<div style="display:flex;align-items:center;padding:6px 16px 6px 32px;gap:6px;flex-wrap:nowrap;${rowBg}">
               <span style="flex:1;min-width:0;overflow:hidden">
@@ -2151,7 +2161,7 @@ function renderPesananByBahan(items,dates){
       sis.sort((a,b)=>a.day-b.day).forEach(si=>{
         const nd=dates[si.day];const ord=si.isOrdered;const paid=si.isPaid;const recv=si.isReceived||false;
         const _rowBg2=paid?'background:#f0fdf4':recv?'background:#fef9c3':ord?'background:#fafafa':'';
-        const _spBadge2=si.supplierId?(()=>{const _sp3=getSupp(si.supplierId);return _sp3?`<div style="font-size:10px;line-height:1.2;color:#7c3aed;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px">🏪 ${_sp3.name}</div>`:'';})():'';
+        const _spBadge2=effSupplierId(si)?(()=>{const _sp3=getSupp(effSupplierId(si));return _sp3?`<div style="font-size:10px;line-height:1.2;color:#7c3aed;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px">🏪 ${_sp3.name}</div>`:'';})():'';
         html+=`<div style="border-top:1px solid var(--br)">`;
         html+=`<div class="mg-sub-row" style="${_rowBg2}">
           <div style="min-width:80px;font-size:13px;font-weight:700;color:var(--pr)">${DAYS[si.day]}<br><span style="font-size:11px;color:var(--mt);font-weight:400">${fmtShort(nd)}</span></div>
@@ -2198,7 +2208,7 @@ function renderPesananBySupplier(items,dates){
   const _supKitName=S.kitchens.find(k=>k.id===_supKid)?.name||'';
   const bySupplier={};
   items.forEach(si=>{
-    const key=si.supplierId||'__none__';
+    const key=effSupplierId(si)||'__none__';
     if(!bySupplier[key])bySupplier[key]=[];
     bySupplier[key].push(si);
   });
@@ -4237,7 +4247,7 @@ function copyRekapWA(){
     const byType={};dayItems.forEach(si=>{const m=getMat(si.materialId);if(!m)return;const t=m.type||'Lainnya';if(!byType[t])byType[t]=[];byType[t].push({si,m});});
     const sorted=[...tOrder.filter(t=>byType[t]),...Object.keys(byType).filter(t=>!tOrder.includes(t))];
     sorted.forEach(typ=>byType[typ].forEach(({si,m})=>{
-      const _ws=getSupp(si.supplierId);
+      const _ws=getSupp(effSupplierId(si));
       txt+=(si.isOrdered?'✅':'⬜')+' '+typeEmoji(m.type)+' '+m.name+': '+si.qty+' '+m.unit;
       if(_ws)txt+=' ['+_ws.name+']';
       txt+='\n';
