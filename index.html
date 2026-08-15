@@ -361,7 +361,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div class="nav-item" onclick="navigate('master-barang')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1L14.5 4.5V11.5L8 15L1.5 11.5V4.5L8 1Z"/><path d="M1.5 4.5L8 8L14.5 4.5"/><path d="M8 8V15"/></svg></span>Master Barang</div>
     <div class="nav-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M1 7l2-5h10l2 5"/><path d="M6 15V11h4v4"/><path d="M1 7h14"/></svg></span>Master Dapur</div>
   </nav>
-  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260815-v46</div>
+  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260815-v48</div>
 </aside>
 
 <!-- MOBILE HEADER -->
@@ -2151,10 +2151,14 @@ function renderPesananByBahan(items,dates){
       sis.sort((a,b)=>a.day-b.day).forEach(si=>{
         const nd=dates[si.day];const ord=si.isOrdered;const paid=si.isPaid;const recv=si.isReceived||false;
         const _rowBg2=paid?'background:#f0fdf4':recv?'background:#fef9c3':ord?'background:#fafafa':'';
+        const _spBadge2=si.supplierId?(()=>{const _sp3=getSupp(si.supplierId);return _sp3?`<div style="font-size:10px;line-height:1.2;color:#7c3aed;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px">🏪 ${_sp3.name}</div>`:'';})():'';
         html+=`<div style="border-top:1px solid var(--br)">`;
         html+=`<div class="mg-sub-row" style="${_rowBg2}">
           <div style="min-width:80px;font-size:13px;font-weight:700;color:var(--pr)">${DAYS[si.day]}<br><span style="font-size:11px;color:var(--mt);font-weight:400">${fmtShort(nd)}</span></div>
-          <div style="flex:1;font-size:14px;font-weight:600">${si.qty} ${m.unit}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:600">${si.qty} ${m.unit}</div>
+            ${_spBadge2}
+          </div>
           <div style="display:flex;gap:5px;flex-shrink:0">
             ${!recv
               ?(ord
@@ -2213,12 +2217,12 @@ function renderPesananBySupplier(items,dates){
     sis.forEach(si=>{if(!byDay[si.day])byDay[si.day]=[];byDay[si.day].push(si);});
     const sortedDays=Object.keys(byDay).map(Number).sort((a,b)=>a-b);
     const _sk='sup_'+sid.replace(/\W/g,'_');
-    window[_sk]={groups:sortedDays.map(di=>{
+    window[_sk]={kitName:_supKitName,groups:sortedDays.map(di=>{
       const delivDate=addDays(dates[di],-1);
       const ddn=ALL_DAYS[delivDate.getDay()];
       const dd=String(delivDate.getDate()).padStart(2,'0');
       const mm=String(delivDate.getMonth()+1).padStart(2,'0');
-      return{label:`Pengiriman ${ddn} ${dd}/${mm}${_supKitName?' ('+_supKitName+')':''}`,items:byDay[di].map(s=>{const mm2=getMat(s.materialId);return{name:mm2?.name||'?',qty:s.qty,unit:mm2?.unit||'',ord:s.isOrdered};})};
+      return{label:`Pengiriman ${ddn} ${dd}/${mm}`,items:byDay[di].map(s=>{const mm2=getMat(s.materialId);return{name:mm2?.name||'?',qty:s.qty,unit:mm2?.unit||'',ord:s.isOrdered};})};
     })};
 
     html+=`<div class="mg" style="border-left-color:${supp?'#7c3aed':'#94a3b8'}">
@@ -2597,6 +2601,7 @@ function copyPesananSingleDay(){
 function copyTypeKey(key){
   const d=window[key];if(!d)return;
   let txt='';
+  if(d.kitName)txt+=`*${d.kitName}*\n\n`;
   if(d.groups){
     d.groups.forEach(g=>{
       txt+=`${g.label}\n`;
@@ -2617,13 +2622,14 @@ function copyMatFromRekap(matId){
   const m=getMat(matId);if(!m)return;
   const kit=S.kitchens.find(k=>k.id===kid);
   let txt='';
+  if(kit?.name)txt+=`*${kit.name}*\n\n`;
   sis.sort((a,b)=>a.day-b.day).forEach(si=>{
     const nd=dates[si.day];
     const delivDate=addDays(nd,-1);
     const dd=String(delivDate.getDate()).padStart(2,'0');
     const mm=String(delivDate.getMonth()+1).padStart(2,'0');
     const ddn=ALL_DAYS[delivDate.getDay()];
-    txt+=`Pengiriman ${ddn} ${dd}/${mm}${kit?' ('+kit.name+')':''}\n• ${m.name} ${si.qty} ${m.unit}${si.isOrdered?' ✅':''}\n\n`;
+    txt+=`Pengiriman ${ddn} ${dd}/${mm}\n• ${m.name} ${si.qty} ${m.unit}${si.isOrdered?' ✅':''}\n\n`;
   });
   copyText(txt.trim());
 }
@@ -3104,6 +3110,12 @@ function buildReviewItems(rawItems){
   return reviewed;
 }
 
+function toggleImportDay(d,checked){
+  if(!IMP.dayFilter)IMP.dayFilter=[];
+  if(checked){ if(!IMP.dayFilter.includes(d))IMP.dayFilter.push(d); }
+  else { IMP.dayFilter=IMP.dayFilter.filter(x=>x!==d); }
+  renderWizStep(3);
+}
 function openImportWizard(){
   IMP={wb:null,step:1,headers:[],rows:[],structure:'A',mapping:{},selectedSheet:'',reviewedItems:[],kitId:'',weekKey:''};
   renderWizStep(1);openModal('modal-import');
@@ -3191,7 +3203,10 @@ function renderWizStep(step){
     IMP.weekKey=getWeekKey(new Date());
     if(wi){const m=wi.match(/(\d{4})-W(\d{2})/);if(m)IMP.weekKey=`${m[1]}-W${m[2].padStart(2,'0')}`;}
 
-    const rawItems=extractRawItems();
+    const rawItemsAll=extractRawItems();
+    const availableImportDays=[...new Set(rawItemsAll.map(r=>r.dayIdx))].sort((a,b)=>a-b);
+    if(!IMP.dayFilter)IMP.dayFilter=[...availableImportDays];
+    const rawItems=rawItemsAll.filter(r=>IMP.dayFilter.includes(r.dayIdx));
     IMP.reviewedItems=buildReviewItems(rawItems);
     const ri=IMP.reviewedItems;
     const existingItems=ri.filter(r=>r.existsInMaster);
@@ -3245,7 +3260,25 @@ function renderWizStep(step){
         </tr>`;
       }).join('');
 
-    body.innerHTML=`
+    const dayFilterHtml=availableImportDays.length>1?`
+      <div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:10px;padding:12px 14px;margin-bottom:14px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:8px;color:var(--tx)">📅 Hari yang Diimport</div>
+        <div style="display:flex;flex-wrap:wrap;gap:12px">
+          ${availableImportDays.map(d=>`<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+            <input type="checkbox" class="imp-day-chk" value="${d}" ${IMP.dayFilter.includes(d)?'checked':''} onchange="toggleImportDay(${d},this.checked)">
+            ${DAYS[d]}
+          </label>`).join('')}
+        </div>
+        <div class="fh" style="margin-top:6px">Hilangkan centang hari yang tidak mau diimport — file boleh berisi satu minggu penuh, cukup pilih hari yang dibutuhkan saja.</div>
+      </div>`:'';
+
+    if(!IMP.dayFilter.length){
+      body.innerHTML=dayFilterHtml+`<div style="border:1px solid var(--br);border-radius:10px;padding:20px;color:var(--mt);font-size:13px;text-align:center">Pilih minimal 1 hari untuk melihat preview import.</div>`;
+      acts.innerHTML=`<button class="btn btn-ol" onclick="renderWizStep(2)">← Kembali</button><button class="btn btn-pr" disabled>Lanjut ke Konfirmasi →</button>`;
+      return;
+    }
+
+    body.innerHTML=dayFilterHtml+`
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
         <div>
           <div style="font-size:14px;font-weight:800">${ri.length} bahan unik · ${existingItems.length} sudah di master · ${newItemsRi.length} baru</div>
@@ -3357,6 +3390,7 @@ function handleExcelUpload(e){
     try{
       IMP.wb=XLSX.read(ev.target.result,{type:'array'});
       IMP.selectedSheet=IMP.wb.SheetNames[0];
+      IMP.dayFilter=null;
       const ss=document.getElementById('sheet-selector');
       if(IMP.wb.SheetNames.length>1){
         ss.style.display='block';
@@ -3716,6 +3750,7 @@ function processImport(){
       const hariRaw=get('hari');
       const dayIdx=parseDayIdx(hariRaw);
       if(dayIdx<0){skipItems.push(row);return;}
+      if(IMP.dayFilter&&!IMP.dayFilter.includes(dayIdx)){skipItems.push(row);return;}
       const name=get('nama');
       if(!name||name.toLowerCase()==='nama bahan'||name.toLowerCase()==='nama'){skipItems.push(row);return;}
       const type=get('jenis'),unit=get('satuan'),price=parseFloat(get('harga'))||0,qty=parseFloat(get('jumlah'))||0;
@@ -3740,6 +3775,7 @@ function processImport(){
       const price=hargaIdx>=0?parseFloat(row[hargaIdx])||0:0;
       const m=findOrCreateMat(name,type,unit,price);
       dayIdxMap.forEach(({ci,di})=>{
+        if(IMP.dayFilter&&!IMP.dayFilter.includes(di))return;
         const qty=parseFloat(row[ci])||0;if(qty<=0)return;
         newItems.push({id:uid(),kitchenId:kitId,weekKey,day:di,materialId:m.id,qty,unitPrice:price||null,isOrdered:false,orderedAt:null,isPaid:false,paidAt:null});
       });
@@ -3781,6 +3817,7 @@ function processImport(){
     Object.entries(IMP.menusByDate).forEach(([dateStr,names])=>{
       const dayIdx=parseDayIdx(dateStr);
       if(dayIdx<0)return;
+      if(IMP.dayFilter&&!IMP.dayFilter.includes(dayIdx))return;
       const parsedDate=parseDateFromRaw(dateStr);
       const menuWeekKey=parsedDate?getWeekKey(parsedDate):weekKey;
       const existing=(S.menus||[]).filter(m=>m.kitchenId===kitId&&m.weekKey===menuWeekKey&&m.day===dayIdx);
