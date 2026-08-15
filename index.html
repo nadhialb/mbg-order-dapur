@@ -361,7 +361,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div class="nav-item" onclick="navigate('master-barang')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1L14.5 4.5V11.5L8 15L1.5 11.5V4.5L8 1Z"/><path d="M1.5 4.5L8 8L14.5 4.5"/><path d="M8 8V15"/></svg></span>Master Barang</div>
     <div class="nav-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M1 7l2-5h10l2 5"/><path d="M6 15V11h4v4"/><path d="M1 7h14"/></svg></span>Master Dapur</div>
   </nav>
-  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260721-v45</div>
+  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260815-v46</div>
 </aside>
 
 <!-- MOBILE HEADER -->
@@ -406,7 +406,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
       <button class="btn btn-ol btn-icon" style="color:var(--rd)" onclick="deleteWeekSchedule()" title="Hapus semua jadwal minggu ini" aria-label="Hapus Minggu">🗑️</button>
     </div>
     <div id="jadwal-week-summary"></div>
-    <div id="jadwal-date-hdr" style="font-weight:800;font-size:15px;margin-bottom:14px"></div>
+    <div id="jadwal-date-hdr" style="font-weight:800;font-size:15px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:8px"></div>
     <div class="jadwal-2col" id="jadwal-2col">
       <div id="jadwal-menu-col"></div>
       <div class="card" id="jadwal-items-col"></div>
@@ -728,7 +728,7 @@ const TYPE_EMOJI={'Karbohidrat':'🌾','Protein':'🍗','Protein Hewani':'🥩',
 const TYPE_PILL={'Karbohidrat':'background:#fef9c3;color:#854d0e','Protein':'background:#fee2e2;color:#991b1b','Sayuran':'background:#dcfce7;color:#166534','Bumbu':'background:#fef3c7;color:#92400e','Minyak & Lemak':'background:#e0f2fe;color:#075985','Buah':'background:#fce7f3;color:#9d174d','Minuman':'background:#dbeafe;color:#1e40af','Frozen Food':'background:#e0f2fe;color:#0e7490','Lainnya':'background:#f1f5f9;color:#475569'};
 // Unified type badge renderer
 function typeBadge(type,opts={}){
-  const emoji=TYPE_EMOJI[type]||'📦';
+  const emoji=typeEmoji(type);
   const pill=TYPE_PILL[type]||'background:#f1f5f9;color:#475569';
   const sz=opts.size||'11px';
   return `<span style="display:inline-flex;align-items:center;gap:3px;font-size:${sz};font-weight:600;padding:2px 7px;border-radius:20px;${pill}">${emoji} ${type}</span>`;
@@ -1560,7 +1560,7 @@ function renderJadwalContent(){
     </div>
     ${menuBody}
   </div>`;
-  document.getElementById('jadwal-date-hdr').textContent=fmt(nd);
+  document.getElementById('jadwal-date-hdr').innerHTML=`<span>${fmt(nd)}</span><button class="btn btn-ol btn-icon" style="color:var(--rd)" onclick="deleteDaySchedule()" title="Hapus menu &amp; bahan hari ini" aria-label="Hapus Hari Ini">🗑️</button>`;
   document.getElementById('jadwal-menu-col').innerHTML=menuHtml;
   const dayTotal=items.reduce((a,si)=>a+si.qty*effPrice(si),0);
   const itemsChevron=jadwalItemsOpen?'▾':'▸';
@@ -2112,7 +2112,7 @@ function renderPesananByBahan(items,dates){
 
   orderedTypes.forEach(type=>{
     const typeMids=byType[type]||[];
-    const emoji=TYPE_EMOJI[type]||'📦';
+    const emoji=typeEmoji(type);
     const typeAllIds=typeMids.flatMap(mid=>matGroups[mid].map(s=>s.id));
     const typeMenuKey2='bahan_'+type.replace(/\W/g,'_');
     const _tik2='tik_'+typeMenuKey2;
@@ -2295,8 +2295,15 @@ function goToCurrentPesananWeek(){pesananWeek=getDefaultWeek();renderPesanan();}
 // ── Custom types & satuan helpers ─────────────────────────────
 const BASE_TYPES=['Karbohidrat','Protein Hewani','Protein Nabati','Protein','Sayuran','Bumbu','Minyak & Lemak','Buah','Minuman','Frozen Food','Lainnya'];
 const BASE_UNITS=['kg','gram','liter','ml','buah','ikat','papan','porsi','btl','pak','karton','dus','loyang','sachet','pcs','unit'];
-function getAllTypes(){return [...BASE_TYPES,...(S.customTypes||[])].filter((v,i,a)=>a.indexOf(v)===i);}
-function getAllUnits(){return [...BASE_UNITS,...(S.customUnits||[])].filter((v,i,a)=>a.indexOf(v)===i);}
+function getAllTypes(){
+  const base=BASE_TYPES.filter(t=>!(S.hiddenTypes||[]).includes(t));
+  return [...base,...(S.customTypes||[])].filter((v,i,a)=>a.indexOf(v)===i);
+}
+function getAllUnits(){
+  const base=BASE_UNITS.filter(u=>!(S.hiddenUnits||[]).includes(u));
+  return [...base,...(S.customUnits||[])].filter((v,i,a)=>a.indexOf(v)===i);
+}
+function typeEmoji(type){return (S.typeEmojiOverrides&&S.typeEmojiOverrides[type])||TYPE_EMOJI[type]||'📦';}
 
 function buildTypeSelect(selClass,currentVal,matId){
   const types=getAllTypes();
@@ -2385,7 +2392,7 @@ function renderMasterBarang(){
           ${(m.supplierIds||[]).map(sid=>{const _s=getSupp(sid);return _s?`<span style="font-size:10px;color:#6b21a8;background:#f3e8ff;border:1px solid #c084fc;border-radius:99px;padding:1px 7px;white-space:nowrap">🏪 ${_s.name}</span>`:'';}).join('')}
         </div>
       </td>
-      <td><div style="display:inline-flex;align-items:center;gap:4px"><span style="font-size:13px;line-height:1;flex-shrink:0">${TYPE_EMOJI[m.type]||'📦'}</span>${buildTypeSelect('td-sel',m.type,m.id)}</div></td>
+      <td><div style="display:inline-flex;align-items:center;gap:4px"><span style="font-size:13px;line-height:1;flex-shrink:0">${typeEmoji(m.type)}</span>${buildTypeSelect('td-sel',m.type,m.id)}</div></td>
       <td>${buildUnitCell(m.id,m.unit)}</td>
       <td><input class="td-inp" type="number" value="${m.price}" min="0" step="500" onchange="updateMatField('${m.id}','price',this.value)" style="width:90px"></td>
       <td class="mb-col-hide">
@@ -2414,8 +2421,20 @@ function populateMatTypeSelect(selId,curVal){
       const n=prompt('Nama kategori baru:');
       if(n&&n.trim()){
         const v=n.trim();
-        if(!S.customTypes)S.customTypes=[];
-        if(!S.customTypes.includes(v)&&!BASE_TYPES.includes(v))S.customTypes.push(v);
+        if(BASE_TYPES.includes(v)){
+          // Kategori bawaan yang sebelumnya disembunyikan -- munculkan lagi.
+          S.hiddenTypes=(S.hiddenTypes||[]).filter(x=>x!==v);
+        } else {
+          if(!S.customTypes)S.customTypes=[];
+          if(!S.customTypes.includes(v))S.customTypes.push(v);
+        }
+        if(!TYPE_EMOJI[v]&&!(S.typeEmojiOverrides&&S.typeEmojiOverrides[v])){
+          const em=prompt(`Simbol emoji untuk "${v}" (kosongkan buat pakai default):`);
+          if(em&&em.trim()){
+            if(!S.typeEmojiOverrides)S.typeEmojiOverrides={};
+            S.typeEmojiOverrides[v]=em.trim();
+          }
+        }
         save();populateMatTypeSelect(selId,v);
       } else {this.value=curVal;}
     } else {curVal=this.value;}
@@ -2528,6 +2547,16 @@ function deleteWeekSchedule(){
   if(!cnt){alert('Tidak ada jadwal untuk minggu ini.');return;}
   if(!confirm(`Hapus ${cnt} item jadwal minggu ini (${curWeek}) untuk dapur ${kit?.name||''}?`))return;
   S.scheduleItems=S.scheduleItems.filter(s=>!(s.weekKey===curWeek&&s.kitchenId===curKitchen));
+  save();renderWeeklySummary();renderDayTabs();renderJadwalContent();
+}
+function deleteDaySchedule(){
+  const kit=S.kitchens.find(k=>k.id===curKitchen);
+  const menuCnt=(S.menus||[]).filter(m=>m.weekKey===curWeek&&m.kitchenId===curKitchen&&m.day===curDay).length;
+  const itemCnt=S.scheduleItems.filter(s=>s.weekKey===curWeek&&s.kitchenId===curKitchen&&s.day===curDay).length;
+  if(!menuCnt&&!itemCnt){alert('Tidak ada menu atau bahan untuk hari ini.');return;}
+  if(!confirm(`Hapus ${menuCnt} menu masakan dan ${itemCnt} bahan untuk ${DAYS[curDay]} (${kit?.name||''})?`))return;
+  if(S.menus)S.menus=S.menus.filter(m=>!(m.weekKey===curWeek&&m.kitchenId===curKitchen&&m.day===curDay));
+  S.scheduleItems=S.scheduleItems.filter(s=>!(s.weekKey===curWeek&&s.kitchenId===curKitchen&&s.day===curDay));
   save();renderWeeklySummary();renderDayTabs();renderJadwalContent();
 }
 
@@ -2693,7 +2722,7 @@ function openRekap(){
     const allOrd=matSis.length>0&&matSis.every(s=>s.isOrdered);
     if(mat.type!==lastType){
       lastType=mat.type;
-      const emoji=TYPE_EMOJI[mat.type]||'📦';
+      const emoji=typeEmoji(mat.type);
       rows+=`<tr style="background:#f5f9f6"><td colspan="8" style="padding:6px 10px;font-size:11px;font-weight:700;color:#2d7a4f;letter-spacing:.3px">${emoji} ${mat.type.toUpperCase()}</td></tr>`;
     }
     const totalQty=Object.values(days).reduce((a,b)=>a+b,0);
@@ -3968,53 +3997,133 @@ function deleteSupplier(id){
   if(curPage==='pesanan')renderPesanan();
 }
 function openTypeUnitMgmt(){
-  renderCustomTypeList();
-  renderCustomUnitList();
+  renderTypeMgmtList();
+  renderUnitMgmtList();
   openModal('modal-typeunit');
 }
-function renderCustomTypeList(){
+function renderTypeMgmtList(){
   const el=document.getElementById('custom-type-list');if(!el)return;
-  // Kategori bawaan (BASE_TYPES) tidak ditampilkan di sini karena memang tidak
-  // bisa dihapus — termasuk "Protein Hewani"/"Protein Nabati" yang sekarang
-  // sudah jadi kategori baku juga.
-  const list=(S.customTypes||[]).filter(t=>!BASE_TYPES.includes(t));
-  if(!list.length){el.innerHTML='<div style="padding:12px;color:#94a3b8;text-align:center;font-size:12px">Belum ada kategori custom.</div>';return;}
+  const list=getAllTypes();
+  if(!list.length){el.innerHTML='<div style="padding:12px;color:#94a3b8;text-align:center;font-size:12px">Tidak ada kategori.</div>';return;}
   el.innerHTML=list.map(t=>{
     const cnt=S.materials.filter(m=>m.type===t).length;
+    const esc=t.replace(/'/g,"\\'");
     return `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--br)">
-      <span style="font-size:14px">${TYPE_EMOJI[t]||'📦'}</span>
+      <input type="checkbox" class="type-chk" value="${t.replace(/"/g,'&quot;')}" style="width:16px;height:16px;flex-shrink:0">
+      <button onclick="editTypeEmoji('${esc}')" title="Ganti simbol" style="border:1px solid var(--br);background:var(--bg2,#f8fafc);border-radius:6px;width:28px;height:28px;font-size:14px;cursor:pointer;flex-shrink:0">${typeEmoji(t)}</button>
       <div style="flex:1;font-size:13px;font-weight:600">${t}</div>
       <span style="font-size:11px;color:var(--mt)">${cnt} bahan</span>
-      <button class="btn btn-rd btn-xs" onclick="deleteCustomType('${t.replace(/'/g,"\\'")}')">🗑️</button>
+      <button class="btn btn-rd btn-xs" onclick="deleteTypeSingle('${esc}')">🗑️</button>
     </div>`;
   }).join('');
 }
-function deleteCustomType(t){
+function deleteType(t){
+  const cnt=S.materials.filter(m=>m.type===t).length;
+  if(cnt>0)return false;
+  if(getAllTypes().length<=1)return false;
+  if(BASE_TYPES.includes(t)){
+    if(!S.hiddenTypes)S.hiddenTypes=[];
+    if(!S.hiddenTypes.includes(t))S.hiddenTypes.push(t);
+  } else {
+    S.customTypes=(S.customTypes||[]).filter(x=>x!==t);
+  }
+  return true;
+}
+function deleteTypeSingle(t){
   const cnt=S.materials.filter(m=>m.type===t).length;
   if(cnt>0){alert(`Tidak bisa hapus: ${cnt} bahan masih pakai kategori "${t}". Ubah dulu jenis bahan-bahan itu di Master Barang sebelum hapus kategori ini.`);return;}
+  if(getAllTypes().length<=1){alert('Tidak bisa hapus: minimal harus ada 1 kategori bahan.');return;}
   if(!confirm(`Hapus kategori "${t}"?`))return;
-  S.customTypes=(S.customTypes||[]).filter(x=>x!==t);
-  save();renderCustomTypeList();
+  deleteType(t);
+  save();renderTypeMgmtList();
 }
-function renderCustomUnitList(){
+function bulkDeleteTypes(){
+  const checked=[...document.querySelectorAll('.type-chk:checked')].map(c=>c.value);
+  if(!checked.length){alert('Pilih dulu kategori yang mau dihapus.');return;}
+  const blocked=[],deletable=[];
+  checked.forEach(t=>{
+    const cnt=S.materials.filter(m=>m.type===t).length;
+    if(cnt>0)blocked.push(`${t} (${cnt} bahan)`);else deletable.push(t);
+  });
+  if(getAllTypes().length-deletable.length<1){
+    alert('Tidak bisa hapus semua kategori — minimal harus ada 1 kategori bahan tersisa.');
+    return;
+  }
+  let msg='';
+  if(deletable.length)msg+=`Hapus ${deletable.length} kategori: ${deletable.join(', ')}?\n`;
+  if(blocked.length)msg+=`\nTidak bisa dihapus (masih dipakai): ${blocked.join(', ')}`;
+  if(!deletable.length){alert(msg);return;}
+  if(!confirm(msg))return;
+  deletable.forEach(t=>deleteType(t));
+  save();renderTypeMgmtList();
+  if(blocked.length)alert(`Kategori berikut tidak dihapus karena masih dipakai: ${blocked.join(', ')}`);
+}
+function editTypeEmoji(t){
+  const cur=typeEmoji(t);
+  const v=prompt(`Ganti simbol untuk kategori "${t}" (masukkan 1 emoji):`,cur);
+  if(v===null)return;
+  const trimmed=v.trim();
+  if(!trimmed)return;
+  if(!S.typeEmojiOverrides)S.typeEmojiOverrides={};
+  S.typeEmojiOverrides[t]=trimmed;
+  save();renderTypeMgmtList();
+  if(curPage==='master-barang')renderMasterBarang();
+}
+function renderUnitMgmtList(){
   const el=document.getElementById('custom-unit-list');if(!el)return;
-  const list=(S.customUnits||[]).filter(u=>!BASE_UNITS.includes(u));
-  if(!list.length){el.innerHTML='<div style="padding:12px;color:#94a3b8;text-align:center;font-size:12px">Belum ada satuan custom.</div>';return;}
+  const list=getAllUnits();
+  if(!list.length){el.innerHTML='<div style="padding:12px;color:#94a3b8;text-align:center;font-size:12px">Tidak ada satuan.</div>';return;}
   el.innerHTML=list.map(u=>{
     const cnt=S.materials.filter(m=>m.unit===u).length;
+    const esc=u.replace(/'/g,"\\'");
     return `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--br)">
+      <input type="checkbox" class="unit-chk" value="${u.replace(/"/g,'&quot;')}" style="width:16px;height:16px;flex-shrink:0">
       <div style="flex:1;font-size:13px;font-weight:600">${u}</div>
       <span style="font-size:11px;color:var(--mt)">${cnt} bahan</span>
-      <button class="btn btn-rd btn-xs" onclick="deleteCustomUnit('${u.replace(/'/g,"\\'")}')">🗑️</button>
+      <button class="btn btn-rd btn-xs" onclick="deleteUnitSingle('${esc}')">🗑️</button>
     </div>`;
   }).join('');
 }
-function deleteCustomUnit(u){
+function deleteUnit(u){
+  const cnt=S.materials.filter(m=>m.unit===u).length;
+  if(cnt>0)return false;
+  if(getAllUnits().length<=1)return false;
+  if(BASE_UNITS.includes(u)){
+    if(!S.hiddenUnits)S.hiddenUnits=[];
+    if(!S.hiddenUnits.includes(u))S.hiddenUnits.push(u);
+  } else {
+    S.customUnits=(S.customUnits||[]).filter(x=>x!==u);
+  }
+  return true;
+}
+function deleteUnitSingle(u){
   const cnt=S.materials.filter(m=>m.unit===u).length;
   if(cnt>0){alert(`Tidak bisa hapus: ${cnt} bahan masih pakai satuan "${u}". Ubah dulu satuan bahan-bahan itu di Master Barang sebelum hapus satuan ini.`);return;}
+  if(getAllUnits().length<=1){alert('Tidak bisa hapus: minimal harus ada 1 satuan.');return;}
   if(!confirm(`Hapus satuan "${u}"?`))return;
-  S.customUnits=(S.customUnits||[]).filter(x=>x!==u);
-  save();renderCustomUnitList();
+  deleteUnit(u);
+  save();renderUnitMgmtList();
+}
+function bulkDeleteUnits(){
+  const checked=[...document.querySelectorAll('.unit-chk:checked')].map(c=>c.value);
+  if(!checked.length){alert('Pilih dulu satuan yang mau dihapus.');return;}
+  const blocked=[],deletable=[];
+  checked.forEach(u=>{
+    const cnt=S.materials.filter(m=>m.unit===u).length;
+    if(cnt>0)blocked.push(`${u} (${cnt} bahan)`);else deletable.push(u);
+  });
+  if(getAllUnits().length-deletable.length<1){
+    alert('Tidak bisa hapus semua satuan — minimal harus ada 1 satuan tersisa.');
+    return;
+  }
+  let msg='';
+  if(deletable.length)msg+=`Hapus ${deletable.length} satuan: ${deletable.join(', ')}?\n`;
+  if(blocked.length)msg+=`\nTidak bisa dihapus (masih dipakai): ${blocked.join(', ')}`;
+  if(!deletable.length){alert(msg);return;}
+  if(!confirm(msg))return;
+  deletable.forEach(u=>deleteUnit(u));
+  save();renderUnitMgmtList();
+  if(blocked.length)alert(`Satuan berikut tidak dihapus karena masih dipakai: ${blocked.join(', ')}`);
 }
 function toggleLainnyaMenu(){
   const m=document.getElementById('lainnya-menu');
@@ -4092,7 +4201,7 @@ function copyRekapWA(){
     const sorted=[...tOrder.filter(t=>byType[t]),...Object.keys(byType).filter(t=>!tOrder.includes(t))];
     sorted.forEach(typ=>byType[typ].forEach(({si,m})=>{
       const _ws=getSupp(si.supplierId);
-      txt+=(si.isOrdered?'✅':'⬜')+' '+(TYPE_EMOJI[m.type]||'•')+' '+m.name+': '+si.qty+' '+m.unit;
+      txt+=(si.isOrdered?'✅':'⬜')+' '+typeEmoji(m.type)+' '+m.name+': '+si.qty+' '+m.unit;
       if(_ws)txt+=' ['+_ws.name+']';
       txt+='\n';
     }));
@@ -4126,7 +4235,7 @@ function printRekap(){
     const sorted=[...tOrder.filter(t=>byType[t]),...Object.keys(byType).filter(t=>!tOrder.includes(t))];
     sorted.forEach(typ=>byType[typ].forEach(({si,m},idx)=>{
       body+='<tr style="background:'+(idx%2?'#fff':'#f9f9f9')+'">';
-      body+='<td style="padding:6px 10px;border-bottom:1px solid #eee;font-size:15px;width:24px">'+(TYPE_EMOJI[m.type]||'📦')+'</td>';
+      body+='<td style="padding:6px 10px;border-bottom:1px solid #eee;font-size:15px;width:24px">'+typeEmoji(m.type)+'</td>';
       body+='<td style="padding:6px 4px;border-bottom:1px solid #eee;font-size:13px;font-weight:500">'+m.name+'</td>';
       body+='<td style="padding:6px 10px;border-bottom:1px solid #eee;font-size:13px;font-weight:700;text-align:right;white-space:nowrap">'+si.qty+' '+m.unit+'</td>';
       body+='<td style="padding:6px 10px;border-bottom:1px solid #eee;font-size:12px;color:#666;text-align:right">'+(m.price||si.unitPrice?fmtRp(si.qty*(si.unitPrice||m.price||0)):'')+'</td>';
@@ -4233,11 +4342,17 @@ init();
 <div class="mbg" id="modal-typeunit">
   <div class="modal" style="max-width:480px">
     <div class="mt">🏷 Kelola Kategori &amp; Satuan</div>
-    <div style="font-size:13px;font-weight:700;margin-bottom:8px;color:var(--tx)">Kategori Bahan (custom)</div>
-    <div id="custom-type-list" style="border:1px solid var(--br);border-radius:10px;margin-bottom:14px;max-height:160px;overflow-y:auto"></div>
-    <div style="font-size:13px;font-weight:700;margin-bottom:8px;color:var(--tx)">Satuan (custom)</div>
-    <div id="custom-unit-list" style="border:1px solid var(--br);border-radius:10px;margin-bottom:14px;max-height:160px;overflow-y:auto"></div>
-    <div class="fh" style="margin-bottom:10px">Kategori/satuan bawaan (Karbohidrat, Protein, kg, dst) tidak bisa dihapus. Tambah kategori/satuan baru lewat form Tambah/Edit Bahan Baku.</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="font-size:13px;font-weight:700;color:var(--tx)">Kategori Bahan</div>
+      <button class="btn btn-rd btn-xs" onclick="bulkDeleteTypes()">🗑️ Hapus Terpilih</button>
+    </div>
+    <div id="custom-type-list" style="border:1px solid var(--br);border-radius:10px;margin-bottom:14px;max-height:180px;overflow-y:auto"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="font-size:13px;font-weight:700;color:var(--tx)">Satuan</div>
+      <button class="btn btn-rd btn-xs" onclick="bulkDeleteUnits()">🗑️ Hapus Terpilih</button>
+    </div>
+    <div id="custom-unit-list" style="border:1px solid var(--br);border-radius:10px;margin-bottom:14px;max-height:180px;overflow-y:auto"></div>
+    <div class="fh" style="margin-bottom:10px">Kategori/satuan yang masih dipakai bahan tidak bisa dihapus — ubah dulu bahan-bahan itu di Master Barang. Klik ikon emoji buat ganti simbolnya. Tambah kategori/satuan baru lewat form Tambah/Edit Bahan Baku.</div>
     <div class="mac">
       <button class="btn btn-ol" onclick="closeModal('modal-typeunit')">Tutup</button>
     </div>
