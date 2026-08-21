@@ -361,7 +361,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div class="nav-item" onclick="navigate('master-barang')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1L14.5 4.5V11.5L8 15L1.5 11.5V4.5L8 1Z"/><path d="M1.5 4.5L8 8L14.5 4.5"/><path d="M8 8V15"/></svg></span>Master Barang</div>
     <div class="nav-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M1 7l2-5h10l2 5"/><path d="M6 15V11h4v4"/><path d="M1 7h14"/></svg></span>Master Dapur</div>
   </nav>
-  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260815-v49</div>
+  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260821-v50</div>
 </aside>
 
 <!-- MOBILE HEADER -->
@@ -1587,7 +1587,7 @@ function renderJadwalContent(){
     html+=`<div class="empty"><div class="ei">📋</div><div class="et">Belum ada bahan untuk hari ini</div><div class="ed">Klik "Tambah Bahan" untuk menambahkan.</div></div>`;
   } else {
     let total=0;
-    const _tOrder=['Karbohidrat','Protein Hewani','Protein Nabati','Protein','Sayuran','Bumbu','Minyak & Lemak','Buah','Minuman','Frozen Food','Lainnya'];
+    const _tOrder=getAllTypes();
     const _byType={};
     items.forEach(si=>{const m=getMat(si.materialId);if(!m)return;const t=m.type||'Lainnya';if(!_byType[t])_byType[t]=[];_byType[t].push(si);});
     const _sortedTypes=[..._tOrder.filter(t=>_byType[t]),...Object.keys(_byType).filter(t=>!_tOrder.includes(t))];
@@ -1949,7 +1949,7 @@ function renderPesananByHari(items,dates){
   const td=today0();
   const _pesKid=document.getElementById('pesanan-kitchen')?.value||curKitchen;
   const _pesKitName=S.kitchens.find(k=>k.id===_pesKid)?.name||'';
-  const typeOrder=['Karbohidrat','Protein Hewani','Protein Nabati','Protein','Sayuran','Bumbu','Minyak & Lemak','Buah','Minuman','Frozen Food','Lainnya'];
+  const typeOrder=getAllTypes();
   // TYPE_PILL is now global
   if(!items.length){
     document.getElementById('pesanan-content').innerHTML='<div class="empty"><div class="ei">🛒</div><div class="et">Tidak ada item pesanan</div><div class="ed">Tambahkan bahan baku di menu Rencana Bahan.</div></div>';
@@ -2108,7 +2108,7 @@ function renderPesananByBahan(items,dates){
   });
 
   // Group matIds by type
-  const typeOrder=['Karbohidrat','Protein Hewani','Protein Nabati','Protein','Sayuran','Bumbu','Minyak & Lemak','Buah','Minuman','Frozen Food','Lainnya'];
+  const typeOrder=getAllTypes();
   const byType={};
   matIds.forEach(mid=>{
     const m=getMat(mid);if(!m)return;
@@ -2311,7 +2311,11 @@ const BASE_TYPES=['Karbohidrat','Protein Hewani','Protein Nabati','Protein','Say
 const BASE_UNITS=['kg','gram','liter','ml','buah','ikat','papan','porsi','btl','pak','karton','dus','loyang','sachet','pcs','unit'];
 function getAllTypes(){
   const base=BASE_TYPES.filter(t=>!(S.hiddenTypes||[]).includes(t));
-  return [...base,...(S.customTypes||[])].filter((v,i,a)=>a.indexOf(v)===i);
+  const all=[...base,...(S.customTypes||[])].filter((v,i,a)=>a.indexOf(v)===i);
+  const order=(S.typeOrder&&S.typeOrder.length)?S.typeOrder:BASE_TYPES;
+  const ordered=order.filter(t=>all.includes(t));
+  const missing=all.filter(t=>!ordered.includes(t));
+  return [...ordered,...missing];
 }
 function getAllUnits(){
   const base=BASE_UNITS.filter(u=>!(S.hiddenUnits||[]).includes(u));
@@ -2722,7 +2726,7 @@ function openRekap(){
     matMap[si.materialId].siIds[si.day]=si.id;
   });
 
-  const typeOrder=['Karbohidrat','Protein Hewani','Protein Nabati','Protein','Sayuran','Bumbu','Minyak & Lemak','Buah','Minuman','Frozen Food','Lainnya'];
+  const typeOrder=getAllTypes();
   const sorted=Object.entries(matMap).filter(([,x])=>x.mat).sort(([,a],[,b])=>{
     const ta=typeOrder.indexOf(a.mat.type),tb=typeOrder.indexOf(b.mat.type);
     return (ta<0?99:ta)-(tb<0?99:tb)||a.mat.name.localeCompare(b.mat.name);
@@ -3223,7 +3227,7 @@ function renderWizStep(step){
     const newItemsRi=ri.filter(r=>!r.existsInMaster);
     const capCount=newItemsRi.filter(r=>r.warnings.some(w=>w.type==='cap')).length;
 
-    const typeOpts=['Karbohidrat','Protein Hewani','Protein Nabati','Protein','Sayuran','Bumbu','Minyak & Lemak','Buah','Minuman','Frozen Food','Lainnya'].map(t=>`<option value="${t}">${t}</option>`).join('');
+    const typeOpts=getAllTypes().map(t=>`<option value="${t}">${t}</option>`).join('');
 
     // Section A: existing master items — info only, auto use new price
     let existingRows=existingItems.length===0
@@ -4052,17 +4056,36 @@ function renderTypeMgmtList(){
   const el=document.getElementById('custom-type-list');if(!el)return;
   const list=getAllTypes();
   if(!list.length){el.innerHTML='<div style="padding:12px;color:#94a3b8;text-align:center;font-size:12px">Tidak ada kategori.</div>';return;}
-  el.innerHTML=list.map(t=>{
+  el.innerHTML=list.map((t,idx)=>{
     const cnt=S.materials.filter(m=>m.type===t).length;
     const esc=t.replace(/'/g,"\\'");
     return `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--br)">
       <input type="checkbox" class="type-chk" value="${t.replace(/"/g,'&quot;')}" style="width:16px;height:16px;flex-shrink:0">
+      <div style="display:flex;flex-direction:column;gap:1px;flex-shrink:0">
+        <button onclick="moveTypeOrder('${esc}',-1)" ${idx===0?'disabled':''} title="Naikkan urutan" style="border:1px solid var(--br);background:${idx===0?'#f1f5f9':'#fff'};border-radius:4px;width:20px;height:16px;font-size:9px;line-height:1;cursor:${idx===0?'default':'pointer'};color:${idx===0?'#cbd5e1':'var(--tx)'};display:flex;align-items:center;justify-content:center;padding:0">▲</button>
+        <button onclick="moveTypeOrder('${esc}',1)" ${idx===list.length-1?'disabled':''} title="Turunkan urutan" style="border:1px solid var(--br);background:${idx===list.length-1?'#f1f5f9':'#fff'};border-radius:4px;width:20px;height:16px;font-size:9px;line-height:1;cursor:${idx===list.length-1?'default':'pointer'};color:${idx===list.length-1?'#cbd5e1':'var(--tx)'};display:flex;align-items:center;justify-content:center;padding:0">▼</button>
+      </div>
       <button onclick="editTypeEmoji('${esc}')" title="Ganti simbol" style="border:1px solid var(--br);background:var(--bg2,#f8fafc);border-radius:6px;width:28px;height:28px;font-size:14px;cursor:pointer;flex-shrink:0">${typeEmoji(t)}</button>
       <div style="flex:1;font-size:13px;font-weight:600">${t}</div>
       <span style="font-size:11px;color:var(--mt)">${cnt} bahan</span>
       <button class="btn btn-rd btn-xs" onclick="deleteTypeSingle('${esc}')">🗑️</button>
     </div>`;
   }).join('');
+}
+// Urutan kategori dipakai di semua tempat bahan dikelompokkan per jenis
+// (Jadwal, Pesanan, Rekap, copy WA, print, dropdown import Excel) -- geser
+// sekali di sini, langsung nyambung kemana-mana.
+function moveTypeOrder(t,dir){
+  const order=getAllTypes();
+  const i=order.indexOf(t);
+  if(i<0)return;
+  const j=i+dir;
+  if(j<0||j>=order.length)return;
+  [order[i],order[j]]=[order[j],order[i]];
+  S.typeOrder=order;
+  save();
+  renderTypeMgmtList();
+  if(curPage==='master-barang')renderMasterBarang();
 }
 function deleteType(t){
   const cnt=S.materials.filter(m=>m.type===t).length;
@@ -4235,7 +4258,7 @@ function copyRekapWA(){
   const kit=S.kitchens.find(k=>k.id===kid);
   const dates=getWeekDates(pesananWeek);
   const items=S.scheduleItems.filter(s=>s.weekKey===pesananWeek&&s.kitchenId===kid);
-  const tOrder=['Karbohidrat','Protein Hewani','Protein Nabati','Protein','Sayuran','Bumbu','Minyak & Lemak','Buah','Minuman','Frozen Food','Lainnya'];
+  const tOrder=getAllTypes();
   let txt='*📦 ORDER BAHAN — '+(kit?.name||'Dapur').toUpperCase()+'*\n';
   txt+='Minggu: '+fmtShort(dates[0])+'–'+fmtShort(dates[4])+' '+dates[4].getFullYear()+'\n\n';
   for(let di=0;di<5;di++){
@@ -4263,7 +4286,7 @@ function printRekap(){
   const kit=S.kitchens.find(k=>k.id===kid);
   const dates=getWeekDates(pesananWeek);
   const items=S.scheduleItems.filter(s=>s.weekKey===pesananWeek&&s.kitchenId===kid);
-  const tOrder=['Karbohidrat','Protein Hewani','Protein Nabati','Protein','Sayuran','Bumbu','Minyak & Lemak','Buah','Minuman','Frozen Food','Lainnya'];
+  const tOrder=getAllTypes();
   let body='';
   for(let di=0;di<5;di++){
     const dayItems=items.filter(s=>s.day===di);
@@ -4399,7 +4422,7 @@ init();
       <button class="btn btn-rd btn-xs" onclick="bulkDeleteUnits()">🗑️ Hapus Terpilih</button>
     </div>
     <div id="custom-unit-list" style="border:1px solid var(--br);border-radius:10px;margin-bottom:14px;max-height:180px;overflow-y:auto"></div>
-    <div class="fh" style="margin-bottom:10px">Kategori/satuan yang masih dipakai bahan tidak bisa dihapus — ubah dulu bahan-bahan itu di Master Barang. Klik ikon emoji buat ganti simbolnya. Tambah kategori/satuan baru lewat form Tambah/Edit Bahan Baku.</div>
+    <div class="fh" style="margin-bottom:10px">Kategori/satuan yang masih dipakai bahan tidak bisa dihapus — ubah dulu bahan-bahan itu di Master Barang. Klik ▲▼ buat atur urutan kategori, klik ikon emoji buat ganti simbolnya. Tambah kategori/satuan baru lewat form Tambah/Edit Bahan Baku.</div>
     <div class="mac">
       <button class="btn btn-ol" onclick="closeModal('modal-typeunit')">Tutup</button>
     </div>
