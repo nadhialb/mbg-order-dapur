@@ -10,7 +10,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --pr:#1a1a1a;--prd:#000;--prl:#555;--prp:#f2f2f2;
-  --or:#e07b39;--rd:#d94f4f;--gn:#2d7a4f;--yw:#c49a00;--bl:#2f6fb5;
+  --or:#e07b39;--or-rgb:224,123,57;--or-light:#f0a76a;--rd:#d94f4f;--gn:#2d7a4f;--yw:#c49a00;--bl:#2f6fb5;
   --bg:#f5f5f5;--card:#fff;--tx:#111111;--mt:#888;--br:#e5e5e5;
   --sw:240px;
 }
@@ -23,7 +23,7 @@ body{font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif
 .sb-nav{flex:1;padding:8px 0;overflow-y:auto}
 .nav-item{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;font-size:13px;font-weight:400;transition:background .15s;border-left:3px solid transparent}
 .nav-item:hover{background:rgba(255,255,255,.1)}
-.nav-item.active{background:rgba(224,123,57,.12);border-left-color:#e07b39;color:#f0a76a}
+.nav-item.active{background:rgba(var(--or-rgb),.12);border-left-color:var(--or);color:var(--or-light)}
 .nav-item .ic{width:18px;height:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.85}
 .sb-footer{padding:14px 18px;border-top:1px solid rgba(255,255,255,.1);font-size:11px;opacity:.45;letter-spacing:.2px}
 
@@ -42,7 +42,7 @@ body{font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif
 .fab-action-ico{width:40px;height:40px;border-radius:50%;background:#fff;border:1.5px solid var(--br);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.15)}
 .bot-nav-inner{display:flex;justify-content:space-around;padding:5px 0 env(safe-area-inset-bottom,3px)}
 .bn-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 8px;cursor:pointer;font-size:10px;font-weight:600;color:var(--mt);min-width:52px}
-.bn-item .ic{width:22px;height:20px;display:flex;align-items:center;justify-content:center}.bn-item.active{color:#e07b39}.bn-item.active .ic{filter:drop-shadow(0 0 3px rgba(224,123,57,.3))}
+.bn-item .ic{width:22px;height:20px;display:flex;align-items:center;justify-content:center}.bn-item.active{color:var(--or)}.bn-item.active .ic{filter:drop-shadow(0 0 3px rgba(var(--or-rgb),.3))}
 
 /* ── MAIN ── */
 .main{margin-left:var(--sw);min-height:100vh;padding:20px 24px}
@@ -153,7 +153,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
 .dtabs{display:flex;gap:5px;margin-bottom:16px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px}
 .dtab{padding:6px 13px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;background:var(--bg);color:var(--mt);border:1.5px solid var(--br);transition:all .15s;white-space:nowrap;flex-shrink:0}
 .dtab:hover:not(.active){background:var(--prp);color:var(--tx);border-color:#d0d0d0}
-.dtab.active{background:#e07b39;color:#fff;border-color:#e07b39}
+.dtab.active{background:var(--or);color:#fff;border-color:var(--or)}
 .dtab .ds{display:block;font-size:10px;font-weight:500;opacity:.75;margin-top:1px}
 
 /* ── VIEW TOGGLE ── */
@@ -212,7 +212,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
 /* ── IMPORT WIZARD ── */
 .wiz-steps{display:flex;gap:0;margin-bottom:20px;border-radius:10px;overflow:hidden;border:1px solid var(--br)}
 .wiz-step{flex:1;padding:10px 14px;text-align:center;font-size:12px;font-weight:700;background:var(--bg);color:var(--mt);position:relative}
-.wiz-step.active{background:#e07b39;color:#fff}
+.wiz-step.active{background:var(--or);color:#fff}
 .wiz-step.done{background:#e8e8e8;color:#555}
 .wiz-step-num{font-size:16px;font-weight:900;display:block;margin-bottom:2px}
 .preview-table{max-height:200px;overflow-y:auto;font-size:12px}
@@ -360,8 +360,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div class="nav-item" onclick="navigate('pesanan')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 4h8M5.5 8h8M5.5 12h5"/><circle cx="2.5" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="2.5" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="2.5" cy="12" r="1" fill="currentColor" stroke="none"/></svg></span>Daftar Pesanan</div>
     <div class="nav-item" onclick="navigate('master-barang')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1L14.5 4.5V11.5L8 15L1.5 11.5V4.5L8 1Z"/><path d="M1.5 4.5L8 8L14.5 4.5"/><path d="M8 8V15"/></svg></span>Master Barang</div>
     <div class="nav-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M1 7l2-5h10l2 5"/><path d="M6 15V11h4v4"/><path d="M1 7h14"/></svg></span>Master Dapur</div>
+    <div class="nav-item" onclick="navigate('riwayat')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.5"/><path d="M8 4.5V8l3 2"/></svg></span>Riwayat</div>
   </nav>
-  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260821-v50</div>
+  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260821-v53</div>
 </aside>
 
 <!-- MOBILE HEADER -->
@@ -528,6 +529,23 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     </div>
   </div>
 
+  <!-- RIWAYAT PERUBAHAN -->
+  <div class="page" id="page-riwayat">
+    <div class="page-hdr">
+      <div><div class="page-title">Riwayat Perubahan</div><div class="page-sub">Pantau perubahan terbaru di Bahan &amp; Jadwal Menu</div></div>
+    </div>
+    <div class="fbar fbar-tight">
+      <label>Dapur:</label>
+      <select id="riwayat-kitchen" onchange="renderRiwayat()"></select>
+      <div class="view-toggle">
+        <button class="vt-btn active" id="vt-riwayat-semua" onclick="setRiwayatFilter('')">Semua</button>
+        <button class="vt-btn" id="vt-riwayat-bahan" onclick="setRiwayatFilter('bahan')">📦 Bahan</button>
+        <button class="vt-btn" id="vt-riwayat-jadwal" onclick="setRiwayatFilter('jadwal')">📅 Jadwal</button>
+      </div>
+    </div>
+    <div class="card" id="riwayat-list"></div>
+  </div>
+
 
 </main>
 
@@ -542,6 +560,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
   <div class="bn-item" onclick="navigate('pesanan')"><span class="ic"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 5h10M7 10h10M7 15h7"/><circle cx="3" cy="5" r="1.5" fill="currentColor" stroke="none"/><circle cx="3" cy="10" r="1.5" fill="currentColor" stroke="none"/><circle cx="3" cy="15" r="1.5" fill="currentColor" stroke="none"/></svg></span>Pesanan</div>
   <div class="bn-item" onclick="navigate('master-barang')"><span class="ic"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 1L19 5.5V14.5L10 19L1 14.5V5.5L10 1Z"/><path d="M1 5.5L10 10L19 5.5"/><path d="M10 10V19"/></svg></span>Barang</div>
   <div class="bn-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="9" width="18" height="10" rx="1.5"/><path d="M1 9l3-7h12l3 7"/><path d="M8 19V14h4v5"/><path d="M1 9h18"/></svg></span>Dapur</div>
+  <div class="bn-item" onclick="navigate('riwayat')"><span class="ic"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="8"/><path d="M10 5.5V10l4 2.5"/></svg></span>Riwayat</div>
 </div></div>
 
 <!-- MODAL: Tambah/Edit Item Jadwal -->
@@ -634,6 +653,23 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <input type="hidden" id="kitchen-id">
     <div class="fg"><label class="fl">Nama Dapur</label><input type="text" id="kitchen-name" placeholder="cth: Dapur Pusat Jakarta"></div>
     <div class="fg"><label class="fl">Lokasi</label><input type="text" id="kitchen-loc" placeholder="cth: Jakarta Selatan"></div>
+    <div class="fg">
+      <label class="fl">Warna Aksen</label>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <input type="color" id="kitchen-color" value="#e07b39" style="width:44px;height:34px;padding:2px;border:1.5px solid var(--br);border-radius:8px;cursor:pointer">
+        <span class="fh" style="margin:0">Dipakai untuk tombol &amp; tab aktif saat dapur ini yang sedang dilihat di Jadwal/Pesanan/Riwayat.</span>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap" id="kitchen-color-swatches">
+        <button type="button" class="kc-swatch" title="Oren (default)" onclick="pickKitchenColor('#e07b39')" style="width:26px;height:26px;border-radius:50%;border:1.5px solid var(--br);background:#e07b39;cursor:pointer;padding:0"></button>
+        <button type="button" class="kc-swatch" title="Teal" onclick="pickKitchenColor('#0d9488')" style="width:26px;height:26px;border-radius:50%;border:1.5px solid var(--br);background:#0d9488;cursor:pointer;padding:0"></button>
+        <button type="button" class="kc-swatch" title="Indigo" onclick="pickKitchenColor('#4338ca')" style="width:26px;height:26px;border-radius:50%;border:1.5px solid var(--br);background:#4338ca;cursor:pointer;padding:0"></button>
+        <button type="button" class="kc-swatch" title="Magenta" onclick="pickKitchenColor('#db2777')" style="width:26px;height:26px;border-radius:50%;border:1.5px solid var(--br);background:#db2777;cursor:pointer;padding:0"></button>
+        <button type="button" class="kc-swatch" title="Cokelat Karamel" onclick="pickKitchenColor('#b45309')" style="width:26px;height:26px;border-radius:50%;border:1.5px solid var(--br);background:#b45309;cursor:pointer;padding:0"></button>
+        <button type="button" class="kc-swatch" title="Navy" onclick="pickKitchenColor('#1e3a8a')" style="width:26px;height:26px;border-radius:50%;border:1.5px solid var(--br);background:#1e3a8a;cursor:pointer;padding:0"></button>
+        <button type="button" class="kc-swatch" title="Marun" onclick="pickKitchenColor('#9f1239')" style="width:26px;height:26px;border-radius:50%;border:1.5px solid var(--br);background:#9f1239;cursor:pointer;padding:0"></button>
+        <button type="button" class="kc-swatch" title="Abu Gelap" onclick="pickKitchenColor('#475569')" style="width:26px;height:26px;border-radius:50%;border:1.5px solid var(--br);background:#475569;cursor:pointer;padding:0"></button>
+      </div>
+    </div>
     <div class="mac">
       <button class="btn btn-ol" onclick="closeModal('modal-kitchen')">Batal</button>
       <button class="btn btn-pr" onclick="saveKitchen()">Simpan</button>
@@ -943,6 +979,40 @@ function effSupplierId(si){
   if(m&&m.supplierIds&&m.supplierIds.length===1)return m.supplierIds[0];
   return null;
 }
+// ── Warna aksen per dapur ──────────────────────────────────
+// Tiap dapur bisa punya warna sendiri (default: oren seperti sebelumnya).
+// Warna ini diterapkan ke variabel CSS --or/--or-rgb/--or-light secara
+// dinamis setiap kali "dapur yang sedang dilihat" berubah (Jadwal, Pesanan,
+// Riwayat), supaya tombol, tab aktif, dsb ikut berubah warna. Di halaman
+// yang tidak terikat satu dapur (Dashboard, Master Barang, Master Dapur)
+// warnanya balik ke default.
+const DEFAULT_ACCENT='#e07b39';
+function hexToRgbArr(hex){
+  let h=(hex||'').replace('#','');
+  if(h.length===3)h=h.split('').map(ch=>ch+ch).join('');
+  const num=parseInt(h,16);
+  if(isNaN(num)||h.length!==6)return [224,123,57];
+  return [(num>>16)&255,(num>>8)&255,num&255];
+}
+function lightenHex(hex,amt){
+  const [r,g,b]=hexToRgbArr(hex);
+  const lr=Math.round(r+(255-r)*amt);
+  const lg=Math.round(g+(255-g)*amt);
+  const lb=Math.round(b+(255-b)*amt);
+  return `rgb(${lr},${lg},${lb})`;
+}
+function applyAccentColor(hex){
+  const h=hex||DEFAULT_ACCENT;
+  const [r,g,b]=hexToRgbArr(h);
+  const root=document.documentElement.style;
+  root.setProperty('--or',h);
+  root.setProperty('--or-rgb',`${r},${g},${b}`);
+  root.setProperty('--or-light',lightenHex(h,.35));
+}
+function applyKitchenAccent(kitchenId){
+  const kit=S.kitchens.find(k=>k.id===kitchenId);
+  applyAccentColor(kit?.color||DEFAULT_ACCENT);
+}
 function effPrice(si){const m=getMat(si.materialId);return si.unitPrice!=null?si.unitPrice:(m?m.price:0);}
 
 // Type style
@@ -1108,6 +1178,7 @@ function confirmImportMenu(){
       }
     });
   });
+  if(added)logChange('jadwal','add',`Import menu: ${added} menu ditambahkan (${days.map(d=>DAYS[d]).join(', ')})`);
   save();
   closeModal('modal-import-menu');
   renderJadwal();
@@ -1119,11 +1190,14 @@ function addMenu(kitId,wk,day){
   const name=inp.value.trim();
   if(!name)return;
   S.menus.push({id:uid(),kitchenId:kitId,weekKey:wk,day,name});
+  logChange('jadwal','add',`Menu "${name}" ditambahkan ke ${DAYS[day]}`);
   inp.value='';
   save();
   renderJadwalContent();
 }
 function deleteMenu(id){
+  const _mn=(S.menus||[]).find(m=>m.id===id);
+  if(_mn)logChange('jadwal','delete',`Menu "${_mn.name}" dihapus dari ${DAYS[_mn.day]}`);
   S.menus=S.menus.filter(m=>m.id!==id);
   save();
   renderJadwalContent();
@@ -1143,14 +1217,15 @@ function navigate(page){
   curPage=page;
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
-  const pages=['dashboard','jadwal','pesanan','master-barang','master-dapur'];
+  const pages=['dashboard','jadwal','pesanan','master-barang','master-dapur','riwayat'];
   document.querySelectorAll('.nav-item').forEach((el,i)=>el.classList.toggle('active',pages[i]===page));
   document.querySelectorAll('.bn-item').forEach((el,i)=>el.classList.toggle('active',pages[i]===page));
-  if(page==='dashboard')renderDashboard();
+  if(page==='dashboard'){applyAccentColor(null);renderDashboard();}
   if(page==='jadwal')renderJadwal();
   if(page==='pesanan')renderPesanan();
-  if(page==='master-barang')renderMasterBarang();
-  if(page==='master-dapur')renderMasterDapur();
+  if(page==='master-barang'){applyAccentColor(null);renderMasterBarang();}
+  if(page==='master-dapur'){applyAccentColor(null);renderMasterDapur();}
+  if(page==='riwayat')renderRiwayat();
 }
 
 // Re-render whichever page is currently visible. Used after data is
@@ -1162,6 +1237,7 @@ function renderCurrentPage(){
   else if(curPage==='pesanan'){renderPesananSide();renderPesanan();}
   else if(curPage==='master-barang')renderMasterBarang();
   else if(curPage==='master-dapur')renderMasterDapur();
+  else if(curPage==='riwayat')renderRiwayat();
 }
 
 // ═══════════════════════════════════════
@@ -1386,6 +1462,72 @@ function populateKitchenSelect(selId,val){
 }
 
 // ═══════════════════════════════════════
+//  RIWAYAT PERUBAHAN (change log — Bahan & Jadwal)
+// ═══════════════════════════════════════
+// Dipanggil dari setiap titik mutasi Bahan (Master Barang) dan Jadwal
+// (menu masakan + bahan terjadwal) supaya user bisa lihat apa saja yang
+// baru berubah. Disimpan maksimal 300 entri terbaru biar tidak membengkak.
+function logChange(cat,action,summary){
+  if(!S.changeLog)S.changeLog=[];
+  S.changeLog.unshift({id:uid(),ts:Date.now(),cat,action,summary,kitchenId:curKitchen||''});
+  if(S.changeLog.length>300)S.changeLog=S.changeLog.slice(0,300);
+}
+let riwayatFilterCat='';
+function setRiwayatFilter(cat){
+  riwayatFilterCat=cat;
+  document.getElementById('vt-riwayat-semua')?.classList.toggle('active',cat==='');
+  document.getElementById('vt-riwayat-bahan')?.classList.toggle('active',cat==='bahan');
+  document.getElementById('vt-riwayat-jadwal')?.classList.toggle('active',cat==='jadwal');
+  renderRiwayat();
+}
+function riwayatTimeAgo(ts){
+  const diff=Date.now()-ts;
+  const min=Math.floor(diff/60000);
+  if(min<1)return 'Baru saja';
+  if(min<60)return `${min} menit lalu`;
+  const hr=Math.floor(min/60);
+  if(hr<24)return `${hr} jam lalu`;
+  const day=Math.floor(hr/24);
+  if(day<7)return `${day} hari lalu`;
+  return fmtShort(new Date(ts));
+}
+function renderRiwayat(){
+  const kSel=document.getElementById('riwayat-kitchen');
+  if(kSel&&!kSel.dataset.init){
+    kSel.innerHTML='<option value="">Semua Dapur</option>'+S.kitchens.map(k=>`<option value="${k.id}">${k.name}</option>`).join('');
+    kSel.dataset.init='1';
+  }
+  const kid=kSel?.value||'';
+  applyAccentColor(kid?S.kitchens.find(k=>k.id===kid)?.color:null);
+  let list=(S.changeLog||[]).slice();
+  if(kid)list=list.filter(e=>e.kitchenId===kid);
+  if(riwayatFilterCat)list=list.filter(e=>e.cat===riwayatFilterCat);
+  const el=document.getElementById('riwayat-list');
+  if(!el)return;
+  if(!list.length){
+    el.innerHTML='<div class="empty"><div class="ei">🕐</div><div class="et">Belum ada riwayat perubahan</div><div class="ed">Perubahan di Master Barang dan Jadwal akan muncul di sini.</div></div>';
+    return;
+  }
+  const icon={add:'➕',edit:'✏️',delete:'🗑️'};
+  const catLabel={bahan:'📦 Bahan',jadwal:'📅 Jadwal'};
+  const catColor={bahan:'#0369a1',jadwal:'#7c3aed'};
+  el.innerHTML=list.map(e=>{
+    const kit=S.kitchens.find(k=>k.id===e.kitchenId);
+    return `<div style="display:flex;gap:10px;padding:12px 14px;border-bottom:1px solid var(--br)">
+      <div style="font-size:16px;flex-shrink:0;line-height:1.4">${icon[e.action]||'•'}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;color:var(--tx);line-height:1.5">${e.summary}</div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:3px;flex-wrap:wrap">
+          <span style="font-size:10px;font-weight:700;color:${catColor[e.cat]||'var(--mt)'}">${catLabel[e.cat]||e.cat}</span>
+          ${kit?`<span style="font-size:11px;color:var(--mt)">· ${kit.name}</span>`:''}
+          <span style="font-size:11px;color:var(--mt)">· ${riwayatTimeAgo(e.ts)}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════
 //  SIDE PANELS
 // ═══════════════════════════════════════
 function renderJadwalSide(){
@@ -1458,7 +1600,9 @@ function addMenuFromSide(){
   const inp=document.getElementById('side-menu-input');
   if(!inp||!inp.value.trim())return;
   if(!S.menus)S.menus=[];
-  S.menus.push({id:uid(),kitchenId:curKitchen,weekKey:curWeek,day:curDay,name:inp.value.trim(),meal:'makan_siang'});
+  const _mname=inp.value.trim();
+  S.menus.push({id:uid(),kitchenId:curKitchen,weekKey:curWeek,day:curDay,name:_mname,meal:'makan_siang'});
+  logChange('jadwal','add',`Menu "${_mname}" ditambahkan ke ${DAYS[curDay]}`);
   save();inp.value='';renderJadwalSide();
 }
 
@@ -1527,6 +1671,7 @@ function renderJadwal(){
   populateKitchenSelect('jadwal-kitchen',curKitchen);
   if(!curKitchen&&S.kitchens.length)curKitchen=S.kitchens[0].id;
   document.getElementById('jadwal-kitchen').value=curKitchen;
+  applyKitchenAccent(curKitchen);
   renderWeekLabel();renderWeeklySummary();renderDayTabs();renderJadwalContent();
 }
 function renderWeekLabel(){
@@ -1647,7 +1792,7 @@ function renderWeeklySummary(){
       ${jadwalSummaryOpen?`<div class="dtabs" style="margin-bottom:0">${dayCols}</div>`:''}
     </div>`;
 }
-function onKitchenChange(){curKitchen=document.getElementById('jadwal-kitchen').value;renderWeeklySummary();renderDayTabs();renderJadwalContent();}
+function onKitchenChange(){curKitchen=document.getElementById('jadwal-kitchen').value;applyKitchenAccent(curKitchen);renderWeeklySummary();renderDayTabs();renderJadwalContent();}
 function selectDay(d){curDay=d;renderWeeklySummary();renderDayTabs();renderJadwalContent();}
 function changeWeek(dir){const d=getWeekDates(curWeek);curWeek=getWeekKey(addDays(d[0],dir*7));renderWeekLabel();renderWeeklySummary();renderDayTabs();renderJadwalContent();}
 function goToCurrentWeek(){curWeek=getDefaultWeek();renderWeekLabel();renderWeeklySummary();renderDayTabs();renderJadwalContent();}
@@ -1748,16 +1893,26 @@ function saveItem(){
   }
   if(editItemId){
     const si=S.scheduleItems.find(s=>s.id===editItemId);
-    if(si){si.materialId=mid;si.qty=qty;si.unitPrice=unitPrice;si.supplierId=supplierId;}
+    if(si){
+      const _m0=getMat(si.materialId);
+      const _changes=[];
+      if(si.materialId!==mid){const _mNew=getMat(mid);_changes.push(`bahan ${_m0?.name||'?'} → ${_mNew?.name||'?'}`);}
+      if(si.qty!==qty)_changes.push(`jumlah ${si.qty} → ${qty}`);
+      si.materialId=mid;si.qty=qty;si.unitPrice=unitPrice;si.supplierId=supplierId;
+      if(_changes.length)logChange('jadwal','edit',`"${getMat(mid)?.name||'?'}" di jadwal ${DAYS[curDay]} diubah: ${_changes.join(', ')}`);
+    }
   } else {
     const dup=S.scheduleItems.find(s=>s.weekKey===curWeek&&s.kitchenId===curKitchen&&s.day===curDay&&s.materialId===mid);
     if(dup){alert('Bahan ini sudah ada di jadwal hari ini.');return;}
     S.scheduleItems.push({id:uid(),kitchenId:curKitchen,weekKey:curWeek,day:curDay,materialId:mid,qty,unitPrice,supplierId,isOrdered:false,orderedAt:null,isPaid:false,paidAt:null,isConfirmed:false,isReceived:false,notes:''});
+    logChange('jadwal','add',`"${m?.name||'?'}" ditambahkan ke jadwal ${DAYS[curDay]} (${qty} ${m?.unit||''})`);
   }
   save();closeModal('modal-add-item');renderWeeklySummary();renderDayTabs();renderJadwalContent();
 }
 function deleteItem(id){
   if(!confirm('Hapus bahan ini dari jadwal?'))return;
+  const _si=S.scheduleItems.find(s=>s.id===id);
+  if(_si){const _m=getMat(_si.materialId);logChange('jadwal','delete',`"${_m?.name||'?'}" dihapus dari jadwal ${DAYS[_si.day]} (${_si.qty} ${_m?.unit||''})`);}
   S.scheduleItems=S.scheduleItems.filter(s=>s.id!==id);save();renderWeeklySummary();renderDayTabs();renderJadwalContent();
 }
 
@@ -1776,6 +1931,7 @@ function renderPesanan(){
   renderRapelNotif();
   populateKitchenSelect('pesanan-kitchen',document.getElementById('pesanan-kitchen').value||curKitchen);
   const kid=document.getElementById('pesanan-kitchen').value;
+  applyKitchenAccent(kid);
   const dates=getWeekDates(pesananWeek);
   document.getElementById('pesanan-week-label').textContent=fmtWeekRange(dates[0],dates[4]);
 
@@ -2530,11 +2686,20 @@ function saveMaterial(){
   if(id){
     const m=getMat(id);
     if(m){
+      const changes=[];
+      if(m.name!==name)changes.push(`nama "${m.name}" → "${name}"`);
+      if(m.type!==type)changes.push(`kategori ${m.type} → ${type}`);
+      if(m.unit!==unit)changes.push(`satuan ${m.unit} → ${unit}`);
+      if(m.price!==price)changes.push(`harga ${fmtRp(m.price)} → ${fmtRp(price)}`);
       if(m.price&&m.price!==price){if(!m.priceHistory)m.priceHistory=[];m.priceHistory.push({price:m.price,date:fmtDate(new Date())});if(m.priceHistory.length>10)m.priceHistory=m.priceHistory.slice(-10);}
       Object.assign(m,{name,type,unit,price,stockType,supplierIds});
+      if(changes.length)logChange('bahan','edit',`"${name}" diubah: ${changes.join(', ')}`);
     }
   }
-  else S.materials.push({id:uid(),name,type,unit,price,stockType,supplierIds});
+  else {
+    S.materials.push({id:uid(),name,type,unit,price,stockType,supplierIds});
+    logChange('bahan','add',`Bahan baru ditambahkan: "${name}" (${type}, ${unit}${price?', '+fmtRp(price):''})`);
+  }
   save();closeModal('modal-material');renderMasterBarang();
 }
 function clearDays(id){
@@ -2542,11 +2707,13 @@ function clearDays(id){
   m.days=0;save();renderMasterBarang();
 }
 function deleteMaterial(id){
+  const _delMat=getMat(id);
   const used=S.scheduleItems.some(s=>s.materialId===id);
   if(used&&!confirm('Bahan ini sudah digunakan di jadwal. Hapus tetap?'))return;
   if(!used&&!confirm('Hapus bahan baku ini?'))return;
   S.materials=S.materials.filter(m=>m.id!==id);
   if(used)S.scheduleItems=S.scheduleItems.filter(s=>s.materialId!==id);
+  if(_delMat)logChange('bahan','delete',`Bahan "${_delMat.name}" dihapus`);
   save();renderMasterBarang();
 }
 
@@ -2565,6 +2732,7 @@ function deleteWeekSchedule(){
   if(!cnt){alert('Tidak ada jadwal untuk minggu ini.');return;}
   if(!confirm(`Hapus ${cnt} item jadwal minggu ini (${curWeek}) untuk dapur ${kit?.name||''}?`))return;
   S.scheduleItems=S.scheduleItems.filter(s=>!(s.weekKey===curWeek&&s.kitchenId===curKitchen));
+  logChange('jadwal','delete',`Semua jadwal bahan minggu ${curWeek} dihapus (${cnt} item) — ${kit?.name||''}`);
   save();renderWeeklySummary();renderDayTabs();renderJadwalContent();
 }
 function deleteDaySchedule(){
@@ -2575,6 +2743,7 @@ function deleteDaySchedule(){
   if(!confirm(`Hapus ${menuCnt} menu masakan dan ${itemCnt} bahan untuk ${DAYS[curDay]} (${kit?.name||''})?`))return;
   if(S.menus)S.menus=S.menus.filter(m=>!(m.weekKey===curWeek&&m.kitchenId===curKitchen&&m.day===curDay));
   S.scheduleItems=S.scheduleItems.filter(s=>!(s.weekKey===curWeek&&s.kitchenId===curKitchen&&s.day===curDay));
+  logChange('jadwal','delete',`Semua menu & bahan ${DAYS[curDay]} dihapus (${menuCnt} menu, ${itemCnt} bahan) — ${kit?.name||''}`);
   save();renderWeeklySummary();renderDayTabs();renderJadwalContent();
 }
 
@@ -2649,23 +2818,38 @@ function copyMatFromRekap(matId){
 }
 function updateStockType(id,val){
   const m=getMat(id);if(!m)return;
+  if(m.stockType!==val){
+    const _stLabel={h1:'H-1',h2:'H-2',h3:'H-3',h4:'H-4',rapel:'Rapel Mingguan'};
+    logChange('bahan','edit',`Tipe stok "${m.name}" diubah dari ${_stLabel[m.stockType]||m.stockType} jadi ${_stLabel[val]||val}`);
+  }
   m.stockType=val;save();renderMasterBarang();
 }
 function updateMatField(id,field,val){
   const m=getMat(id);if(!m)return;
-  if(field==='name'){const v=val.trim();if(v)m.name=v;}
+  const _label=m.name;
+  if(field==='name'){
+    const v=val.trim();
+    if(v&&v!==m.name){logChange('bahan','edit',`Nama "${m.name}" diubah jadi "${v}"`);m.name=v;}
+  }
   else if(field==='price'){
     const np=parseFloat(val)||0;
     if(m.price&&m.price!==np){
       if(!m.priceHistory)m.priceHistory=[];
       m.priceHistory.push({price:m.price,date:fmtDate(new Date())});
       if(m.priceHistory.length>10)m.priceHistory=m.priceHistory.slice(-10);
+      logChange('bahan','edit',`Harga "${_label}" diubah dari ${fmtRp(m.price)} jadi ${fmtRp(np)}`);
     }
     m.price=np;
   }
   else if(field==='days')m.days=Math.max(0,parseInt(val)||0);
-  else if(field==='unit'){const v=val.trim();if(v)m.unit=v;}
-  else if(field==='type')m.type=val;
+  else if(field==='unit'){
+    const v=val.trim();
+    if(v&&v!==m.unit){logChange('bahan','edit',`Satuan "${_label}" diubah dari ${m.unit} jadi ${v}`);m.unit=v;}
+  }
+  else if(field==='type'){
+    if(val!==m.type)logChange('bahan','edit',`Kategori "${_label}" diubah dari ${m.type} jadi ${val}`);
+    m.type=val;
+  }
   save();
 }
 function resetIgnoredPairs(){
@@ -2937,7 +3121,7 @@ function renderMasterDapur(){
   const tbody=document.getElementById('kitchen-tbody');
   if(!S.kitchens.length){tbody.innerHTML=`<tr><td colspan="4"><div class="empty"><div class="ei">🍳</div><div class="et">Belum ada dapur</div></div></td></tr>`;return;}
   tbody.innerHTML=S.kitchens.map(k=>`<tr>
-    <td><b>${k.name}</b></td><td>${k.location||'—'}</td><td>${k.created||'—'}</td>
+    <td><span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:${k.color||DEFAULT_ACCENT};margin-right:7px;vertical-align:middle;border:1px solid rgba(0,0,0,.1)"></span><b>${k.name}</b></td><td>${k.location||'—'}</td><td>${k.created||'—'}</td>
     <td style="white-space:nowrap">
       <button class="btn btn-ol btn-xs" onclick="openEditKitchen('${k.id}')">✏️ Edit</button>
       <button class="btn btn-rd btn-xs" style="margin-left:4px" onclick="deleteKitchen('${k.id}')">🗑️</button>
@@ -2947,21 +3131,28 @@ function renderMasterDapur(){
 function openAddKitchen(){
   document.getElementById('kitchen-modal-title').textContent='Tambah Dapur';
   ['kitchen-id','kitchen-name','kitchen-loc'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('kitchen-color').value=DEFAULT_ACCENT;
   openModal('modal-kitchen');
 }
 function openEditKitchen(id){
   const k=getKit(id);if(!k)return;
   document.getElementById('kitchen-modal-title').textContent='Edit Dapur';
   document.getElementById('kitchen-id').value=k.id;document.getElementById('kitchen-name').value=k.name;
-  document.getElementById('kitchen-loc').value=k.location||'';openModal('modal-kitchen');
+  document.getElementById('kitchen-loc').value=k.location||'';
+  document.getElementById('kitchen-color').value=k.color||DEFAULT_ACCENT;
+  openModal('modal-kitchen');
+}
+function pickKitchenColor(hex){
+  document.getElementById('kitchen-color').value=hex;
 }
 function saveKitchen(){
   const name=document.getElementById('kitchen-name').value.trim();
   const location=document.getElementById('kitchen-loc').value.trim();
+  const color=document.getElementById('kitchen-color').value||DEFAULT_ACCENT;
   if(!name){alert('Nama dapur wajib diisi.');return;}
   const id=document.getElementById('kitchen-id').value;
-  if(id){const k=getKit(id);if(k)Object.assign(k,{name,location});}
-  else S.kitchens.push({id:uid(),name,location,created:fmtDate(new Date())});
+  if(id){const k=getKit(id);if(k)Object.assign(k,{name,location,color});}
+  else S.kitchens.push({id:uid(),name,location,color,created:fmtDate(new Date())});
   save();closeModal('modal-kitchen');renderMasterDapur();
 }
 function deleteKitchen(id){
@@ -3848,9 +4039,10 @@ function processImport(){
 function confirmImport(){
   const{newMats,newItems,priceUpdates=[],newMenus=[]}=IMP.importResult;
   newMats.forEach(m=>S.materials.push(m));
+  let _addedItems=0;
   newItems.forEach(si=>{
     const dup=S.scheduleItems.find(s=>s.weekKey===si.weekKey&&s.kitchenId===si.kitchenId&&s.day===si.day&&s.materialId===si.materialId);
-    if(!dup)S.scheduleItems.push(si);
+    if(!dup){S.scheduleItems.push(si);_addedItems++;}
   });
   priceUpdates.forEach(pu=>{
     const m=getMat(pu.materialId);
@@ -3860,6 +4052,9 @@ function confirmImport(){
     if(!S.menus)S.menus=[];
     newMenus.forEach(nm=>S.menus.push(nm));
   }
+  if(newMats.length)logChange('bahan','add',`Import Excel: ${newMats.length} bahan baru ditambahkan ke master`);
+  if(priceUpdates.length)logChange('bahan','edit',`Import Excel: harga ${priceUpdates.length} bahan diupdate`);
+  if(_addedItems||newMenus.length)logChange('jadwal','add',`Import Excel: ${_addedItems} bahan & ${newMenus.length} menu ditambahkan ke jadwal`);
   save();closeModal('modal-import');
   alert(`✅ Import berhasil!\n• ${newMats.length} bahan baku baru ditambahkan ke master\n• ${newItems.length} item jadwal ditambahkan${newMenus.length?`\n• ${newMenus.length} menu masakan ditambahkan`:''}`);
   renderMasterBarang();
@@ -3884,6 +4079,7 @@ function applyState(state){
   dashWeek=_defWk;
   menuWeek=_defWk;
   curKitchen=S.kitchens[0]?.id||'';
+  applyKitchenAccent(curKitchen);
   const dayOfWeek=today.getDay();
   curDay=(dayOfWeek===0||dayOfWeek===6)?0:dayOfWeek-1;
   pesananDay=curDay;
