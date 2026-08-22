@@ -362,7 +362,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div class="nav-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M1 7l2-5h10l2 5"/><path d="M6 15V11h4v4"/><path d="M1 7h14"/></svg></span>Master Dapur</div>
     <div class="nav-item" onclick="navigate('riwayat')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.5"/><path d="M8 4.5V8l3 2"/></svg></span>Riwayat</div>
   </nav>
-  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260821-v53</div>
+  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260822-v55</div>
 </aside>
 
 <!-- MOBILE HEADER -->
@@ -469,9 +469,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
               <button class="btn btn-ol" onclick="openImportWizard()">📊 Import Excel</button>
               <div style="position:relative;display:inline-block">
                 <button class="btn btn-ol" onclick="toggleLainnyaMenu()" id="lainnya-btn" style="padding:6px 10px">⋮ Lainnya</button>
-                <div id="lainnya-menu" style="display:none;position:absolute;top:calc(100% + 4px);right:0;background:#fff;border:1px solid var(--br);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:300;min-width:180px;overflow:hidden">
+                <div id="lainnya-menu" style="display:none;position:absolute;top:calc(100% + 4px);left:0;background:#fff;border:1px solid var(--br);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:300;min-width:200px;max-width:calc(100vw - 32px);overflow:hidden">
                   <button onclick="closeLainnyaMenu();exportAllData()" style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;border:none;background:none;cursor:pointer;font-size:13px;text-align:left;color:var(--tx)">⬇ Backup Data</button>
                   <label style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;border:none;background:none;cursor:pointer;font-size:13px;text-align:left;color:var(--tx)">⬆ Restore Data<input type="file" accept=".json" style="display:none" onchange="closeLainnyaMenu();importAllData(this)"></label>
+                  <button onclick="closeLainnyaMenu();openAutoBackupList()" style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;border:none;background:none;cursor:pointer;font-size:13px;text-align:left;color:var(--tx)">🕐 Cadangan Otomatis</button>
                   <div style="height:1px;background:var(--br);margin:2px 0"></div>
                   <button onclick="closeLainnyaMenu();exportMasterBarang()" style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;border:none;background:none;cursor:pointer;font-size:13px;text-align:left;color:var(--tx)">⬇ Export JSON</button>
                   <label style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;border:none;background:none;cursor:pointer;font-size:13px;text-align:left;color:var(--tx)">⬆ Import JSON<input type="file" accept=".json" style="display:none" onchange="closeLainnyaMenu();importMasterBarang(this)"></label>
@@ -898,6 +899,7 @@ async function pullFromCloud(){
 }
 
 function save(){
+  maybeAutoBackup();
   localStorage.setItem('mbg-v2',JSON.stringify(S));
   clearTimeout(_saveTimer);
   _saveTimer=setTimeout(()=>{
@@ -2637,7 +2639,7 @@ function populateMatUnitSelect(selId,curVal){
 function openAddMaterial(){
   document.getElementById('mat-modal-title').textContent='Tambah Bahan Baku';
   ['mat-id','mat-name','mat-price'].forEach(id=>document.getElementById(id).value='');
-  renderMatSupplierCheckboxes([]);
+  renderMatSupplierCheckboxes(S.primarySupplierId?[S.primarySupplierId]:[]);
   populateMatTypeSelect('mat-type','Karbohidrat');
   populateMatUnitSelect('mat-unit','kg');
   document.getElementById('mat-stocktype').value='h1';
@@ -3082,6 +3084,62 @@ function importAllData(input){
   };
   reader.readAsText(file);
   input.value='';
+}
+// ── Cadangan Otomatis (auto backup snapshots) ──────────────
+// App otomatis nyimpen beberapa cadangan penuh (state lengkap) secara
+// berkala di localStorage, terpisah dari cadangan manual (Backup/Restore
+// Data). Tujuannya: kalau ada data yang tiba-tiba hilang -- entah karena
+// bug atau salah pencet aksi hapus massal -- masih ada jalan buat balikin
+// tanpa harus mengandalkan file backup manual yang mungkin belum sempat
+// dibuat. Cloud sync sendiri TIDAK cukup buat ini karena sifatnya cermin
+// langsung: kalau data hilang lalu ke-sync, cloud ikut kosong juga.
+const AUTO_BACKUP_MIN_GAP_MS=4*60*60*1000; // minimal 4 jam antar cadangan
+const AUTO_BACKUP_MAX_COUNT=8;
+function maybeAutoBackup(){
+  if(!S.autoBackups)S.autoBackups=[];
+  const last=S.autoBackups[0];
+  const now=Date.now();
+  if(last&&(now-last.ts)<AUTO_BACKUP_MIN_GAP_MS)return;
+  const snapshot={...S};
+  delete snapshot.autoBackups;
+  S.autoBackups.unshift({id:uid(),ts:now,data:JSON.parse(JSON.stringify(snapshot))});
+  if(S.autoBackups.length>AUTO_BACKUP_MAX_COUNT)S.autoBackups=S.autoBackups.slice(0,AUTO_BACKUP_MAX_COUNT);
+}
+function openAutoBackupList(){
+  renderAutoBackupList();
+  openModal('modal-auto-backup');
+}
+function renderAutoBackupList(){
+  const el=document.getElementById('auto-backup-list');
+  if(!el)return;
+  const list=S.autoBackups||[];
+  if(!list.length){
+    el.innerHTML='<div style="padding:14px;color:var(--mt);font-size:13px;text-align:center">Belum ada cadangan otomatis. Cadangan baru dibuat otomatis tiap beberapa jam saat ada perubahan data.</div>';
+    return;
+  }
+  el.innerHTML=list.map(b=>{
+    const d=b.data||{};
+    const stat=`${(d.kitchens||[]).length} dapur · ${(d.materials||[]).length} bahan · ${(d.scheduleItems||[]).length} item jadwal`;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border-bottom:1px solid var(--br)">
+      <div>
+        <div style="font-size:13px;font-weight:700">${fmtSyncTime(b.ts)}</div>
+        <div style="font-size:11px;color:var(--mt);margin-top:2px">${stat}</div>
+      </div>
+      <button class="btn btn-ol btn-xs" onclick="restoreAutoBackup('${b.id}')">↺ Pulihkan</button>
+    </div>`;
+  }).join('');
+}
+function restoreAutoBackup(backupId){
+  const b=(S.autoBackups||[]).find(x=>x.id===backupId);
+  if(!b)return;
+  const when=fmtSyncTime(b.ts);
+  if(!confirm(`Pulihkan data ke kondisi saat ${when}?\n\nSemua perubahan setelah waktu itu akan hilang (kecuali sempat dibackup manual). Lanjutkan?`))return;
+  const restored=JSON.parse(JSON.stringify(b.data));
+  restored.autoBackups=S.autoBackups;
+  S=restored;
+  save();
+  alert('✓ Data berhasil dipulihkan ke cadangan tersebut.');
+  location.reload();
 }
 function exportMasterBarang(){
   const data=JSON.stringify(S.materials,null,2);
@@ -4186,18 +4244,36 @@ function renderSupplierList(){
   if(!el)return;
   if(!(S.suppliers||[]).length){el.innerHTML='<div style="padding:16px;color:var(--mt);text-align:center;font-size:13px">Belum ada supplier. Tambah supplier di bawah.</div>';return;}
   el.innerHTML=(S.suppliers||[]).map(s=>{
-    const matCount=S.materials.filter(m=>(m.supplierIds||[]).includes(s.id)).length;
-    return `<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--br)">
-      <div style="flex:1">
-        <div style="font-weight:600;font-size:13px">${s.name}</div>
-        ${s.phone?`<div style="font-size:11px;color:var(--mt)">${s.phone}</div>`:''}
-        ${s.notes?`<div style="font-size:11px;color:var(--mt);font-style:italic">${s.notes}</div>`:''}
-        <div style="font-size:11px;color:var(--mt);margin-top:2px">${matCount} bahan terhubung</div>
+    const mats=S.materials.filter(m=>(m.supplierIds||[]).includes(s.id));
+    const isPrimary=S.primarySupplierId===s.id;
+    const matsHtml=mats.length
+      ?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">${mats.map(m=>`<span style="font-size:10px;background:#f1f5f9;color:var(--tx);padding:2px 7px;border-radius:99px;white-space:nowrap">${m.name}</span>`).join('')}</div>`
+      :`<div style="font-size:11px;color:var(--mt);margin-top:4px">Belum ada bahan yang terhubung</div>`;
+    return `<div style="padding:11px 14px;border-bottom:1px solid var(--br);${isPrimary?'background:#fffbeb':''}">
+      <div style="display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap">
+        <div style="flex:1;min-width:180px">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span style="font-weight:700;font-size:13px">${s.name}</span>
+            ${isPrimary?'<span style="font-size:10px;font-weight:700;color:#92400e;background:#fef3c7;padding:1px 7px;border-radius:99px;white-space:nowrap">⭐ Utama</span>':''}
+          </div>
+          ${s.phone?`<div style="font-size:11px;color:var(--mt);margin-top:2px">📞 ${s.phone}</div>`:''}
+          ${s.notes?`<div style="font-size:11px;color:var(--mt);font-style:italic;margin-top:1px">${s.notes}</div>`:''}
+          <div style="font-size:11px;color:var(--mt);font-weight:600;margin-top:6px">${mats.length} bahan terhubung</div>
+          ${matsHtml}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+          <button class="btn btn-xs" onclick="setPrimarySupplier('${s.id}')" title="${isPrimary?'Batal jadikan utama':'Jadikan supplier utama'}" style="white-space:nowrap;${isPrimary?'background:#f59e0b;color:#fff;border-color:#f59e0b':'background:#fff;border:1.5px solid var(--br);color:var(--tx)'}">${isPrimary?'⭐ Utama':'☆ Jadikan Utama'}</button>
+          <button class="btn btn-ol btn-xs" onclick="openEditSupplier('${s.id}')">✏️ Edit</button>
+          <button class="btn btn-rd btn-xs" onclick="deleteSupplier('${s.id}')">🗑️ Hapus</button>
+        </div>
       </div>
-      <button class="btn btn-ol btn-xs" onclick="openEditSupplier('${s.id}')">✏️</button>
-      <button class="btn btn-rd btn-xs" onclick="deleteSupplier('${s.id}')">🗑️</button>
     </div>`;
   }).join('');
+}
+function setPrimarySupplier(id){
+  S.primarySupplierId = S.primarySupplierId===id ? null : id;
+  save();
+  renderSupplierList();
 }
 function openSupplierMgmt(){
   renderSupplierList();
@@ -4239,6 +4315,7 @@ function deleteSupplier(id){
   S.suppliers=(S.suppliers||[]).filter(s=>s.id!==id);
   S.materials.forEach(m=>{if(m.supplierIds)m.supplierIds=m.supplierIds.filter(x=>x!==id);});
   S.scheduleItems.forEach(s=>{if(s.supplierId===id)s.supplierId=null;});
+  if(S.primarySupplierId===id)S.primarySupplierId=null;
   save();renderSupplierList();
   if(curPage==='master-barang')renderMasterBarang();
   if(curPage==='pesanan')renderPesanan();
@@ -4589,9 +4666,10 @@ init();
 
 <!-- Supplier Management Modal -->
 <div class="mbg" id="modal-supplier">
-  <div class="modal" style="max-width:480px">
+  <div class="modal" style="max-width:600px">
     <div class="mt">🏪 Kelola Supplier</div>
-    <div id="supplier-list-body" style="max-height:260px;overflow-y:auto;border:1px solid var(--br);border-radius:10px;margin-bottom:14px"></div>
+    <div class="fh" style="margin-bottom:10px">Tandai satu supplier sebagai "⭐ Utama" supaya otomatis tercentang tiap kali menambah bahan baku baru di Master Barang.</div>
+    <div id="supplier-list-body" style="max-height:340px;overflow-y:auto;border:1px solid var(--br);border-radius:10px;margin-bottom:14px"></div>
     <div style="font-size:13px;font-weight:700;margin-bottom:8px;color:var(--tx)" id="supp-form-title">Tambah Supplier</div>
     <input type="hidden" id="supp-id">
     <div class="fg"><label class="fl">Nama Supplier *</label><input type="text" id="supp-name" placeholder="cth: Pak Budi Sayur"></div>
@@ -4621,6 +4699,18 @@ init();
     <div class="fh" style="margin-bottom:10px">Kategori/satuan yang masih dipakai bahan tidak bisa dihapus — ubah dulu bahan-bahan itu di Master Barang. Klik ▲▼ buat atur urutan kategori, klik ikon emoji buat ganti simbolnya. Tambah kategori/satuan baru lewat form Tambah/Edit Bahan Baku.</div>
     <div class="mac">
       <button class="btn btn-ol" onclick="closeModal('modal-typeunit')">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cadangan Otomatis -->
+<div class="mbg" id="modal-auto-backup">
+  <div class="modal" style="max-width:460px">
+    <div class="mt">🕐 Cadangan Otomatis</div>
+    <div class="fh" style="margin-bottom:10px">App otomatis menyimpan cadangan data (maksimal 8 versi terakhir, minimal berjarak 4 jam) supaya bisa dipulihkan kalau ada data yang tiba-tiba hilang. Ini terpisah dari cadangan manual (Backup Data/Restore Data).</div>
+    <div id="auto-backup-list" style="border:1px solid var(--br);border-radius:10px;max-height:320px;overflow-y:auto;margin-bottom:14px"></div>
+    <div class="mac">
+      <button class="btn btn-ol" onclick="closeModal('modal-auto-backup')">Tutup</button>
     </div>
   </div>
 </div>
