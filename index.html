@@ -362,7 +362,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div class="nav-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M1 7l2-5h10l2 5"/><path d="M6 15V11h4v4"/><path d="M1 7h14"/></svg></span>Master Dapur</div>
     <div class="nav-item" onclick="navigate('riwayat')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.5"/><path d="M8 4.5V8l3 2"/></svg></span>Riwayat</div>
   </nav>
-  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260822-v55</div>
+  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260824-v56</div>
 </aside>
 
 <!-- MOBILE HEADER -->
@@ -480,6 +480,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
                   <div style="height:1px;background:var(--br);margin:2px 0"></div>
                   <button onclick="closeLainnyaMenu();openSupplierMgmt()" style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;border:none;background:none;cursor:pointer;font-size:13px;text-align:left;color:var(--tx)">🏪 Kelola Supplier</button>
                   <button onclick="closeLainnyaMenu();openTypeUnitMgmt()" style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;border:none;background:none;cursor:pointer;font-size:13px;text-align:left;color:var(--tx)">🏷 Kelola Kategori &amp; Satuan</button>
+                  <button onclick="closeLainnyaMenu();openAttentionMgmt()" style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;border:none;background:none;cursor:pointer;font-size:13px;text-align:left;color:var(--tx)">🚩 Bahan Perlu Perhatian</button>
                   <button onclick="closeLainnyaMenu();resetIgnoredPairs()" style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;border:none;background:none;cursor:pointer;font-size:13px;text-align:left;color:var(--tx)">↺ Reset Abaikan</button>
                 </div>
               </div>
@@ -1015,6 +1016,34 @@ function applyKitchenAccent(kitchenId){
   const kit=S.kitchens.find(k=>k.id===kitchenId);
   applyAccentColor(kit?.color||DEFAULT_ACCENT);
 }
+function darkenHex(hex,amt){
+  const [r,g,b]=hexToRgbArr(hex);
+  const dr=Math.round(r*(1-amt));
+  const dg=Math.round(g*(1-amt));
+  const db=Math.round(b*(1-amt));
+  return `rgb(${dr},${dg},${db})`;
+}
+// Tiap supplier bisa punya warna badge sendiri (default: ungu seperti
+// sebelumnya) supaya gampang dibedain sekilas mata di Jadwal/Pesanan kalau
+// bahan-bahan datang dari beberapa supplier berbeda.
+const DEFAULT_SUPPLIER_COLOR='#7c3aed';
+function supplierBadgeStyle(supplierId){
+  const supp=getSupp(supplierId);
+  const hex=supp?.color||DEFAULT_SUPPLIER_COLOR;
+  const [r,g,b]=hexToRgbArr(hex);
+  return{
+    solid:hex,
+    bg:`rgba(${r},${g},${b},.12)`,
+    text:darkenHex(hex,.12),
+    border:`rgba(${r},${g},${b},.55)`
+  };
+}
+// Bahan yang perlu di-follow-up rutin (mis. sering telat kirim / kualitasnya
+// perlu dicek) bisa ditandai "butuh perhatian" lewat ⋮ Lainnya. Ditandai
+// pakai font merah tebal + prefix 🚩 di Jadwal & Daftar Pesanan.
+function matNeedsAttention(m){ return !!(m&&m.needsAttention); }
+function attnPrefix(m){ return matNeedsAttention(m)?'🚩 ':''; }
+function attnStyle(m){ return matNeedsAttention(m)?'color:#dc2626;font-weight:800':''; }
 function effPrice(si){const m=getMat(si.materialId);return si.unitPrice!=null?si.unitPrice:(m?m.price:0);}
 
 // Type style
@@ -1746,13 +1775,13 @@ function renderJadwalContent(){
         const hasDiff=si.unitPrice!=null&&si.unitPrice!==m.price;
         html+=`<div class="oi" style="border-left-color:${typeColor(m.type)}">
           <div class="oi-info">
-            <div class="oi-name">${m.name}</div>
+            <div class="oi-name" style="${attnStyle(m)}">${attnPrefix(m)}${m.name}</div>
             <div class="oi-meta">
               <span style="color:var(--tx);font-weight:500">${si.qty} ${m.unit}</span>
               <span style="color:var(--br)">·</span>
               ${m.stockType==='rapel'?'<span class="badge bg-gn">Rapel</span>':H_DAYS[m.stockType]?`<span class="badge bg-bl">H-${H_DAYS[m.stockType]}</span>`:''}
               ${hasDiff?`<span style="color:var(--or);font-size:11px">≠ master</span>`:''}
-              ${effSupplierId(si)?(()=>{const _sp=getSupp(effSupplierId(si));return _sp?`<span style="font-size:10px;color:#6b21a8;background:#f3e8ff;border:1px solid #c084fc;border-radius:99px;padding:1px 7px;white-space:nowrap">🏪 ${_sp.name}</span>`:'';})():''}
+              ${effSupplierId(si)?(()=>{const _sp=getSupp(effSupplierId(si));if(!_sp)return'';const _bs=supplierBadgeStyle(_sp.id);return `<span style="font-size:10px;color:${_bs.text};background:${_bs.bg};border:1px solid ${_bs.border};border-radius:99px;padding:1px 7px;white-space:nowrap">🏪 ${_sp.name}</span>`;})():''}
             </div>
           </div>
           <div class="oi-right">
@@ -2202,14 +2231,14 @@ function renderPesananByHari(items,dates){
         if(catOpen){
           byType[typ].forEach(({si,m})=>{
             const ord=si.isOrdered;const paid=si.isPaid;const recv=si.isReceived||false;
-            const nameStyle=ord?'text-decoration:line-through;color:#94a3b8':'font-weight:600';
+            const nameStyle=(ord?'text-decoration:line-through;color:#94a3b8':'font-weight:600')+(matNeedsAttention(m)?';color:#dc2626;font-weight:800':'');
             const qtyStyle=ord?'color:#94a3b8':'color:var(--tx)';
             const rowBg=paid?'background:#f0fdf4':recv?'background:#fef9c3':ord?'background:#fafafa':'';
-            const _spBadge=effSupplierId(si)?(()=>{const _sp2=getSupp(effSupplierId(si));return _sp2?`<div style="font-size:10px;line-height:1.2;color:#7c3aed;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px">🏪 ${_sp2.name}</div>`:'';})():'';
+            const _spBadge=effSupplierId(si)?(()=>{const _sp2=getSupp(effSupplierId(si));if(!_sp2)return'';const _bs2=supplierBadgeStyle(_sp2.id);return `<div style="font-size:10px;line-height:1.2;color:${_bs2.text};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px">🏪 ${_sp2.name}</div>`;})():'';
             html+=`<div style="border-top:1px solid var(--br)">`;
             html+=`<div style="display:flex;align-items:center;padding:6px 16px 6px 32px;gap:6px;flex-wrap:nowrap;${rowBg}">
               <span style="flex:1;min-width:0;overflow:hidden">
-                <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;${nameStyle}">${m.name}</div>
+                <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;${nameStyle}">${attnPrefix(m)}${m.name}</div>
                 ${_spBadge}
               </span>
               <span style="font-size:13px;font-weight:600;flex-shrink:0;${qtyStyle}">${si.qty} ${m.unit}</span>
@@ -2307,7 +2336,7 @@ function renderPesananByBahan(items,dates){
 
       html+=`<div class="mg" style="border-left-color:${typeColor(m.type)}">
         <div class="mg-hdr">
-          <div class="mg-name">${m.name}</div>
+          <div class="mg-name" style="${attnStyle(m)}">${attnPrefix(m)}${m.name}</div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             ${multiDay?`<span class="badge bg-bl">${sis.length} Hari</span>`:''}
             <span style="font-weight:800;color:var(--pr)">${totalQty} ${m.unit} total</span>
@@ -2319,7 +2348,7 @@ function renderPesananByBahan(items,dates){
       sis.sort((a,b)=>a.day-b.day).forEach(si=>{
         const nd=dates[si.day];const ord=si.isOrdered;const paid=si.isPaid;const recv=si.isReceived||false;
         const _rowBg2=paid?'background:#f0fdf4':recv?'background:#fef9c3':ord?'background:#fafafa':'';
-        const _spBadge2=effSupplierId(si)?(()=>{const _sp3=getSupp(effSupplierId(si));return _sp3?`<div style="font-size:10px;line-height:1.2;color:#7c3aed;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px">🏪 ${_sp3.name}</div>`:'';})():'';
+        const _spBadge2=effSupplierId(si)?(()=>{const _sp3=getSupp(effSupplierId(si));if(!_sp3)return'';const _bs3=supplierBadgeStyle(_sp3.id);return `<div style="font-size:10px;line-height:1.2;color:${_bs3.text};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px">🏪 ${_sp3.name}</div>`;})():'';
         html+=`<div style="border-top:1px solid var(--br)">`;
         html+=`<div class="mg-sub-row" style="${_rowBg2}">
           <div style="min-width:80px;font-size:13px;font-weight:700;color:var(--pr)">${DAYS[si.day]}<br><span style="font-size:11px;color:var(--mt);font-weight:400">${fmtShort(nd)}</span></div>
@@ -2393,7 +2422,7 @@ function renderPesananBySupplier(items,dates){
       return{label:`Pengiriman ${ddn} ${dd}/${mm}`,items:byDay[di].map(s=>{const mm2=getMat(s.materialId);return{name:mm2?.name||'?',qty:s.qty,unit:mm2?.unit||'',ord:s.isOrdered};})};
     })};
 
-    html+=`<div class="mg" style="border-left-color:${supp?'#7c3aed':'#94a3b8'}">
+    html+=`<div class="mg" style="border-left-color:${supp?supplierBadgeStyle(supp.id).solid:'#94a3b8'}">
       <div class="mg-hdr">
         <div class="mg-name">🏪 ${label}${supp?.phone?` <span style="font-weight:400;color:var(--mt);font-size:11px">${supp.phone}</span>`:''}</div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -2413,7 +2442,7 @@ function renderPesananBySupplier(items,dates){
         const ord=si.isOrdered,paid=si.isPaid,recv=si.isReceived||false;
         const rowBg=paid?'background:#f0fdf4':recv?'background:#fef9c3':ord?'background:#fafafa':'';
         html+=`<div style="display:flex;align-items:center;padding:6px 16px;gap:6px;flex-wrap:nowrap;border-top:1px solid var(--br);${rowBg}">
-          <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;${ord?'text-decoration:line-through;color:#94a3b8':'font-weight:600'}">${m.name}</span>
+          <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;${(ord?'text-decoration:line-through;color:#94a3b8':'font-weight:600')+(matNeedsAttention(m)?';color:#dc2626;font-weight:800':'')}">${attnPrefix(m)}${m.name}</span>
           <span style="font-size:13px;font-weight:600;flex-shrink:0;${ord?'color:#94a3b8':'color:var(--tx)'}">${si.qty} ${m.unit}</span>
           ${!recv
             ?(ord
@@ -2563,9 +2592,10 @@ function renderMasterBarang(){
     return `<tr id="mat-row-${m.id}" style="${rowBg}" onfocusin="activateMatRow('${m.id}',event)" onfocusout="scheduleMatDeact('${m.id}',event)">
       <td style="white-space:nowrap">
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-          <input class="td-inp" type="text" value="${m.name}" onchange="updateMatField('${m.id}','name',this.value)" style="min-width:90px;width:100%;font-weight:600;font-size:13px;border-left:3px solid ${typeColor(m.type)};padding-left:8px">
+          <input class="td-inp" type="text" value="${m.name}" onchange="updateMatField('${m.id}','name',this.value)" style="min-width:90px;width:100%;font-weight:600;font-size:13px;border-left:3px solid ${typeColor(m.type)};padding-left:8px;${attnStyle(m)}">
+          ${matNeedsAttention(m)?`<span class="badge" style="background:#fee2e2;color:#dc2626;font-weight:700" title="Butuh perhatian khusus">🚩 Perhatian</span>`:''}
           ${hasSimilar?`<span class="badge bg-yw" style="cursor:pointer" onclick="openMergeModal('${m.id}')" title="Mirip: ${similarTo}">⚠️ Mirip</span><span class="badge bg-gr" style="cursor:pointer;font-size:10px" onclick="ignoreMatPair('${m.id}','${ignoreIds[0]||''}')">Abaikan</span>`:''}
-          ${(m.supplierIds||[]).map(sid=>{const _s=getSupp(sid);return _s?`<span style="font-size:10px;color:#6b21a8;background:#f3e8ff;border:1px solid #c084fc;border-radius:99px;padding:1px 7px;white-space:nowrap">🏪 ${_s.name}</span>`:'';}).join('')}
+          ${(m.supplierIds||[]).map(sid=>{const _s=getSupp(sid);if(!_s)return'';const _bs4=supplierBadgeStyle(_s.id);return `<span style="font-size:10px;color:${_bs4.text};background:${_bs4.bg};border:1px solid ${_bs4.border};border-radius:99px;padding:1px 7px;white-space:nowrap">🏪 ${_s.name}</span>`;}).join('')}
         </div>
       </td>
       <td><div style="display:inline-flex;align-items:center;gap:4px"><span style="font-size:13px;line-height:1;flex-shrink:0">${typeEmoji(m.type)}</span>${buildTypeSelect('td-sel',m.type,m.id)}</div></td>
@@ -4253,6 +4283,7 @@ function renderSupplierList(){
       <div style="display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap">
         <div style="flex:1;min-width:180px">
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:${s.color||DEFAULT_SUPPLIER_COLOR};flex-shrink:0;border:1px solid rgba(0,0,0,.1)"></span>
             <span style="font-weight:700;font-size:13px">${s.name}</span>
             ${isPrimary?'<span style="font-size:10px;font-weight:700;color:#92400e;background:#fef3c7;padding:1px 7px;border-radius:99px;white-space:nowrap">⭐ Utama</span>':''}
           </div>
@@ -4275,12 +4306,16 @@ function setPrimarySupplier(id){
   save();
   renderSupplierList();
 }
+function pickSupplierColor(hex){
+  document.getElementById('supp-color').value=hex;
+}
 function openSupplierMgmt(){
   renderSupplierList();
   document.getElementById('supp-id').value='';
   document.getElementById('supp-name').value='';
   document.getElementById('supp-phone').value='';
   document.getElementById('supp-notes').value='';
+  document.getElementById('supp-color').value=DEFAULT_SUPPLIER_COLOR;
   document.getElementById('supp-form-title').textContent='Tambah Supplier';
   openModal('modal-supplier');
 }
@@ -4290,6 +4325,7 @@ function openEditSupplier(id){
   document.getElementById('supp-name').value=s.name;
   document.getElementById('supp-phone').value=s.phone||'';
   document.getElementById('supp-notes').value=s.notes||'';
+  document.getElementById('supp-color').value=s.color||DEFAULT_SUPPLIER_COLOR;
   document.getElementById('supp-form-title').textContent='Edit Supplier';
   renderSupplierList();
   openModal('modal-supplier');
@@ -4299,13 +4335,15 @@ function saveSupplier(){
   if(!name){alert('Nama supplier wajib diisi.');return;}
   const phone=document.getElementById('supp-phone').value.trim();
   const notes=document.getElementById('supp-notes').value.trim();
+  const color=document.getElementById('supp-color').value||DEFAULT_SUPPLIER_COLOR;
   const id=document.getElementById('supp-id').value;
-  if(id){const s=getSupp(id);if(s)Object.assign(s,{name,phone,notes});}
-  else{if(!S.suppliers)S.suppliers=[];S.suppliers.push({id:uid(),name,phone,notes});}
+  if(id){const s=getSupp(id);if(s)Object.assign(s,{name,phone,notes,color});}
+  else{if(!S.suppliers)S.suppliers=[];S.suppliers.push({id:uid(),name,phone,notes,color});}
   document.getElementById('supp-id').value='';
   document.getElementById('supp-name').value='';
   document.getElementById('supp-phone').value='';
   document.getElementById('supp-notes').value='';
+  document.getElementById('supp-color').value=DEFAULT_SUPPLIER_COLOR;
   document.getElementById('supp-form-title').textContent='Tambah Supplier';
   save();renderSupplierList();
   if(document.getElementById('mat-supplier-list'))renderMatSupplierCheckboxes(getCheckedMatSuppliers());
@@ -4318,6 +4356,33 @@ function deleteSupplier(id){
   if(S.primarySupplierId===id)S.primarySupplierId=null;
   save();renderSupplierList();
   if(curPage==='master-barang')renderMasterBarang();
+  if(curPage==='pesanan')renderPesanan();
+}
+function openAttentionMgmt(){
+  const s=document.getElementById('attn-search');if(s)s.value='';
+  renderAttentionList();
+  openModal('modal-attention');
+}
+function renderAttentionList(){
+  const el=document.getElementById('attn-list');
+  if(!el)return;
+  const q=(document.getElementById('attn-search')?.value||'').toLowerCase().trim();
+  const list=S.materials.filter(m=>!q||m.name.toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name));
+  if(!list.length){el.innerHTML='<div style="padding:14px;color:var(--mt);text-align:center;font-size:13px">Tidak ada bahan ditemukan.</div>';return;}
+  el.innerHTML=list.map(m=>`<label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--br);cursor:pointer">
+    <input type="checkbox" ${m.needsAttention?'checked':''} onchange="toggleMatAttention('${m.id}',this.checked)" style="width:16px;height:16px;flex-shrink:0">
+    <span style="flex:1;font-size:13px;${m.needsAttention?'color:#dc2626;font-weight:700':''}">${m.needsAttention?'🚩 ':''}${m.name}</span>
+    <span style="font-size:11px;color:var(--mt)">${m.type}</span>
+  </label>`).join('');
+}
+function toggleMatAttention(id,checked){
+  const m=getMat(id);if(!m)return;
+  m.needsAttention=checked;
+  logChange('bahan','edit',`"${m.name}" ${checked?'ditandai':'dibatalkan tandanya sebagai'} butuh perhatian khusus`);
+  save();
+  renderAttentionList();
+  if(curPage==='master-barang')renderMasterBarang();
+  if(curPage==='jadwal')renderJadwal();
   if(curPage==='pesanan')renderPesanan();
 }
 function openTypeUnitMgmt(){
@@ -4675,6 +4740,23 @@ init();
     <div class="fg"><label class="fl">Nama Supplier *</label><input type="text" id="supp-name" placeholder="cth: Pak Budi Sayur"></div>
     <div class="fg"><label class="fl">No. HP / Kontak</label><input type="text" id="supp-phone" placeholder="cth: 0812-3456-7890"></div>
     <div class="fg"><label class="fl">Catatan</label><input type="text" id="supp-notes" placeholder="cth: Antar setiap Senin &amp; Kamis"></div>
+    <div class="fg">
+      <label class="fl">Warna Label</label>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <input type="color" id="supp-color" value="#7c3aed" style="width:44px;height:34px;padding:2px;border:1.5px solid var(--br);border-radius:8px;cursor:pointer">
+        <span class="fh" style="margin:0">Dipakai untuk badge nama supplier ini di Jadwal &amp; Daftar Pesanan, biar gampang dibedain per supplier.</span>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap" id="supp-color-swatches">
+        <button type="button" class="kc-swatch" title="Ungu (default)" onclick="pickSupplierColor('#7c3aed')" style="width:26px;height:26px;border-radius:50%;border:1.5px solid var(--br);background:#7c3aed;cursor:pointer;padding:0"></button>
+        <button type="button" class="kc-swatch" title="Teal" onclick="pickSupplierColor('#0d9488')" style="width:26px;height:26px;border-radius:50%;border:1.5px solid var(--br);background:#0d9488;cursor:pointer;padding:0"></button>
+        <button type="button" class="kc-swatch" title="Oren" onclick="pickSupplierColor('#e07b39')" style="width:26px;height:26px;border-radius:50%;border:1.5px solid var(--br);background:#e07b39;cursor:pointer;padding:0"></button>
+        <button type="button" class="kc-swatch" title="Magenta" onclick="pickSupplierColor('#db2777')" style="width:26px;height:26px;border-radius:50%;border:1.5px solid var(--br);background:#db2777;cursor:pointer;padding:0"></button>
+        <button type="button" class="kc-swatch" title="Hijau" onclick="pickSupplierColor('#15803d')" style="width:26px;height:26px;border-radius:50%;border:1.5px solid var(--br);background:#15803d;cursor:pointer;padding:0"></button>
+        <button type="button" class="kc-swatch" title="Navy" onclick="pickSupplierColor('#1e3a8a')" style="width:26px;height:26px;border-radius:50%;border:1.5px solid var(--br);background:#1e3a8a;cursor:pointer;padding:0"></button>
+        <button type="button" class="kc-swatch" title="Marun" onclick="pickSupplierColor('#9f1239')" style="width:26px;height:26px;border-radius:50%;border:1.5px solid var(--br);background:#9f1239;cursor:pointer;padding:0"></button>
+        <button type="button" class="kc-swatch" title="Abu Gelap" onclick="pickSupplierColor('#475569')" style="width:26px;height:26px;border-radius:50%;border:1.5px solid var(--br);background:#475569;cursor:pointer;padding:0"></button>
+      </div>
+    </div>
     <div class="mac">
       <button class="btn btn-ol" onclick="closeModal('modal-supplier')">Tutup</button>
       <button class="btn btn-pr" onclick="saveSupplier()">Simpan Supplier</button>
@@ -4699,6 +4781,19 @@ init();
     <div class="fh" style="margin-bottom:10px">Kategori/satuan yang masih dipakai bahan tidak bisa dihapus — ubah dulu bahan-bahan itu di Master Barang. Klik ▲▼ buat atur urutan kategori, klik ikon emoji buat ganti simbolnya. Tambah kategori/satuan baru lewat form Tambah/Edit Bahan Baku.</div>
     <div class="mac">
       <button class="btn btn-ol" onclick="closeModal('modal-typeunit')">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bahan Perlu Perhatian -->
+<div class="mbg" id="modal-attention">
+  <div class="modal" style="max-width:480px">
+    <div class="mt">🚩 Bahan Perlu Perhatian</div>
+    <div class="fh" style="margin-bottom:10px">Tandai bahan yang perlu di-follow-up rutin (misalnya karena sering telat kirim atau kualitasnya perlu dicek tiap kali). Bahan yang ditandai akan tampil dengan warna merah &amp; ikon 🚩 di Jadwal dan Daftar Pesanan.</div>
+    <input type="text" id="attn-search" placeholder="Cari bahan..." oninput="renderAttentionList()" style="width:100%;padding:8px 12px;border:1.5px solid var(--br);border-radius:8px;font-size:13px;margin-bottom:10px">
+    <div id="attn-list" style="border:1px solid var(--br);border-radius:10px;max-height:340px;overflow-y:auto;margin-bottom:14px"></div>
+    <div class="mac">
+      <button class="btn btn-ol" onclick="closeModal('modal-attention')">Tutup</button>
     </div>
   </div>
 </div>
