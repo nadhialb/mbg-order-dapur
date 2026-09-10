@@ -362,7 +362,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div class="nav-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M1 7l2-5h10l2 5"/><path d="M6 15V11h4v4"/><path d="M1 7h14"/></svg></span>Master Dapur</div>
     <div class="nav-item" onclick="navigate('riwayat')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.5"/><path d="M8 4.5V8l3 2"/></svg></span>Riwayat</div>
   </nav>
-  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260824-v56</div>
+  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260907-v57</div>
 </aside>
 
 <!-- MOBILE HEADER -->
@@ -797,18 +797,18 @@ function loadState(){
           }
         });
         state._v=4;
-        localStorage.setItem('mbg-v2',JSON.stringify(state));
+        safeSetItem('mbg-v2',JSON.stringify(state));
       }
       if(state._v<5){
         if(!state.menus)state.menus=[];
         state._v=5;
-        localStorage.setItem('mbg-v2',JSON.stringify(state));
+        safeSetItem('mbg-v2',JSON.stringify(state));
       }
       if(state._v<6){
         if(!state.customTypes)state.customTypes=[];
         if(!state.customUnits)state.customUnits=[];
         state._v=6;
-        localStorage.setItem('mbg-v2',JSON.stringify(state));
+        safeSetItem('mbg-v2',JSON.stringify(state));
       }
       return state;
     }
@@ -872,7 +872,7 @@ async function manualSync(){
   try{
     await sbGet(); // inisialisasi _sbRowId jika belum ada
     S._updated=Date.now();
-    localStorage.setItem('mbg-v2',JSON.stringify(S));
+    safeSetItem('mbg-v2',JSON.stringify(S));
     await sbSet(JSON.parse(JSON.stringify(S)));
     setSyncBtn('ok');
     alert('✓ Data lokal berhasil disimpan ke cloud!');
@@ -892,20 +892,44 @@ async function pullFromCloud(){
     const remoteTime=remote._updated?new Date(remote._updated).toLocaleString('id-ID'):'Tidak diketahui';
     if(!confirm('Ambil data dari cloud?\nCloud tersimpan: '+remoteTime+'\n\nData lokal akan diganti.'))return;
     applyState(remote);
-    localStorage.setItem('mbg-v2',JSON.stringify(S));
+    safeSetItem('mbg-v2',JSON.stringify(S));
     renderCurrentPage();
     alert('✓ Data cloud berhasil dimuat!');
   }catch(e){ alert('Gagal ambil data: '+e.message); }
   finally{ if(btn){btn.textContent='⬇ Ambil dari Cloud';btn.disabled=false;} }
 }
 
+// Safari (terutama iOS) punya kuota localStorage yang jauh lebih kecil dari
+// Chrome desktop. Kalau penyimpanan lokal penuh, localStorage.setItem() akan
+// melempar error — dan kalau tidak ditangkap, error itu menghentikan seluruh
+// fungsi yang sedang jalan (termasuk render ulang tampilan), sehingga
+// tombol-tombol seperti Pesan/Datang/Bayar terlihat "tidak merespon" padahal
+// sebenarnya nyangkut di baris localStorage.setItem ini. safeSetItem()
+// menangkap error itu supaya sisa kode (render ulang dsb) tetap jalan.
+function safeSetItem(key,val){
+  try{
+    localStorage.setItem(key,val);
+    return true;
+  }catch(e){
+    console.warn('localStorage.setItem gagal (kemungkinan penyimpanan penuh):',e);
+    return false;
+  }
+}
 function save(){
   maybeAutoBackup();
-  localStorage.setItem('mbg-v2',JSON.stringify(S));
+  if(!safeSetItem('mbg-v2',JSON.stringify(S))){
+    // Penyimpanan lokal penuh — kemungkinan besar karena cadangan otomatis
+    // menumpuk. Buang semua kecuali cadangan paling baru lalu coba lagi
+    // sekali supaya perubahan tetap tersimpan tanpa perlu aksi dari pengguna.
+    if(S.autoBackups&&S.autoBackups.length>1){
+      S.autoBackups=S.autoBackups.slice(0,1);
+      safeSetItem('mbg-v2',JSON.stringify(S));
+    }
+  }
   clearTimeout(_saveTimer);
   _saveTimer=setTimeout(()=>{
     S._updated=Date.now();
-    localStorage.setItem('mbg-v2',JSON.stringify(S));
+    safeSetItem('mbg-v2',JSON.stringify(S));
     sbSet(JSON.parse(JSON.stringify(S))).catch(e=>console.warn('Supabase save error:',e));
   },2000);
 }
@@ -3124,14 +3148,19 @@ function importAllData(input){
 // dibuat. Cloud sync sendiri TIDAK cukup buat ini karena sifatnya cermin
 // langsung: kalau data hilang lalu ke-sync, cloud ikut kosong juga.
 const AUTO_BACKUP_MIN_GAP_MS=4*60*60*1000; // minimal 4 jam antar cadangan
-const AUTO_BACKUP_MAX_COUNT=8;
+const AUTO_BACKUP_MAX_COUNT=5; // dikecilkan dari 8 — tiap cadangan nyimpen state penuh, kalau kebanyakan bisa bikin localStorage kepenuhan (terutama di Safari/iOS yang kuotanya lebih kecil)
 function maybeAutoBackup(){
   if(!S.autoBackups)S.autoBackups=[];
   const last=S.autoBackups[0];
   const now=Date.now();
   if(last&&(now-last.ts)<AUTO_BACKUP_MIN_GAP_MS)return;
   const snapshot={...S};
+  // Riwayat Perubahan (changeLog) sengaja tidak ikut disimpan di tiap cadangan
+  // otomatis — itu log terpisah yang sudah aman di state utama, tidak perlu
+  // diduplikasi berkali-kali di setiap snapshot dan bisa jadi lumayan besar
+  // ukurannya kalau sudah dipakai lama.
   delete snapshot.autoBackups;
+  delete snapshot.changeLog;
   S.autoBackups.unshift({id:uid(),ts:now,data:JSON.parse(JSON.stringify(snapshot))});
   if(S.autoBackups.length>AUTO_BACKUP_MAX_COUNT)S.autoBackups=S.autoBackups.slice(0,AUTO_BACKUP_MAX_COUNT);
 }
@@ -4683,10 +4712,10 @@ function init(){
     if(remote){
       const remoteV=remote._updated||0;
       const localV=S._updated||0;
-      if(remoteV>localV){ applyState(remote); localStorage.setItem('mbg-v2',JSON.stringify(S)); renderCurrentPage(); }
+      if(remoteV>localV){ applyState(remote); safeSetItem('mbg-v2',JSON.stringify(S)); renderCurrentPage(); }
       else { sbSet(JSON.parse(JSON.stringify(S))).catch(e=>console.warn(e)); }
     } else {
-      S._updated=Date.now(); localStorage.setItem('mbg-v2',JSON.stringify(S));
+      S._updated=Date.now(); safeSetItem('mbg-v2',JSON.stringify(S));
       sbSet(JSON.parse(JSON.stringify(S))).catch(e=>console.warn(e));
     }
   }).catch(e=>console.warn('Supabase sync gagal:',e));
