@@ -362,7 +362,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div class="nav-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M1 7l2-5h10l2 5"/><path d="M6 15V11h4v4"/><path d="M1 7h14"/></svg></span>Master Dapur</div>
     <div class="nav-item" onclick="navigate('riwayat')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.5"/><path d="M8 4.5V8l3 2"/></svg></span>Riwayat</div>
   </nav>
-  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260907-v57</div>
+  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20260913-v59</div>
 </aside>
 
 <!-- MOBILE HEADER -->
@@ -992,6 +992,12 @@ function fmtShort(d){return `${d.getDate()} ${MONTHS[d.getMonth()].slice(0,3)}`;
 function fmtWeekRange(d1,d2){return `${fmtShort(d1)}\u2013${fmtShort(d2)} '${String(d2.getFullYear()).slice(-2)}`;}
 function fmtDate(d){return d.toISOString().slice(0,10);}
 function fmtRp(n){return 'Rp '+Number(n||0).toLocaleString('id-ID');}
+// Penjumlahan angka desimal di JS suka nyisain sisa pembulatan (mis. 0.1+0.1+0.1
+// jadi 0.30000000000000004) karena keterbatasan floating point. roundQty()
+// membulatkan ke 4 angka di belakang koma (cukup presisi buat satuan
+// kg/liter/dll, tapi buang sisa "sampah" pembulatan itu) supaya total yang
+// ditampilkan ke pengguna selalu bersih.
+function roundQty(n){return Math.round((n+Number.EPSILON)*10000)/10000;}
 function uid(){return 'id'+Date.now()+Math.random().toString(36).slice(2,7);}
 function getMat(id){return S.materials.find(m=>m.id===id);}
 function getKit(id){return S.kitchens.find(k=>k.id===id);}
@@ -1799,7 +1805,7 @@ function renderJadwalContent(){
         const hasDiff=si.unitPrice!=null&&si.unitPrice!==m.price;
         html+=`<div class="oi" style="border-left-color:${typeColor(m.type)}">
           <div class="oi-info">
-            <div class="oi-name" style="${attnStyle(m)}">${attnPrefix(m)}${m.name}</div>
+            <div class="oi-name" style="${attnStyle(m)};display:flex;align-items:center;gap:5px"><button onclick="event.stopPropagation();toggleMatAttention('${m.id}',${!matNeedsAttention(m)})" title="${matNeedsAttention(m)?'Batal tandai urgent':'Tandai urgent — bahan ini perlu perhatian khusus'}" style="background:none;border:none;cursor:pointer;font-size:12px;padding:0;line-height:1;flex-shrink:0;opacity:${matNeedsAttention(m)?1:.3}">🚩</button><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name}</span></div>
             <div class="oi-meta">
               <span style="color:var(--tx);font-weight:500">${si.qty} ${m.unit}</span>
               <span style="color:var(--br)">·</span>
@@ -2082,8 +2088,8 @@ function renderSuggestions(kid,wk,dates){
   Object.entries(byMat).forEach(([mid,sis])=>{
     if(sis.length<2)return;
     const m=getMat(mid);if(!m)return;
-    const totalQty=sis.reduce((a,s)=>a+s.qty,0);
-    const totalPr=sis.reduce((a,s)=>a+s.qty*effPrice(s),0);
+    const totalQty=roundQty(sis.reduce((a,s)=>a+s.qty,0));
+    const totalPr=roundQty(sis.reduce((a,s)=>a+s.qty*effPrice(s),0));
     const dayLabels=sis.map(s=>`${DAYS[s.day]} (${s.qty} ${m.unit})`).join(', ');
     html+=`<div class="sug-group">
       <div class="sug-group-title">📦 ${m.name} — Dibutuhkan ${sis.length} Hari, Bisa 1 PO / Beda Pengiriman</div>
@@ -2262,7 +2268,7 @@ function renderPesananByHari(items,dates){
             html+=`<div style="border-top:1px solid var(--br)">`;
             html+=`<div style="display:flex;align-items:center;padding:6px 16px 6px 32px;gap:6px;flex-wrap:nowrap;${rowBg}">
               <span style="flex:1;min-width:0;overflow:hidden">
-                <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;${nameStyle}">${attnPrefix(m)}${m.name}</div>
+                <div style="display:flex;align-items:center;gap:5px;overflow:hidden"><button onclick="event.stopPropagation();toggleMatAttention('${m.id}',${!matNeedsAttention(m)})" title="${matNeedsAttention(m)?'Batal tandai urgent':'Tandai urgent — bahan ini perlu perhatian khusus'}" style="background:none;border:none;cursor:pointer;font-size:12px;padding:0;line-height:1;flex-shrink:0;opacity:${matNeedsAttention(m)?1:.3}">🚩</button><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;${nameStyle}">${m.name}</span></div>
                 ${_spBadge}
               </span>
               <span style="font-size:13px;font-weight:600;flex-shrink:0;${qtyStyle}">${si.qty} ${m.unit}</span>
@@ -2354,13 +2360,13 @@ function renderPesananByBahan(items,dates){
     typeMids.forEach(mid=>{
       const sis=matGroups[mid];
       const m=getMat(mid);if(!m)return;
-      const totalQty=sis.reduce((a,s)=>a+s.qty,0);
-      const totalPr=sis.reduce((a,s)=>a+s.qty*effPrice(s),0);
+      const totalQty=roundQty(sis.reduce((a,s)=>a+s.qty,0));
+      const totalPr=roundQty(sis.reduce((a,s)=>a+s.qty*effPrice(s),0));
       const multiDay=sis.length>1;
 
       html+=`<div class="mg" style="border-left-color:${typeColor(m.type)}">
         <div class="mg-hdr">
-          <div class="mg-name" style="${attnStyle(m)}">${attnPrefix(m)}${m.name}</div>
+          <div class="mg-name" style="${attnStyle(m)};display:flex;align-items:center;gap:5px"><button onclick="event.stopPropagation();toggleMatAttention('${m.id}',${!matNeedsAttention(m)})" title="${matNeedsAttention(m)?'Batal tandai urgent':'Tandai urgent — bahan ini perlu perhatian khusus'}" style="background:none;border:none;cursor:pointer;font-size:12px;padding:0;line-height:1;flex-shrink:0;opacity:${matNeedsAttention(m)?1:.3}">🚩</button><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name}</span></div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             ${multiDay?`<span class="badge bg-bl">${sis.length} Hari</span>`:''}
             <span style="font-weight:800;color:var(--pr)">${totalQty} ${m.unit} total</span>
@@ -2466,7 +2472,7 @@ function renderPesananBySupplier(items,dates){
         const ord=si.isOrdered,paid=si.isPaid,recv=si.isReceived||false;
         const rowBg=paid?'background:#f0fdf4':recv?'background:#fef9c3':ord?'background:#fafafa':'';
         html+=`<div style="display:flex;align-items:center;padding:6px 16px;gap:6px;flex-wrap:nowrap;border-top:1px solid var(--br);${rowBg}">
-          <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;${(ord?'text-decoration:line-through;color:#94a3b8':'font-weight:600')+(matNeedsAttention(m)?';color:#dc2626;font-weight:800':'')}">${attnPrefix(m)}${m.name}</span>
+          <span style="flex:1;min-width:0;display:flex;align-items:center;gap:5px;overflow:hidden"><button onclick="event.stopPropagation();toggleMatAttention('${m.id}',${!matNeedsAttention(m)})" title="${matNeedsAttention(m)?'Batal tandai urgent':'Tandai urgent — bahan ini perlu perhatian khusus'}" style="background:none;border:none;cursor:pointer;font-size:12px;padding:0;line-height:1;flex-shrink:0;opacity:${matNeedsAttention(m)?1:.3}">🚩</button><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;${(ord?'text-decoration:line-through;color:#94a3b8':'font-weight:600')+(matNeedsAttention(m)?';color:#dc2626;font-weight:800':'')}">${m.name}</span></span>
           <span style="font-size:13px;font-weight:600;flex-shrink:0;${ord?'color:#94a3b8':'color:var(--tx)'}">${si.qty} ${m.unit}</span>
           ${!recv
             ?(ord
@@ -2932,7 +2938,7 @@ function renderRapelNotif(){
   const matRows=rapelMats.map(m=>{
     const sis=nextItems.filter(s=>s.materialId===m.id);
     if(!sis.length)return '';  // skip jika tidak ada di jadwal minggu itu
-    const totalQty=sis.reduce((a,s)=>a+s.qty,0);
+    const totalQty=roundQty(sis.reduce((a,s)=>a+s.qty,0));
     const allOrd=sis.every(s=>s.isOrdered);
     return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.2)">
       <span style="font-size:13px;font-weight:600">${allOrd?'✅ ':'📦 '}${m.name}</span>
@@ -2985,7 +2991,7 @@ function openRekap(){
       const emoji=typeEmoji(mat.type);
       rows+=`<tr style="background:#f5f9f6"><td colspan="8" style="padding:6px 10px;font-size:11px;font-weight:700;color:#2d7a4f;letter-spacing:.3px">${emoji} ${mat.type.toUpperCase()}</td></tr>`;
     }
-    const totalQty=Object.values(days).reduce((a,b)=>a+b,0);
+    const totalQty=roundQty(Object.values(days).reduce((a,b)=>a+b,0));
     const multiDay=Object.keys(days).length>1;
     const nameStyle=allOrd?'color:#94a3b8;text-decoration:line-through':'font-weight:600';
     const dayCells=[0,1,2,3,4].map(d=>{
@@ -3421,7 +3427,7 @@ function buildReviewItems(rawItems){
     if(similar.length)warnings.push({type:'typo',msg:`Mirip dengan: ${similar.map(s=>'"'+capitalizeWords(s)+'"').join(', ')}`});
     if(masterSimilar.length)warnings.push({type:'dup',msg:`Mirip di master: ${masterSimilar.map(m=>'"'+m.name+'"').join(', ')}`});
     const dayLabels=[...new Set(g.occurrences.map(o=>DAYS[o.day]))].join(', ');
-    const totalQty=g.occurrences.reduce((a,o)=>a+o.qty,0);
+    const totalQty=roundQty(g.occurrences.reduce((a,o)=>a+o.qty,0));
     const masterPrice=exactMaster?.price||0;
     const avgPrice=masterPrice&&newPrice?Math.round((masterPrice+newPrice)/2):newPrice||masterPrice;
     return{key,originalNames:[...g.originalNames],corrected,type:detectedType,unit:g.unit,price:newPrice,
@@ -4111,8 +4117,8 @@ function processImport(){
   dryItems.forEach(si=>{if(!dryByMat[si.materialId])dryByMat[si.materialId]=[];dryByMat[si.materialId].push(si);});
   const dryGroups=Object.entries(dryByMat).map(([mid,sis])=>{
     const m=allMats.find(x=>x.id===mid);
-    const totalQty=sis.reduce((a,s)=>a+s.qty,0);
-    const totalPrice=sis.reduce((a,s)=>a+s.qty*(s.unitPrice||m?.price||0),0);
+    const totalQty=roundQty(sis.reduce((a,s)=>a+s.qty,0));
+    const totalPrice=roundQty(sis.reduce((a,s)=>a+s.qty*(s.unitPrice||m?.price||0),0));
     return{name:m?.name||mid,unit:m?.unit||'',totalQty,totalPrice};
   });
 
@@ -4120,7 +4126,7 @@ function processImport(){
   newItems.forEach(si=>{if(!byMat2[si.materialId])byMat2[si.materialId]=[];byMat2[si.materialId].push(si);});
   const sameMatGroups=Object.entries(byMat2).filter(([,sis])=>sis.length>1).map(([mid,sis])=>{
     const m=allMats.find(x=>x.id===mid);
-    return{name:m?.name||mid,unit:m?.unit||'',days:sis.map(s=>s.day),totalQty:sis.reduce((a,s)=>a+s.qty,0)};
+    return{name:m?.name||mid,unit:m?.unit||'',days:sis.map(s=>s.day),totalQty:roundQty(sis.reduce((a,s)=>a+s.qty,0))};
   });
 
   // Build price updates for existing master items
