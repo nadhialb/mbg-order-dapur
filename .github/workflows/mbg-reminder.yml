@@ -1,0 +1,27 @@
+name: MBG Pengingat Supplier
+
+# Tiap pagi jam 08:00 WIB (01:00 UTC) membaca data dari Supabase, lalu mengirim
+# notifikasi ke HP lewat ntfy kalau ada supplier yang perlu dihubungi
+# (barang datang hari ini / besok) atau pengingat pribadi yang jatuh tempo.
+
+on:
+  schedule:
+    - cron: '0 1 * * *'     # 01:00 UTC = 08:00 WIB
+  workflow_dispatch: {}      # tombol "Run workflow" untuk tes manual
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Kirim pengingat
+        run: node scripts/mbg-reminder.js
+        env:
+          TZ: Asia/Jakarta
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12bGlsdXFya3p5d29qam5xeGRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyMjU1MjIsImV4cCI6MjA5NjgwMTUyMn0.I9tRfUBBxO6T12Fct2Tl0T_po5keT8H7Eq7Cmboudmw
+          # Opsional: isi alamat aplikasi GitHub Pages supaya notifikasi bisa diklik
+          APP_URL: ''
