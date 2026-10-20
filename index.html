@@ -362,7 +362,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div class="nav-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M1 7l2-5h10l2 5"/><path d="M6 15V11h4v4"/><path d="M1 7h14"/></svg></span>Master Dapur</div>
     <div class="nav-item" onclick="navigate('riwayat')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.5"/><path d="M8 4.5V8l3 2"/></svg></span>Riwayat</div>
   </nav>
-  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20261017-v64</div>
+  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20261020-v66</div>
 </aside>
 
 <!-- MOBILE HEADER -->
@@ -509,7 +509,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
       <button class="btn btn-ol btn-xs" id="mb-modebtn" onclick="mbToggleMode()">☑ Pilih beberapa</button>
       <div id="mb-bulkbar" style="display:none;align-items:center;gap:8px;flex-wrap:wrap">
         <b id="mb-bulk-count" style="font-size:12px"></b>
-        <button class="btn btn-pr btn-xs" onclick="openBulkSupplier()">🏪 Atur Supplier</button>
+        <button class="btn btn-pr btn-xs" onclick="openBulkEdit()">✏️ Ubah Sekaligus</button>
       </div>
     </div>
     <div class="card">
@@ -517,7 +517,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
         <thead><tr>
           <th onclick="sortMaster('name')" style="cursor:pointer;user-select:none"><input type="checkbox" id="mb-selall" title="Pilih semua" onclick="event.stopPropagation()" onchange="mbSelAll(this.checked)" style="display:none;width:14px;height:14px;vertical-align:middle;margin-right:5px">Nama Bahan <span id="sort-name">↕</span></th>
           <th onclick="sortMaster('type')" style="cursor:pointer;user-select:none">Jenis <span id="sort-type">↕</span></th>
-          <th>Satuan</th><th>Harga Ref.</th><th class="mb-col-hide" title="H-1 s/d H-4: otomatis dipesan N hari sebelum dibutuhkan. Rapel: dipesan sekaligus tiap Jumat–Sabtu untuk minggu depan.">Tipe Stok ⓘ</th><th style="position:sticky;right:0;background:#fff;box-shadow:-2px 0 4px rgba(0,0,0,.04)"></th>
+          <th>Satuan</th><th>Harga Ref.</th><th title="⭐ Utama = otomatis ikut supplier utama. Pilih supplier lain untuk mengubah manual hanya di bahan ini.">Supplier ⓘ</th><th class="mb-col-hide" title="H-1 s/d H-4: otomatis dipesan N hari sebelum dibutuhkan. Rapel: dipesan sekaligus tiap Jumat–Sabtu untuk minggu depan.">Tipe Stok ⓘ</th><th style="position:sticky;right:0;background:#fff;box-shadow:-2px 0 4px rgba(0,0,0,.04)"></th>
         </tr></thead>
         <tbody id="material-tbody"></tbody>
       </table></div>
@@ -1017,11 +1017,19 @@ function getSupp(id){return (S.suppliers||[]).find(s=>s.id===id);}
 // cuma punya 1 supplier terdaftar, anggap itu supplier-nya (auto-detect).
 // Begitu bahan itu punya 2+ supplier, auto-detect berhenti dan user harus
 // pilih manual (supaya tidak salah tebak).
+// Supplier efektif sebuah bahan: pilihan manual di bahan (supplierIds) kalau ada,
+// kalau kosong otomatis ikut Supplier Utama (S.primarySupplierId).
+function matUsesPrimary(m){return !((m&&m.supplierIds||[]).some(id=>getSupp(id)));}
+function matSupplierIds(m){
+  const ids=((m&&m.supplierIds)||[]).filter(id=>getSupp(id));
+  if(ids.length)return ids;
+  return (S.primarySupplierId&&getSupp(S.primarySupplierId))?[S.primarySupplierId]:[];
+}
 function effSupplierId(si){
-  if(si.supplierId)return si.supplierId;
+  if(si.supplierId&&getSupp(si.supplierId))return si.supplierId;
   const m=getMat(si.materialId);
-  if(m&&m.supplierIds&&m.supplierIds.length===1)return m.supplierIds[0];
-  return null;
+  const ids=matSupplierIds(m);
+  return ids.length===1?ids[0]:null;
 }
 // ── Warna aksen per dapur ──────────────────────────────────
 // Tiap dapur bisa punya warna sendiri (default: oren seperti sebelumnya).
@@ -1376,6 +1384,134 @@ function getReminders(kitchenId,weekKey){
 // ═══════════════════════════════════════
 //  DASHBOARD — per kitchen
 // ═══════════════════════════════════════
+// ═══════════════════════════════════════
+//  ASISTEN PENGINGAT SUPPLIER (H-1, hari H, pengingat custom)
+//  Berbasis aturan (bukan AI generatif): mencari bahan yang sudah dipesan
+//  tapi belum datang, dikelompokkan per supplier, lengkap dengan draf WA.
+// ═══════════════════════════════════════
+function _ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function _parseYmd(s){const p=String(s||'').split('-').map(Number);return p.length===3&&p[0]?new Date(p[0],p[1]-1,p[2]):null;}
+function getSupplierReminders(){
+  const td=today0();
+  const res={h0:{},h1:{},custom:[]};
+  S.scheduleItems.forEach(si=>{
+    if(si.isReceived)return;
+    const m=getMat(si.materialId);if(!m)return;
+    const dates=getWeekDates(si.weekKey);if(!dates||!dates[si.day])return;
+    const deliv=addDays(dates[si.day],-1);
+    const diff=Math.round((deliv-td)/864e5);
+    if(diff!==0&&diff!==1)return;
+    const sid=effSupplierId(si)||'_none';
+    const bucket=diff===0?res.h0:res.h1;
+    (bucket[sid]=bucket[sid]||{sid,items:[],date:deliv}).items.push({si,m,kit:getKit(si.kitchenId)?.name||'',ordered:!!si.isOrdered});
+  });
+  (S.customReminders||[]).forEach(r=>{
+    if(r.done)return;
+    const d=_parseYmd(r.date);if(!d)return;
+    const diff=Math.round((d-td)/864e5);
+    if(diff<=1)res.custom.push({...r,diff});
+  });
+  res.custom.sort((a,b)=>a.diff-b.diff);
+  return res;
+}
+function reminderCount(){
+  const r=getSupplierReminders();
+  return {h0:Object.keys(r.h0).length,h1:Object.keys(r.h1).length,custom:r.custom.length};
+}
+function _suppPhoneWa(p){let d=String(p||'').replace(/\D/g,'');if(!d)return '';if(d.startsWith('0'))d='62'+d.slice(1);return d;}
+function buildSuppMsg(kind,sid){
+  const r=getSupplierReminders();const g=(kind==='h0'?r.h0:r.h1)[sid];if(!g)return '';
+  const s=getSupp(sid);
+  const kits=[...new Set(g.items.map(x=>x.kit))];
+  let t=`Halo ${s?s.name:'Bapak/Ibu'}, mengingatkan pengiriman ${kind==='h0'?'HARI INI':'BESOK'} (${fmt(g.date)})${kits.length===1&&kits[0]?' ke '+kits[0]:''}:\n`;
+  g.items.forEach(x=>{t+=`• ${x.m.name} ${x.si.qty} ${x.m.unit}${kits.length>1&&x.kit?' ('+x.kit+')':''}\n`;});
+  t+=`\nMohon konfirmasi ketersediaan & jam pengiriman. Terima kasih 🙏`;
+  return t;
+}
+function copySuppMsg(kind,sid){copyText(buildSuppMsg(kind,sid));}
+function waSuppMsg(kind,sid){
+  const s=getSupp(sid);const ph=_suppPhoneWa(s?.phone);
+  const url='https://wa.me/'+ph+'?text='+encodeURIComponent(buildSuppMsg(kind,sid));
+  window.open(url,'_blank');
+}
+function assistantCardHtml(){
+  const r=getSupplierReminders();
+  const grp=(kind,map,title,color)=>{
+    const ids=Object.keys(map);if(!ids.length)return '';
+    return `<div style="margin-bottom:10px"><div style="font-size:12px;font-weight:800;color:${color};margin-bottom:6px">${title} (${ids.length} supplier)</div>`+ids.map(sid=>{
+      const g=map[sid];const s=getSupp(sid==='_none'?'':sid);
+      const names=g.items.map(x=>`${matNeedsAttention(x.m)?'🚩 ':''}${x.m.name} ${x.si.qty} ${x.m.unit}${x.ordered?'':' <i style="color:#dc2626">(belum dipesan)</i>'}`).join(', ');
+      const acts=s?`<div style="display:flex;gap:6px;margin-top:6px">
+          <button class="btn btn-pr btn-xs" onclick="waSuppMsg('${kind}','${sid}')">💬 WhatsApp</button>
+          <button class="btn btn-ol btn-xs" onclick="copySuppMsg('${kind}','${sid}')">📋 Salin pesan</button></div>`
+        :`<div style="font-size:11px;color:var(--mt);margin-top:4px">Bahan ini belum punya supplier — atur dulu di Master Barang.</div>`;
+      return `<div style="padding:9px 11px;border:1px solid var(--br);border-radius:10px;margin-bottom:6px;background:#fff">
+        <div style="font-weight:700;font-size:13px">🏪 ${s?s.name:'Belum ada supplier'}${s&&s.phone?` <span style="font-weight:400;color:var(--mt);font-size:11px">· ${s.phone}</span>`:''}</div>
+        <div style="font-size:12px;color:var(--tx);margin-top:3px;line-height:1.5">${names}</div>${acts}</div>`;
+    }).join('')+'</div>';
+  };
+  const cust=r.custom.length?`<div style="margin-bottom:6px"><div style="font-size:12px;font-weight:800;color:#7c3aed;margin-bottom:6px">📌 Pengingat saya (${r.custom.length})</div>`+r.custom.map(x=>{
+    const s=x.supplierId?getSupp(x.supplierId):null;
+    const lbl=x.diff<0?`<b style="color:#dc2626">${-x.diff} hari lewat</b>`:x.diff===0?'<b style="color:#dc2626">Hari ini</b>':'Besok';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:8px 11px;border:1px solid var(--br);border-radius:10px;margin-bottom:6px;background:#fff">
+      <div style="flex:1;font-size:13px">${x.note}${s?` <span style="color:var(--mt);font-size:11px">· 🏪 ${s.name}</span>`:''}<div style="font-size:11px;color:var(--mt)">${lbl}</div></div>
+      <button class="btn btn-gn btn-xs" onclick="doneReminder('${x.id}')">✓ Selesai</button></div>`;}).join('')+'</div>':'';
+  const body=grp('h0',r.h0,'📦 Hari H — barang datang HARI INI','#dc2626')+grp('h1',r.h1,'⏰ H-1 — barang datang BESOK','#d97706')+cust;
+  const notifOn=typeof Notification!=='undefined'&&Notification.permission==='granted'&&localStorage.getItem('mbg-notif-on')==='1';
+  return `<div class="card" style="padding:14px 16px;margin-bottom:14px;border-left:4px solid #7c3aed">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <div style="font-weight:800;font-size:14px;flex:1;min-width:150px">🔔 Asisten Pengingat Supplier</div>
+      <button class="btn btn-ol btn-xs" onclick="openReminderMgmt()">＋ Pengingat</button>
+      <button class="btn btn-ol btn-xs" onclick="toggleNotif()">${notifOn?'🔕 Matikan notifikasi':'🔔 Aktifkan notifikasi'}</button>
+    </div>
+    ${body||'<div style="font-size:13px;color:var(--mt)">✅ Tidak ada supplier yang perlu dihubungi hari ini maupun besok.</div>'}
+  </div>`;
+}
+function openReminderMgmt(){
+  document.getElementById('rm-date').value=_ymd(addDays(today0(),1));
+  document.getElementById('rm-note').value='';
+  document.getElementById('rm-supplier').innerHTML='<option value="">— Tanpa supplier —</option>'+(S.suppliers||[]).map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  renderReminderList();openModal('modal-reminder');
+}
+function renderReminderList(){
+  const el=document.getElementById('rm-list');if(!el)return;
+  const list=[...(S.customReminders||[])].sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  el.innerHTML=list.length?list.map(x=>{const s=x.supplierId?getSupp(x.supplierId):null;
+    return `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--br);${x.done?'opacity:.5':''}">
+      <div style="flex:1;font-size:13px;${x.done?'text-decoration:line-through':''}">${x.note}<div style="font-size:11px;color:var(--mt)">${fmtShort(_parseYmd(x.date)||new Date())}${s?' · 🏪 '+s.name:''}</div></div>
+      <button class="btn btn-rd btn-xs" onclick="deleteReminder('${x.id}')">🗑️</button></div>`;}).join(''):'<div style="padding:12px;text-align:center;color:var(--mt);font-size:13px">Belum ada pengingat.</div>';
+}
+function addReminder(){
+  const date=document.getElementById('rm-date').value,note=document.getElementById('rm-note').value.trim();
+  if(!date||!note){alert('Isi tanggal dan catatan pengingat.');return;}
+  if(!S.customReminders)S.customReminders=[];
+  S.customReminders.push({id:uid(),date,note,supplierId:document.getElementById('rm-supplier').value||null,done:false});
+  document.getElementById('rm-note').value='';
+  save();renderReminderList();if(curPage==='dashboard')renderDashboard();
+}
+function doneReminder(id){const r=(S.customReminders||[]).find(x=>x.id===id);if(r){r.done=true;save();if(curPage==='dashboard')renderDashboard();}}
+function deleteReminder(id){S.customReminders=(S.customReminders||[]).filter(x=>x.id!==id);save();renderReminderList();if(curPage==='dashboard')renderDashboard();}
+// ── Notifikasi browser (hanya muncul saat aplikasi terbuka; tidak ada server) ──
+function toggleNotif(){
+  if(typeof Notification==='undefined'){alert('Browser ini belum mendukung notifikasi. (Di iPhone, notifikasi hanya jalan kalau aplikasi di-Add to Home Screen.)');return;}
+  if(localStorage.getItem('mbg-notif-on')==='1'&&Notification.permission==='granted'){safeSetItem('mbg-notif-on','0');renderDashboard();return;}
+  Notification.requestPermission().then(p=>{
+    if(p==='granted'){safeSetItem('mbg-notif-on','1');localStorage.removeItem('mbg-notif-last');checkNotify();}
+    else alert('Izin notifikasi ditolak. Aktifkan lewat pengaturan situs di browser.');
+    if(curPage==='dashboard')renderDashboard();
+  });
+}
+function checkNotify(){
+  try{
+    if(typeof Notification==='undefined'||Notification.permission!=='granted'||localStorage.getItem('mbg-notif-on')!=='1')return;
+    const n=reminderCount();const total=n.h0+n.h1+n.custom;if(!total)return;
+    const key=_ymd(today0())+'|'+n.h0+'|'+n.h1+'|'+n.custom;
+    if(localStorage.getItem('mbg-notif-last')===key)return;
+    safeSetItem('mbg-notif-last',key);
+    const parts=[];if(n.h0)parts.push(n.h0+' supplier barang datang HARI INI');if(n.h1)parts.push(n.h1+' supplier datang BESOK (H-1)');if(n.custom)parts.push(n.custom+' pengingat pribadi');
+    new Notification('🔔 MBG Dapur — Pengingat Supplier',{body:parts.join(' · ')});
+  }catch(e){console.warn('notif gagal',e);}
+}
 function renderDashboard(){
   const td=today0();
   const wk=dashWeek;
@@ -1391,7 +1527,7 @@ function renderDashboard(){
   }
 
   // === Global summary bar ===
-  let html='';
+  let html=assistantCardHtml();
   const allWkItems=S.scheduleItems.filter(si=>S.kitchens.some(k=>k.id===si.kitchenId)&&si.weekKey===wk);
   const urgentToday=[];const urgentOverdue=[];
   S.kitchens.forEach(k=>{
@@ -1916,9 +2052,10 @@ function onItemMaterialChange(existingPrice,existingSupplierId){
   const hintEl=document.getElementById('item-price-hint');
   const suppWrap=document.getElementById('item-supplier-wrap');
   const suppSel=document.getElementById('item-supplier');
-  if(m&&m.supplierIds&&m.supplierIds.length>1){
-    suppSel.innerHTML=m.supplierIds.map(sid=>{const sp=getSupp(sid);return sp?`<option value="${sid}">${sp.name}</option>`:'';}).join('');
-    if(existingSupplierId&&m.supplierIds.includes(existingSupplierId))suppSel.value=existingSupplierId;
+  const _msids=m?matSupplierIds(m):[];
+  if(m&&_msids.length>1){
+    suppSel.innerHTML=_msids.map(sid=>{const sp=getSupp(sid);return sp?`<option value="${sid}">${sp.name}</option>`:'';}).join('');
+    if(existingSupplierId&&_msids.includes(existingSupplierId))suppSel.value=existingSupplierId;
     suppWrap.style.display='block';
   } else {
     suppWrap.style.display='none';suppSel.innerHTML='';
@@ -1968,8 +2105,8 @@ function saveItem(){
   let supplierId=null;
   if(suppWrap&&suppWrap.style.display!=='none'){
     supplierId=document.getElementById('item-supplier').value||null;
-  } else if(m&&m.supplierIds&&m.supplierIds.length===1){
-    supplierId=m.supplierIds[0];
+  } else if(m&&matSupplierIds(m).length===1){
+    supplierId=matSupplierIds(m)[0];
   }
   if(editItemId){
     const si=S.scheduleItems.find(s=>s.id===editItemId);
@@ -2598,6 +2735,31 @@ function buildUnitCell(matId,currentUnit){
     <option value="__custom__">Lainnya…</option>
   </select>`;
 }
+function buildSupplierCell(m){
+  const sups=S.suppliers||[];
+  const prim=S.primarySupplierId?getSupp(S.primarySupplierId):null;
+  const explicit=(m.supplierIds||[]).filter(id=>getSupp(id));
+  const multi=explicit.length>1;
+  const cur=multi?'__multi__':(explicit.length?explicit[0]:'__auto__');
+  const sty=(()=>{const id=explicit.length===1?explicit[0]:(prim&&!explicit.length?prim.id:null);if(!id)return 'width:112px';const b=supplierBadgeStyle(id);return `width:112px;border-color:${b.border};background:${b.bg};color:${b.text};font-weight:600`;})();
+  return `<select class="td-sel" style="${sty}" onchange="setMatSupplier('${m.id}',this)">
+    <option value="__auto__"${cur==='__auto__'?' selected':''}>⭐ Utama${prim?' ('+prim.name+')':' (belum diatur)'}</option>
+    ${sups.map(s=>`<option value="${s.id}"${cur===s.id?' selected':''}>${s.name}</option>`).join('')}
+    ${multi?`<option value="__multi__" selected>Beberapa (${explicit.length})</option>`:''}
+    <option value="__edit__">Pilih beberapa…</option>
+  </select>`;
+}
+function setMatSupplier(matId,sel){
+  const m=getMat(matId);if(!m)return;
+  const v=sel.value;
+  if(v==='__edit__'||v==='__multi__'){openEditMaterial(matId);renderMasterBarang();return;}
+  const before=matSupplierIds(m).map(id=>getSupp(id)?.name).join(', ')||'-';
+  m.supplierIds=v==='__auto__'?[]:[v];
+  const after=matSupplierIds(m);
+  S.scheduleItems.forEach(si=>{if(si.materialId===matId&&si.supplierId&&!after.includes(si.supplierId))si.supplierId=null;});
+  logChange('bahan','edit',`Supplier "${m.name}": ${before} → ${after.map(id=>getSupp(id)?.name).join(', ')||'-'}${v==='__auto__'?' (otomatis utama)':''}`);
+  save();renderMasterBarang();
+}
 function handleUnitChange(matId,sel){
   if(sel.value==='__custom__'){
     const val=prompt('Satuan kustom:');
@@ -2629,36 +2791,55 @@ function mbToggle(id,on){on?_mbSel.add(id):_mbSel.delete(id);mbUpdateBar();}
 function mbSelAll(on){_mbSel=on?new Set(S.materials.map(m=>m.id)):new Set();renderMasterBarang();}
 function mbClearSel(){_mbSel=new Set();renderMasterBarang();}
 function mbSelType(t){S.materials.filter(m=>m.type===t).forEach(m=>_mbSel.add(m.id));renderMasterBarang();}
-function openBulkSupplier(){
+function openBulkSupplier(){openBulkEdit();}
+function openBulkEdit(){
   if(!_mbSel.size)return;
-  if(!(S.suppliers||[]).length){alert('Belum ada supplier. Tambah dulu lewat ⋮ Lainnya → Kelola Supplier.');return;}
   document.getElementById('bs-sub').textContent=_mbSel.size+' bahan terpilih';
-  document.getElementById('bs-supplier').innerHTML=S.suppliers.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
-  document.getElementById('bs-mode-add').checked=true;
+  const keep='<option value="">— tidak diubah —</option>';
+  document.getElementById('be-type').innerHTML=keep+getAllTypes().map(t=>`<option value="${t}">${typeEmoji(t)} ${t}</option>`).join('');
+  document.getElementById('be-unit').innerHTML=keep+getAllUnits().map(u=>`<option value="${u}">${u}</option>`).join('');
+  document.getElementById('be-stock').innerHTML=keep+[['h1','⏰ H-1 (otomatis)'],['h2','⏰ H-2 (otomatis)'],['h3','⏰ H-3 (otomatis)'],['h4','⏰ H-4 (otomatis)'],['rapel','📦 Rapel Mingguan']].map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
+  const prim=S.primarySupplierId?getSupp(S.primarySupplierId):null;
+  document.getElementById('bs-supplier').innerHTML=keep+`<option value="__auto__">⭐ Ikuti supplier utama${prim?' ('+prim.name+')':''}</option>`+(S.suppliers||[]).map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  document.getElementById('bs-keepold').checked=false;
+  bsSuppChanged();
   const ts=getAllTypes().filter(t=>S.materials.some(m=>m.type===t));
   document.getElementById('bs-types').innerHTML=ts.map(t=>`<button class="btn btn-ol btn-xs" onclick="mbSelType('${t.replace(/'/g,"\\'")}');document.getElementById('bs-sub').textContent=_mbSel.size+' bahan terpilih'">+ ${typeEmoji(t)} ${t}</button>`).join(' ');
   openModal('modal-bulk-supp');
 }
-function applyBulkSupplier(){
-  const sid=document.getElementById('bs-supplier').value;
-  const mode=document.querySelector('input[name="bs-mode"]:checked').value;
-  const s=getSupp(sid);if(!s||!_mbSel.size)return;
-  let n=0;
-  S.materials.filter(m=>_mbSel.has(m.id)).forEach(m=>{
-    const old=m.supplierIds||[];
-    if(mode==='add'){if(!old.includes(sid)){m.supplierIds=[...old,sid];n++;}}
-    else if(mode==='replace'){m.supplierIds=[sid];n++;S.scheduleItems.forEach(si=>{if(si.materialId===m.id&&si.supplierId&&si.supplierId!==sid)si.supplierId=null;});}
-    else if(mode==='clear'){m.supplierIds=[];n++;S.scheduleItems.forEach(si=>{if(si.materialId===m.id)si.supplierId=null;});}
+function bsSuppChanged(){
+  const v=document.getElementById('bs-supplier').value;
+  document.getElementById('bs-keepold-wrap').style.display=(v&&v!=='__auto__')?'block':'none';
+}
+function applyBulkSupplier(){applyBulkEdit();}
+function applyBulkEdit(){
+  const type=document.getElementById('be-type').value,unit=document.getElementById('be-unit').value,stock=document.getElementById('be-stock').value;
+  const sv=document.getElementById('bs-supplier').value,keepOld=document.getElementById('bs-keepold').checked;
+  if(!type&&!unit&&!stock&&!sv){alert('Pilih minimal satu hal yang mau diubah.');return;}
+  const mats=S.materials.filter(m=>_mbSel.has(m.id));if(!mats.length)return;
+  const ST={h1:'H-1',h2:'H-2',h3:'H-3',h4:'H-4',rapel:'Rapel'};
+  mats.forEach(m=>{
+    if(type)m.type=type;
+    if(unit)m.unit=unit;
+    if(stock)m.stockType=stock;
+    if(sv){
+      const old=m.supplierIds||[];
+      m.supplierIds=sv==='__auto__'?[]:(keepOld?[...old.filter(x=>x!==sv),sv]:[sv]);
+      const after=matSupplierIds(m);
+      S.scheduleItems.forEach(si=>{if(si.materialId===m.id&&si.supplierId&&!after.includes(si.supplierId))si.supplierId=null;});
+    }
   });
-  const label=mode==='add'?`ditambah supplier "${s.name}"`:mode==='replace'?`supplier diganti jadi "${s.name}"`:'supplier dikosongkan';
-  logChange('bahan','edit',`${_mbSel.size} bahan sekaligus: ${label}`);
+  const parts=[];
+  if(type)parts.push(`kategori → ${type}`);if(unit)parts.push(`satuan → ${unit}`);if(stock)parts.push(`tipe stok → ${ST[stock]}`);
+  if(sv)parts.push(sv==='__auto__'?'supplier → ikut utama':`supplier → ${getSupp(sv)?.name}${keepOld?' (ditambah)':''}`);
+  logChange('bahan','edit',`${mats.length} bahan sekaligus: ${parts.join(', ')}`);
   save();closeModal('modal-bulk-supp');_mbSel=new Set();_mbMode=false;renderMasterBarang();
 }
 function renderMasterBarang(){
   updateSyncTimestamp();
   const tbody=document.getElementById('material-tbody');
   if(!S.materials.length){
-    tbody.innerHTML=`<tr><td colspan="7"><div class="empty"><div class="ei">📦</div><div class="et">Belum ada bahan baku</div></div></td></tr>`;return;
+    tbody.innerHTML=`<tr><td colspan="8"><div class="empty"><div class="ei">📦</div><div class="et">Belum ada bahan baku</div></div></td></tr>`;return;
   }
   // Sort
   const sorted=[...S.materials].sort((a,b)=>{
@@ -2691,11 +2872,11 @@ function renderMasterBarang(){
           <input class="td-inp" type="text" value="${m.name}" onchange="updateMatField('${m.id}','name',this.value)" style="min-width:90px;width:100%;font-weight:600;font-size:13px;border-left:3px solid ${typeColor(m.type)};padding-left:8px;${attnStyle(m)}">
           ${matNeedsAttention(m)?`<span class="badge" style="background:#fee2e2;color:#dc2626;font-weight:700" title="Butuh perhatian khusus">🚩 Perhatian</span>`:''}
           ${hasSimilar?`<span class="badge bg-yw" style="cursor:pointer" onclick="openMergeModal('${m.id}')" title="Mirip: ${similarTo}">⚠️ Mirip</span><span class="badge bg-gr" style="cursor:pointer;font-size:10px" onclick="ignoreMatPair('${m.id}','${ignoreIds[0]||''}')">Abaikan</span>`:''}
-          ${(m.supplierIds||[]).map(sid=>{const _s=getSupp(sid);if(!_s)return'';const _bs4=supplierBadgeStyle(_s.id);return `<span style="font-size:10px;color:${_bs4.text};background:${_bs4.bg};border:1px solid ${_bs4.border};border-radius:99px;padding:1px 7px;white-space:nowrap">🏪 ${_s.name}</span>`;}).join('')}
         </div>
       </td>
       <td><div style="display:inline-flex;align-items:center;gap:4px"><span style="font-size:13px;line-height:1;flex-shrink:0">${typeEmoji(m.type)}</span>${buildTypeSelect('td-sel',m.type,m.id)}</div></td>
       <td>${buildUnitCell(m.id,m.unit)}</td>
+      <td>${buildSupplierCell(m)}</td>
       <td><input class="td-inp" type="number" value="${m.price}" min="0" step="500" onchange="updateMatField('${m.id}','price',this.value)" style="width:90px"></td>
       <td class="mb-col-hide">
         <select onchange="updateStockType('${m.id}',this.value)" style="width:auto;min-width:130px;padding:4px 8px;font-size:13px;border-radius:6px;border:1.5px solid var(--br);cursor:pointer;-webkit-appearance:auto;appearance:auto">
@@ -2765,7 +2946,7 @@ function populateMatUnitSelect(selId,curVal){
 function openAddMaterial(){
   document.getElementById('mat-modal-title').textContent='Tambah Bahan Baku';
   ['mat-id','mat-name','mat-price'].forEach(id=>document.getElementById(id).value='');
-  renderMatSupplierCheckboxes(S.primarySupplierId?[S.primarySupplierId]:[]);
+  renderMatSupplierCheckboxes([]);
   populateMatTypeSelect('mat-type','Karbohidrat');
   populateMatUnitSelect('mat-unit','kg');
   document.getElementById('mat-stocktype').value='h1';
@@ -4364,8 +4545,8 @@ function renderMatSupplierCheckboxes(selectedIds){
   if(!(S.suppliers||[]).length){el.innerHTML='<div style="font-size:12px;color:#94a3b8;padding:6px 0">Belum ada supplier. Tambah lewat ⋮ Lainnya → Kelola Supplier.</div>';return;}
   el.innerHTML=S.suppliers.map(s=>`<label style="display:flex;align-items:center;gap:7px;padding:5px 0;font-size:13px;cursor:pointer">
     <input type="checkbox" value="${s.id}"${selectedIds.includes(s.id)?' checked':''} style="width:15px;height:15px;flex-shrink:0">
-    <span>${s.name}</span>
-  </label>`).join('');
+    <span>${s.name}</span>${S.primarySupplierId===s.id?' <span style="font-size:10px;color:#92400e;background:#fef3c7;padding:1px 6px;border-radius:99px">⭐ Utama</span>':''}
+  </label>`).join('')+(S.primarySupplierId&&getSupp(S.primarySupplierId)?`<div class="fh" style="margin-top:4px">Tidak ada yang dicentang = otomatis ikut supplier utama (${getSupp(S.primarySupplierId).name}).</div>`:'');
 }
 function getCheckedMatSuppliers(){
   return Array.from(document.querySelectorAll('#mat-supplier-list input[type=checkbox]:checked')).map(el=>el.value);
@@ -4375,7 +4556,7 @@ function renderSupplierList(){
   if(!el)return;
   if(!(S.suppliers||[]).length){el.innerHTML='<div style="padding:16px;color:var(--mt);text-align:center;font-size:13px">Belum ada supplier. Tambah supplier di bawah.</div>';return;}
   el.innerHTML=(S.suppliers||[]).map(s=>{
-    const mats=S.materials.filter(m=>(m.supplierIds||[]).includes(s.id));
+    const mats=S.materials.filter(m=>matSupplierIds(m).includes(s.id));
     const isPrimary=S.primarySupplierId===s.id;
     const matsHtml=mats.length
       ?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">${mats.map(m=>`<span style="font-size:10px;background:#f1f5f9;color:var(--tx);padding:2px 7px;border-radius:99px;white-space:nowrap">${m.name}</span>`).join('')}</div>`
@@ -4405,8 +4586,13 @@ function renderSupplierList(){
 }
 function setPrimarySupplier(id){
   S.primarySupplierId = S.primarySupplierId===id ? null : id;
+  logChange('bahan','edit',S.primarySupplierId?`Supplier utama: "${getSupp(id)?.name}" (otomatis dipakai bahan tanpa pilihan manual)`:'Supplier utama dibatalkan');
   save();
   renderSupplierList();
+  if(curPage==='master-barang')renderMasterBarang();
+  if(curPage==='pesanan')renderPesanan();
+  if(curPage==='jadwal')renderJadwal();
+  if(curPage==='dashboard')renderDashboard();
 }
 function pickSupplierColor(hex){
   document.getElementById('supp-color').value=hex;
@@ -4492,7 +4678,7 @@ let _smSuppId=null,_smSel=new Set();
 function openSuppMats(sid){
   const s=getSupp(sid);if(!s)return;
   _smSuppId=sid;
-  _smSel=new Set(S.materials.filter(m=>(m.supplierIds||[]).includes(sid)).map(m=>m.id));
+  _smSel=new Set(S.materials.filter(m=>matSupplierIds(m).includes(sid)).map(m=>m.id));
   document.getElementById('sm-title').textContent='📦 Bahan untuk '+s.name;
   document.getElementById('sm-search').value='';
   document.getElementById('sm-onlyfree').checked=false;
@@ -4520,8 +4706,9 @@ function renderSuppMats(){
       <span style="font-size:11px;color:var(--mt)">${ms.filter(m=>_smSel.has(m.id)).length}/${ms.length}</span>
     </div>`+ms.map(m=>{
       const others=(m.supplierIds||[]).filter(id=>id!==_smSuppId).map(id=>getSupp(id)?.name).filter(Boolean);
-      return `<label style="display:flex;align-items:center;gap:8px;padding:7px 12px 7px 24px;border-bottom:1px solid var(--br);cursor:pointer">
-        <input type="checkbox" ${_smSel.has(m.id)?'checked':''} onchange="smToggle('${m.id}',this.checked)" style="width:16px;height:16px;flex-shrink:0">
+      const inh=_smSuppId===S.primarySupplierId&&matUsesPrimary(m);
+      return `<label style="display:flex;align-items:center;gap:8px;padding:7px 12px 7px 24px;border-bottom:1px solid var(--br);cursor:${inh?'default':'pointer'}">
+        <input type="checkbox" ${_smSel.has(m.id)?'checked':''} ${inh?'disabled title="Otomatis karena supplier utama"':''} onchange="smToggle('${m.id}',this.checked)" style="width:16px;height:16px;flex-shrink:0">${inh?'<span style="font-size:10px;color:#92400e">⭐</span>':''}
         <span style="flex:1;font-size:13px">${m.name}</span>
         ${others.length?`<span style="font-size:10px;color:var(--mt)">🏪 ${others.join(', ')}</span>`:''}
       </label>`;}).join('');
@@ -4535,6 +4722,7 @@ function saveSuppMats(){
   const sid=_smSuppId,s=getSupp(sid);if(!s)return;
   let added=0,removed=0;
   S.materials.forEach(m=>{
+    if(sid===S.primarySupplierId&&matUsesPrimary(m))return;
     const has=(m.supplierIds||[]).includes(sid),want=_smSel.has(m.id);
     if(want&&!has){m.supplierIds=[...(m.supplierIds||[]),sid];added++;}
     else if(!want&&has){
@@ -4855,6 +5043,9 @@ function init(){
   }).catch(e=>console.warn('Supabase sync gagal:',e));
 }
 init();
+setTimeout(checkNotify,2500);
+setInterval(checkNotify,30*60*1000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkNotify();});
 </script>
 <!-- MODAL: Import Menu Bulk dari Excel -->
 <div class="mbg" id="modal-import-menu" onclick="if(event.target===this)closeModal('modal-import-menu')">
@@ -4896,7 +5087,7 @@ init();
 <div class="mbg" id="modal-supplier">
   <div class="modal" style="max-width:600px">
     <div class="mt">🏪 Kelola Supplier</div>
-    <div class="fh" style="margin-bottom:10px">Tandai satu supplier sebagai "⭐ Utama" supaya otomatis tercentang tiap kali menambah bahan baku baru di Master Barang.</div>
+    <div class="fh" style="margin-bottom:10px">Tandai satu supplier sebagai "⭐ Utama" supaya otomatis menjadi supplier semua bahan yang supplier-nya tidak diatur manual. Untuk satu bahan tertentu, ubah lewat kolom Supplier di Master Barang.</div>
     <div id="supplier-list-body" style="max-height:340px;overflow-y:auto;border:1px solid var(--br);border-radius:10px;margin-bottom:14px"></div>
     <div style="font-size:13px;font-weight:700;margin-bottom:8px;color:var(--tx)" id="supp-form-title">Tambah Supplier</div>
     <input type="hidden" id="supp-id">
@@ -4927,21 +5118,39 @@ init();
   </div>
 </div>
 
+<!-- Pengingat custom -->
+<div class="mbg" id="modal-reminder">
+  <div class="modal" style="max-width:460px">
+    <div class="mt">📌 Pengingat Saya</div>
+    <div class="fr2">
+      <div class="fg"><label class="fl">Tanggal</label><input type="date" id="rm-date"></div>
+      <div class="fg"><label class="fl">Supplier (opsional)</label><select id="rm-supplier" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid var(--br);font-size:13px"></select></div>
+    </div>
+    <div class="fg"><label class="fl">Catatan</label><input type="text" id="rm-note" placeholder="cth: Tanya stok ayam untuk event Jumat"></div>
+    <button class="btn btn-pr" onclick="addReminder()" style="width:100%;margin-bottom:10px">＋ Tambah Pengingat</button>
+    <div id="rm-list" style="border:1px solid var(--br);border-radius:10px;max-height:240px;overflow-y:auto;margin-bottom:12px"></div>
+    <div class="mac"><button class="btn btn-ol" onclick="closeModal('modal-reminder')">Tutup</button></div>
+  </div>
+</div>
+
 <!-- Atur Supplier massal dari Master Barang -->
 <div class="mbg" id="modal-bulk-supp">
   <div class="modal" style="max-width:440px">
-    <div class="mt">🏪 Atur Supplier Sekaligus</div>
+    <div class="mt">✏️ Ubah Beberapa Bahan Sekaligus</div>
     <div id="bs-sub" class="fh" style="margin-bottom:6px;font-weight:700"></div>
-    <div id="bs-types" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px"></div>
-    <div class="fg"><label class="fl">Supplier</label><select id="bs-supplier" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid var(--br);font-size:13px"></select></div>
-    <div class="fg" style="font-size:13px;line-height:2">
-      <label style="display:block;cursor:pointer"><input type="radio" name="bs-mode" id="bs-mode-add" value="add" checked> Tambahkan supplier ini <span style="color:var(--mt)">(supplier lama tetap)</span></label>
-      <label style="display:block;cursor:pointer"><input type="radio" name="bs-mode" value="replace"> Ganti semua supplier lama dengan ini</label>
-      <label style="display:block;cursor:pointer"><input type="radio" name="bs-mode" value="clear"> Kosongkan supplier</label>
+    <div id="bs-types" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px"></div>
+    <div class="fh" style="margin-bottom:8px">Isi hanya yang mau diubah. Yang "tidak diubah" dibiarkan seperti semula.</div>
+    <div class="fr2">
+      <div class="fg"><label class="fl">Jenis</label><select id="be-type" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid var(--br);font-size:13px"></select></div>
+      <div class="fg"><label class="fl">Satuan</label><select id="be-unit" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid var(--br);font-size:13px"></select></div>
+    </div>
+    <div class="fg"><label class="fl">Tipe Stok</label><select id="be-stock" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid var(--br);font-size:13px"></select></div>
+    <div class="fg"><label class="fl">Supplier</label><select id="bs-supplier" onchange="bsSuppChanged()" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid var(--br);font-size:13px"></select>
+      <label id="bs-keepold-wrap" style="display:none;font-size:12px;margin-top:6px;cursor:pointer"><input type="checkbox" id="bs-keepold"> Pertahankan supplier lama (tambahkan saja)</label>
     </div>
     <div class="mac">
       <button class="btn btn-ol" onclick="closeModal('modal-bulk-supp')">Batal</button>
-      <button class="btn btn-pr" onclick="applyBulkSupplier()">Terapkan</button>
+      <button class="btn btn-pr" onclick="applyBulkEdit()">Terapkan</button>
     </div>
   </div>
 </div>
