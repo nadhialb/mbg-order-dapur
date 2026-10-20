@@ -347,6 +347,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
 #jadwal-kitchen option,#pesanan-kitchen option{background:#fff;color:var(--tx)}
 
 
+.pes-card>div:last-child{border-radius:0 0 12px 12px}.pes-card>div:last-child>div:last-child,.pes-card>div:last-child>div:last-child>div{border-radius:0 0 12px 12px}
 </style>
 </head>
 <body>
@@ -362,7 +363,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div class="nav-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M1 7l2-5h10l2 5"/><path d="M6 15V11h4v4"/><path d="M1 7h14"/></svg></span>Master Dapur</div>
     <div class="nav-item" onclick="navigate('riwayat')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.5"/><path d="M8 4.5V8l3 2"/></svg></span>Riwayat</div>
   </nav>
-  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20261020-v68</div>
+  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20261020-v72</div>
 </aside>
 
 <!-- MOBILE HEADER -->
@@ -642,11 +643,6 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
         <option value="rapel">📦 Rapel (Jumat mingguan)</option>
       </select>
       <div class="fh">Rapel = diorder Jumat–Sabtu minggu sebelumnya · H-N = otomatis dipesan N hari sebelum dibutuhkan</div>
-    </div>
-    <div class="fg" style="margin-bottom:13px">
-      <label class="fl">Catatan request ke supplier <span style="font-weight:400;color:var(--mt)">— opsional</span></label>
-      <input type="text" id="mat-reqnote" placeholder="cth: diselep / potong 10 / yang segar">
-      <div class="fh">Otomatis masuk ke "catatan" di chat WhatsApp ke supplier.</div>
     </div>
     <div id="mat-price-history" style="margin-bottom:8px"></div>
     <div class="fg" style="margin-bottom:12px">
@@ -1426,17 +1422,18 @@ function reminderCount(){
   return {h0:Object.keys(r.h0).length,h1:Object.keys(r.h1).length,custom:r.custom.length};
 }
 function _suppPhoneWa(p){let d=String(p||'').replace(/\D/g,'');if(!d)return '';if(d.startsWith('0'))d='62'+d.slice(1);return d;}
+function _ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function getDelivReq(date,sid){return ((S.deliveryReqs||{})[_ymd(date)+'|'+sid])||{};}
 function buildSuppMsg(kind,sid){
   const r=getSupplierReminders();const g=(kind==='h0'?r.h0:r.h1)[sid];if(!g)return '';
-  const s=getSupp(sid)||{};
-  const d=g.date;
+  const d=g.date;const dr=getDelivReq(d,sid);
   const dd=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
   let head=`Pengiriman ${ALL_DAYS[d.getDay()]} ${dd}`;
-  if(s.reqTime)head+=' '+(/^jam\b/i.test(s.reqTime)?s.reqTime:'jam '+s.reqTime);
-  const line=x=>`• ${x.m.name} ${x.si.qty} ${x.m.unit}${x.m.reqNote?' ('+x.m.reqNote+')':''}\n`;
+  if(dr.time)head+=' '+(/^jam\b/i.test(dr.time)?dr.time:'jam '+dr.time);
+  const line=x=>`• ${x.m.name} ${x.si.qty} ${x.m.unit}${x.si.reqNote?' ('+x.si.reqNote+')':''}\n`;
   let t='';
-  if(s.reqPlace){
-    t=`${head} ke ${s.reqPlace}\n`+g.items.map(line).join('');
+  if(dr.place){
+    t=`${head} ke ${dr.place}\n`+g.items.map(line).join('');
   }else{
     const kits=[...new Set(g.items.map(x=>x.kit||''))];
     t=kits.map(k=>`${head}${k?' ('+k+')':''}\n`+g.items.filter(x=>(x.kit||'')===k).map(line).join('')).join('\n');
@@ -1444,9 +1441,44 @@ function buildSuppMsg(kind,sid){
   t+=`\nOrderan untuk ${kind==='h0'?'hari ini':'besok'} yaa`;
   return t;
 }
-function setSuppReq(sid,field,val){
-  const s=getSupp(sid);if(!s)return;
-  s[field]=val.trim();save();
+// ---- Request pengiriman (Daftar Pesanan) ----
+function openDelReq(){
+  const ids=window._pesReqIds||[];const date=window._pesReqDate;if(!date)return;
+  const items=ids.map(id=>S.scheduleItems.find(x=>x.id===id)).filter(Boolean);
+  const bySup={};
+  items.forEach(si=>{const m=getMat(si.materialId);if(!m)return;const sid=effSupplierId(si)||'_none';(bySup[sid]=bySup[sid]||[]).push({si,m});});
+  const esc=v=>String(v||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+  const inp='width:100%;padding:6px 9px;font-size:12px;border:1.5px solid var(--br);border-radius:8px;box-sizing:border-box';
+  let h=`<div style="font-size:12px;color:var(--mt);margin-bottom:10px">Pengiriman ${ALL_DAYS[date.getDay()]} ${String(date.getDate()).padStart(2,'0')}/${String(date.getMonth()+1).padStart(2,'0')} · kosongkan kalau tidak ada request</div>`;
+  Object.keys(bySup).forEach(sid=>{
+    const sp=sid==='_none'?null:getSupp(sid);const dr=getDelivReq(date,sid);
+    h+=`<div style="border:1px solid var(--br);border-radius:10px;padding:9px 11px;margin-bottom:8px"><div style="font-weight:700;font-size:13px;margin-bottom:6px">🏪 ${sp?esc(sp.name):'Bahan tanpa supplier'}</div>`;
+    h+=`<div style="display:flex;gap:6px;margin-bottom:8px"><div style="flex:1"><div style="font-size:11px;color:var(--mt);margin-bottom:2px">Jam kirim</div><input data-dr-time="${sid}" value="${esc(dr.time)}" placeholder="cth: 19.00" style="${inp}"></div><div style="flex:2"><div style="font-size:11px;color:var(--mt);margin-bottom:2px">Kirim ke <span style="opacity:.7">(kosong = dapur)</span></div><input data-dr-place="${sid}" value="${esc(dr.place)}" placeholder="cth: Rumah Umi" style="${inp}"></div></div><div style="font-size:11px;color:var(--mt);margin-bottom:2px">Catatan per bahan</div>`;
+    bySup[sid].forEach(({si,m})=>{h+=`<div style="display:flex;align-items:center;gap:6px;margin-top:4px"><span style="flex:0 0 42%;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.name)} ${si.qty} ${esc(m.unit)}</span><input data-dr-note="${si.id}" value="${esc(si.reqNote)}" placeholder="Catatan, cth: diselep" style="${inp};flex:1"></div>`;});
+    h+='</div>';
+  });
+  document.getElementById('delreq-body').innerHTML=h||'<div style="color:var(--mt);font-size:13px">Tidak ada item.</div>';
+  openModal('modal-delreq');
+}
+function saveDelReq(){
+  const date=window._pesReqDate;if(!date)return;
+  if(!S.deliveryReqs)S.deliveryReqs={};
+  const root=document.getElementById('delreq-body');
+  const sids=new Set();
+  root.querySelectorAll('[data-dr-time]').forEach(e=>sids.add(e.getAttribute('data-dr-time')));
+  sids.forEach(sid=>{
+    const t=root.querySelector(`[data-dr-time="${sid}"]`).value.trim();
+    const p=root.querySelector(`[data-dr-place="${sid}"]`).value.trim();
+    const k=_ymd(date)+'|'+sid;
+    if(t||p)S.deliveryReqs[k]={time:t,place:p};else delete S.deliveryReqs[k];
+  });
+  root.querySelectorAll('[data-dr-note]').forEach(e=>{
+    const si=S.scheduleItems.find(x=>x.id===e.getAttribute('data-dr-note'));
+    if(si){const v=e.value.trim();if(v)si.reqNote=v;else delete si.reqNote;}
+  });
+  save();closeModal('modal-delreq');
+  if(typeof renderPesanan==='function'&&curPage==='pesanan')renderPesanan();
+  if(curPage==='dashboard')renderDashboard();
 }
 function copySuppMsg(kind,sid){copyText(buildSuppMsg(kind,sid));}
 function waSuppMsg(kind,sid){
@@ -1460,10 +1492,8 @@ function assistantCardHtml(){
     const ids=Object.keys(map);if(!ids.length)return '';
     return `<div style="margin-bottom:10px"><div style="font-size:12px;font-weight:800;color:${color};margin-bottom:6px">${title} (${ids.length} supplier)</div>`+ids.map(sid=>{
       const g=map[sid];const s=getSupp(sid==='_none'?'':sid);
-      const names=g.items.map(x=>`${matNeedsAttention(x.m)?'🚩 ':''}${x.m.name} ${x.si.qty} ${x.m.unit}${x.m.reqNote?` <span style="color:#7c3aed">(${x.m.reqNote})</span>`:''}${x.ordered?'':' <i style="color:#dc2626">(belum dipesan)</i>'}`).join(', ');
+      const names=g.items.map(x=>`${matNeedsAttention(x.m)?'🚩 ':''}${x.m.name} ${x.si.qty} ${x.m.unit}${x.si.reqNote?` <span style="color:#7c3aed">(${x.si.reqNote})</span>`:''}${x.ordered?'':' <i style="color:#dc2626">(belum dipesan)</i>'}`).join(', ');
       const acts=s?`<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center">
-          <input type="text" value="${(s.reqTime||'').replace(/"/g,'&quot;')}" placeholder="Jam, cth: 19.00" onchange="setSuppReq('${sid}','reqTime',this.value)" style="width:128px;padding:4px 8px;font-size:12px;border:1.5px solid var(--br);border-radius:8px">
-          <input type="text" value="${(s.reqPlace||'').replace(/"/g,'&quot;')}" placeholder="Kirim ke (opsional)" onchange="setSuppReq('${sid}','reqPlace',this.value)" style="width:140px;padding:4px 8px;font-size:12px;border:1.5px solid var(--br);border-radius:8px">
           <button class="btn btn-pr btn-xs" onclick="waSuppMsg('${kind}','${sid}')">💬 WhatsApp</button>
           <button class="btn btn-ol btn-xs" onclick="copySuppMsg('${kind}','${sid}')">📋 Salin pesan</button></div>`
         :`<div style="font-size:11px;color:var(--mt);margin-top:4px">Bahan ini belum punya supplier — atur dulu di Master Barang.</div>`;
@@ -2370,13 +2400,17 @@ function renderPesananByHari(items,dates){
     const isTodayDelivery=deliveryDate.getTime()===td.getTime();
     const ordN=dis.filter(s=>s.isOrdered).length;
     const _paidN=dis.filter(s=>s.isPaid).length;const _recvN=dis.filter(s=>s.isReceived).length;const countColor=_paidN===dis.length&&dis.length>0?'#713f12':_recvN===dis.length&&dis.length>0?'#1e40af':ordN===dis.length&&dis.length>0?'#166534':'var(--mt)';
+    window._pesReqIds=dis.map(x=>x.id);window._pesReqDate=deliveryDate;
+    const _reqSet=new Set();
+    dis.forEach(x=>{const dr=getDelivReq(deliveryDate,effSupplierId(x)||'_none');if(dr.time||dr.place)_reqSet.add((dr.time?'🕘 '+String(dr.time).replace(/^jam\s+/i,''):'')+(dr.time&&dr.place?' · ':'')+(dr.place?'📍 '+dr.place:''));});
+    const _reqLine=_reqSet.size?`<div style="font-size:11px;color:#7c3aed;margin-top:2px;font-weight:600">${[..._reqSet].map(t=>t.replace(/&/g,'&amp;').replace(/</g,'&lt;')).join(' &nbsp;|&nbsp; ')}</div>`:'';
     const dayKey=`day_${di}`;
     const dayOpen=window._pesCollapseDay[dayKey]!==false; // default open
     const chevron=dayOpen?'▾':'▸';
 
     html+=`${di>0?'<div style="height:10px"></div>':''}
-    <div style="background:#fff;border:1px solid var(--br);border-radius:12px;overflow:hidden;margin-bottom:2px">
-    <div onclick="toggleDayCollapse('${dayKey}')" style="padding:11px 16px;border-bottom:${dayOpen?'1px solid var(--br)':'none'};display:flex;align-items:center;justify-content:space-between;background:#fafafa;border-radius:0;cursor:pointer;user-select:none">
+    <div class="pes-card" style="background:#fff;border:1px solid var(--br);border-radius:12px;margin-bottom:2px">
+    <div onclick="toggleDayCollapse('${dayKey}')" style="padding:11px 16px;border-bottom:${dayOpen?'1px solid var(--br)':'none'};display:flex;align-items:center;justify-content:space-between;background:#fafafa;border-radius:${dayOpen?'12px 12px 0 0':'12px'};cursor:pointer;user-select:none">
       <div style="display:flex;align-items:center;gap:10px">
         <span style="font-size:13px;color:var(--mt)">${chevron}</span>
         <div>
@@ -2384,7 +2418,7 @@ function renderPesananByHari(items,dates){
             <span style="font-size:15px;font-weight:800;font-family:'Plus Jakarta Sans','Outfit',sans-serif;letter-spacing:-.3px;color:var(--tx)">${deliveryDayName}, ${ddd}/${ddm}/${ddY}</span>
             ${isTodayDelivery?'<span class="badge bg-or">Hari Ini</span>':''}
           </div>
-          <div style="font-size:11px;color:var(--mt);margin-top:2px">Menu: ${DAYS[di]}, ${String(nd.getDate()).padStart(2,'0')}/${String(nd.getMonth()+1).padStart(2,'0')}</div>
+          <div style="font-size:11px;color:var(--mt);margin-top:2px">Menu: ${DAYS[di]}, ${String(nd.getDate()).padStart(2,'0')}/${String(nd.getMonth()+1).padStart(2,'0')}</div>${_reqLine}
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px" onclick="event.stopPropagation()">
@@ -2397,6 +2431,7 @@ function renderPesananByHari(items,dates){
             <div onclick="event.stopPropagation();closeDayMenus();markDayPaid(${di})" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">Tandai Semua Bayar</div>
             <div style="border-top:1px solid var(--br)"></div>
             <div onclick="event.stopPropagation();closeDayMenus();copyPesananSingleDay()" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">📋 Copy Hari Ini</div>
+            <div onclick="event.stopPropagation();closeDayMenus();openDelReq()" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">📝 Jam, Tempat &amp; Catatan...</div>
           </div>
         </div>
       </div>
@@ -2415,7 +2450,7 @@ function renderPesananByHari(items,dates){
         const catOpen=window._pesCopyCollapseType[catKey]!==false;
         const catChev=catOpen?'▾':'▸';
         const _ck=`tc_${di}_${typ.replace(/\W/g,'_')}`;
-        window[_ck]={label:`Pengiriman ${deliveryDayName} ${ddd}/${ddm}${_pesKitName?' ('+_pesKitName+')':''}`,items:byType[typ].map(({si,m})=>({name:m.name,qty:si.qty,unit:m.unit,ord:si.isOrdered}))};
+        window[_ck]={groups:delivGroupsFor(byType[typ].map(x=>x.si),deliveryDate,_pesKitName)};
 
         const typeIds=byType[typ].map(({si})=>si.id);
         const typeMenuKey=catKey;
@@ -2434,6 +2469,7 @@ function renderPesananByHari(items,dates){
                 <div onclick="closeTypeMenus();markTypeItems(window['${_tik}'],'pay')" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">Bayar Semua</div>
                 <div style="border-top:1px solid var(--br)"></div>
                 <div onclick="closeTypeMenus();openAttentionMgmt()" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">🚩 Tandai Urgent...</div>
+                <div onclick="closeTypeMenus();openDelReq()" style="padding:9px 14px;font-size:13px;cursor:pointer;color:var(--tx)" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">📝 Jam, Tempat &amp; Catatan...</div>
               </div>
             </div>
             <span style="font-size:10px;color:var(--mt);width:14px;text-align:center">${catChev}</span>
@@ -2449,7 +2485,7 @@ function renderPesananByHari(items,dates){
             html+=`<div style="border-top:1px solid var(--br)">`;
             html+=`<div style="display:flex;align-items:center;padding:6px 16px 6px 32px;gap:6px;flex-wrap:nowrap;${rowBg}">
               <span style="flex:1;min-width:0;overflow:hidden">
-                <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;${nameStyle}">${attnPrefix(m)}${m.name}</div>
+                <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;${nameStyle}">${attnPrefix(m)}${m.name}${si.reqNote?` <span style="font-weight:400;font-size:11px;color:#7c3aed">(${String(si.reqNote).replace(/</g,'&lt;')})</span>`:''}</div>
                 ${_spBadge}
               </span>
               <span style="font-size:13px;font-weight:600;flex-shrink:0;${qtyStyle}">${si.qty} ${m.unit}</span>
@@ -2632,7 +2668,7 @@ function renderPesananBySupplier(items,dates){
       const ddn=ALL_DAYS[delivDate.getDay()];
       const dd=String(delivDate.getDate()).padStart(2,'0');
       const mm=String(delivDate.getMonth()+1).padStart(2,'0');
-      return{label:`Pengiriman ${ddn} ${dd}/${mm}`,items:byDay[di].map(s=>{const mm2=getMat(s.materialId);return{name:mm2?.name||'?',qty:s.qty,unit:mm2?.unit||'',ord:s.isOrdered};})};
+      return{label:delivHead(delivDate,getDelivReq(delivDate,getSupp(sid)?sid:'_none'),''),items:byDay[di].map(s=>{const mm2=getMat(s.materialId);return{name:mm2?.name||'?',qty:s.qty,unit:mm2?.unit||'',ord:s.isOrdered,note:s.reqNote||''};})};
     })};
 
     html+=`<div class="mg" style="border-left-color:${supp?supplierBadgeStyle(supp.id).solid:'#94a3b8'}">
@@ -2947,7 +2983,6 @@ function openAddMaterial(){
   populateMatTypeSelect('mat-type','Karbohidrat');
   populateMatUnitSelect('mat-unit','kg');
   document.getElementById('mat-stocktype').value='h1';
-  document.getElementById('mat-reqnote').value='';
   const _ph3=document.getElementById('mat-price-history');
   if(_ph3){_ph3.style.display='none';_ph3.innerHTML='';}
   openModal('modal-material');
@@ -2961,7 +2996,6 @@ function openEditMaterial(id){
   populateMatUnitSelect('mat-unit',m.unit||'kg');
   document.getElementById('mat-price').value=m.price||0;
   document.getElementById('mat-stocktype').value=m.stockType||'h1';
-  document.getElementById('mat-reqnote').value=m.reqNote||'';
   renderMatSupplierCheckboxes(m.supplierIds||[]);
   const _dmrE=document.getElementById('del-mat-row');if(_dmrE)_dmrE.style.display='block';
   const _phEl=document.getElementById('mat-price-history');
@@ -2988,7 +3022,6 @@ function saveMaterial(){
   const unit=document.getElementById('mat-unit').value.trim();
   const price=parseInt(document.getElementById('mat-price').value)||0;
   const stockType=document.getElementById('mat-stocktype').value||'h1';
-  const reqNote=document.getElementById('mat-reqnote').value.trim();
   const supplierIds=getCheckedMatSuppliers();
   if(!name||!unit){alert('Nama dan satuan wajib diisi.');return;}
   const id=document.getElementById('mat-id').value;
@@ -3001,13 +3034,12 @@ function saveMaterial(){
       if(m.unit!==unit)changes.push(`satuan ${m.unit} → ${unit}`);
       if(m.price!==price)changes.push(`harga ${fmtRp(m.price)} → ${fmtRp(price)}`);
       if(m.price&&m.price!==price){if(!m.priceHistory)m.priceHistory=[];m.priceHistory.push({price:m.price,date:fmtDate(new Date())});if(m.priceHistory.length>10)m.priceHistory=m.priceHistory.slice(-10);}
-      if((m.reqNote||'')!==reqNote)changes.push(`catatan request "${reqNote||'-'}"`);
-      Object.assign(m,{name,type,unit,price,stockType,supplierIds,reqNote});
+      Object.assign(m,{name,type,unit,price,stockType,supplierIds});
       if(changes.length)logChange('bahan','edit',`"${name}" diubah: ${changes.join(', ')}`);
     }
   }
   else {
-    S.materials.push({id:uid(),name,type,unit,price,stockType,supplierIds,reqNote});
+    S.materials.push({id:uid(),name,type,unit,price,stockType,supplierIds});
     logChange('bahan','add',`Bahan baru ditambahkan: "${name}" (${type}, ${unit}${price?', '+fmtRp(price):''})`);
   }
   save();closeModal('modal-material');renderMasterBarang();
@@ -3073,14 +3105,21 @@ function fallbackCopy(txt){
   catch(e){alert('Tidak bisa menyalin otomatis. Salin manual:\n\n'+txt.slice(0,200));}
   document.body.removeChild(ta);
 }
+function delivHead(dd,dr,kitName){
+  let h=`Pengiriman ${ALL_DAYS[dd.getDay()]} ${String(dd.getDate()).padStart(2,'0')}/${String(dd.getMonth()+1).padStart(2,'0')}`;
+  if(dr&&dr.time)h+=' '+(/^jam\b/i.test(dr.time)?dr.time:'jam '+dr.time);
+  if(dr&&dr.place)h+=' ke '+dr.place;else if(kitName)h+=' ('+kitName+')';
+  return h;
+}
+function delivGroupsFor(sis,dd,kitName){
+  const map=new Map();
+  sis.forEach(si=>{const sid=effSupplierId(si)||'_none';const dr=getDelivReq(dd,sid);const k=(dr.time||'')+'|'+(dr.place||'');if(!map.has(k))map.set(k,{dr,items:[]});map.get(k).items.push(si);});
+  return [...map.values()].map(g=>({label:delivHead(dd,g.dr,kitName),items:g.items.map(si=>{const m=getMat(si.materialId);return{name:m?.name||'?',qty:si.qty,unit:m?.unit||'',ord:si.isOrdered,note:si.reqNote||''};})}));
+}
 function buildDayText(day,date,items,kitName){
   if(!items.length)return '';
   const delivDate=addDays(date,-1);
-  const ddd=String(delivDate.getDate()).padStart(2,'0');
-  const ddm=String(delivDate.getMonth()+1).padStart(2,'0');
-  const ddn=ALL_DAYS[delivDate.getDay()];
-  let txt=`*Pengiriman ${ddn} ${ddd}/${ddm}${kitName?' ('+kitName+')':''}*\n`;
-  items.forEach(si=>{const m=getMat(si.materialId);if(m)txt+=`• ${m.name} ${si.qty} ${m.unit}${si.isOrdered?' ✅':''}\n`;});
+  const txt=delivGroupsFor(items,delivDate,kitName).map(g=>`*${g.label}*\n`+g.items.map(i=>`• ${i.name} ${i.qty} ${i.unit}${i.note?' ('+i.note+')':''}${i.ord?' ✅':''}\n`).join('')).join('\n');
   return txt;
 }
 function copyPesananSingleDay(){
@@ -3098,12 +3137,12 @@ function copyTypeKey(key){
   if(d.groups){
     d.groups.forEach(g=>{
       txt+=`${g.label}\n`;
-      g.items.forEach(item=>{txt+=`• ${item.name} ${item.qty} ${item.unit}${item.ord?' ✅':''}\n`;});
+      g.items.forEach(item=>{txt+=`• ${item.name} ${item.qty} ${item.unit}${item.note?' ('+item.note+')':''}${item.ord?' ✅':''}\n`;});
       txt+='\n';
     });
   } else {
     txt+=`${d.label}\n`;
-    d.items.forEach(item=>{txt+=`• ${item.name} ${item.qty} ${item.unit}${item.ord?' ✅':''}\n`;});
+    d.items.forEach(item=>{txt+=`• ${item.name} ${item.qty} ${item.unit}${item.note?' ('+item.note+')':''}${item.ord?' ✅':''}\n`;});
   }
   copyText(txt.trim());
 }
@@ -5120,6 +5159,13 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkNotif
 </div>
 
 <!-- Pengingat custom -->
+<div class="mbg" id="modal-delreq">
+  <div class="modal" style="max-width:480px">
+    <div class="mt">📝 Jam, Tempat &amp; Catatan Pengiriman</div>
+    <div id="delreq-body" style="max-height:60vh;overflow-y:auto"></div>
+    <div class="mac"><button class="btn btn-ol" onclick="closeModal('modal-delreq')">Batal</button><button class="btn btn-pr" onclick="saveDelReq()">Simpan</button></div>
+  </div>
+</div>
 <div class="mbg" id="modal-reminder">
   <div class="modal" style="max-width:460px">
     <div class="mt">📌 Pengingat Saya</div>
