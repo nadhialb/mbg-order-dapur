@@ -363,7 +363,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div class="nav-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M1 7l2-5h10l2 5"/><path d="M6 15V11h4v4"/><path d="M1 7h14"/></svg></span>Master Dapur</div>
     <div class="nav-item" onclick="navigate('riwayat')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.5"/><path d="M8 4.5V8l3 2"/></svg></span>Riwayat</div>
   </nav>
-  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20261020-v72</div>
+  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20261020-v73</div>
 </aside>
 
 <!-- MOBILE HEADER -->
@@ -1424,20 +1424,21 @@ function reminderCount(){
 function _suppPhoneWa(p){let d=String(p||'').replace(/\D/g,'');if(!d)return '';if(d.startsWith('0'))d='62'+d.slice(1);return d;}
 function _ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function getDelivReq(date,sid){return ((S.deliveryReqs||{})[_ymd(date)+'|'+sid])||{};}
+function effReq(si,date){
+  const sid=effSupplierId(si)||'_none';const dr=getDelivReq(date,sid);
+  return {time:si.reqTime||dr.time||'',place:si.reqPlace||dr.place||''};
+}
+function reqTxt(rq){
+  const t=rq.time?'🕘 '+String(rq.time).replace(/^jam\s+/i,''):'';const p=rq.place?'📍 '+rq.place:'';
+  return [t,p].filter(Boolean).join(' · ');
+}
 function buildSuppMsg(kind,sid){
   const r=getSupplierReminders();const g=(kind==='h0'?r.h0:r.h1)[sid];if(!g)return '';
-  const d=g.date;const dr=getDelivReq(d,sid);
-  const dd=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
-  let head=`Pengiriman ${ALL_DAYS[d.getDay()]} ${dd}`;
-  if(dr.time)head+=' '+(/^jam\b/i.test(dr.time)?dr.time:'jam '+dr.time);
+  const d=g.date;
   const line=x=>`• ${x.m.name} ${x.si.qty} ${x.m.unit}${x.si.reqNote?' ('+x.si.reqNote+')':''}\n`;
-  let t='';
-  if(dr.place){
-    t=`${head} ke ${dr.place}\n`+g.items.map(line).join('');
-  }else{
-    const kits=[...new Set(g.items.map(x=>x.kit||''))];
-    t=kits.map(k=>`${head}${k?' ('+k+')':''}\n`+g.items.filter(x=>(x.kit||'')===k).map(line).join('')).join('\n');
-  }
+  const map=new Map();
+  g.items.forEach(x=>{const rq=effReq(x.si,d);const k=rq.time+'|'+rq.place+'|'+(rq.place?'':x.kit||'');if(!map.has(k))map.set(k,{rq,kit:rq.place?'':x.kit||'',items:[]});map.get(k).items.push(x);});
+  let t=[...map.values()].map(o=>delivHead(d,o.rq,o.kit)+'\n'+o.items.map(line).join('')).join('\n');
   t+=`\nOrderan untuk ${kind==='h0'?'hari ini':'besok'} yaa`;
   return t;
 }
@@ -1453,8 +1454,8 @@ function openDelReq(){
   Object.keys(bySup).forEach(sid=>{
     const sp=sid==='_none'?null:getSupp(sid);const dr=getDelivReq(date,sid);
     h+=`<div style="border:1px solid var(--br);border-radius:10px;padding:9px 11px;margin-bottom:8px"><div style="font-weight:700;font-size:13px;margin-bottom:6px">🏪 ${sp?esc(sp.name):'Bahan tanpa supplier'}</div>`;
-    h+=`<div style="display:flex;gap:6px;margin-bottom:8px"><div style="flex:1"><div style="font-size:11px;color:var(--mt);margin-bottom:2px">Jam kirim</div><input data-dr-time="${sid}" value="${esc(dr.time)}" placeholder="cth: 19.00" style="${inp}"></div><div style="flex:2"><div style="font-size:11px;color:var(--mt);margin-bottom:2px">Kirim ke <span style="opacity:.7">(kosong = dapur)</span></div><input data-dr-place="${sid}" value="${esc(dr.place)}" placeholder="cth: Rumah Umi" style="${inp}"></div></div><div style="font-size:11px;color:var(--mt);margin-bottom:2px">Catatan per bahan</div>`;
-    bySup[sid].forEach(({si,m})=>{h+=`<div style="display:flex;align-items:center;gap:6px;margin-top:4px"><span style="flex:0 0 42%;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.name)} ${si.qty} ${esc(m.unit)}</span><input data-dr-note="${si.id}" value="${esc(si.reqNote)}" placeholder="Catatan, cth: diselep" style="${inp};flex:1"></div>`;});
+    h+=`<div style="display:flex;gap:6px;margin-bottom:8px"><div style="flex:1"><div style="font-size:11px;color:var(--mt);margin-bottom:2px">Jam kirim</div><input data-dr-time="${sid}" value="${esc(dr.time)}" placeholder="cth: 19.00" style="${inp}"></div><div style="flex:2"><div style="font-size:11px;color:var(--mt);margin-bottom:2px">Kirim ke <span style="opacity:.7">(kosong = dapur)</span></div><input data-dr-place="${sid}" value="${esc(dr.place)}" placeholder="cth: Rumah Umi" style="${inp}"></div></div><div style="font-size:11px;color:var(--mt);margin-bottom:2px">Per bahan <span style="opacity:.7">(opsional — jam/tempat di sini menggantikan yang di atas)</span></div>`;
+    bySup[sid].forEach(({si,m})=>{h+=`<div style="margin-top:7px"><div style="font-size:12px;font-weight:600;margin-bottom:2px">${esc(m.name)} ${si.qty} ${esc(m.unit)}</div><div style="display:flex;gap:5px"><input data-dr-itime="${si.id}" value="${esc(si.reqTime)}" placeholder="🕘 jam" style="${inp};flex:0 0 22%"><input data-dr-iplace="${si.id}" value="${esc(si.reqPlace)}" placeholder="📍 tempat" style="${inp};flex:1"><input data-dr-note="${si.id}" value="${esc(si.reqNote)}" placeholder="catatan" style="${inp};flex:1"></div></div>`;});
     h+='</div>';
   });
   document.getElementById('delreq-body').innerHTML=h||'<div style="color:var(--mt);font-size:13px">Tidak ada item.</div>';
@@ -1474,7 +1475,8 @@ function saveDelReq(){
   });
   root.querySelectorAll('[data-dr-note]').forEach(e=>{
     const si=S.scheduleItems.find(x=>x.id===e.getAttribute('data-dr-note'));
-    if(si){const v=e.value.trim();if(v)si.reqNote=v;else delete si.reqNote;}
+    if(si){const id=si.id;const g=(a,f)=>{const el=root.querySelector(`[data-dr-${a}="${id}"]`);const v=el?el.value.trim():'';if(v)si[f]=v;else delete si[f];};
+      g('note','reqNote');g('itime','reqTime');g('iplace','reqPlace');}
   });
   save();closeModal('modal-delreq');
   if(typeof renderPesanan==='function'&&curPage==='pesanan')renderPesanan();
@@ -2401,9 +2403,7 @@ function renderPesananByHari(items,dates){
     const ordN=dis.filter(s=>s.isOrdered).length;
     const _paidN=dis.filter(s=>s.isPaid).length;const _recvN=dis.filter(s=>s.isReceived).length;const countColor=_paidN===dis.length&&dis.length>0?'#713f12':_recvN===dis.length&&dis.length>0?'#1e40af':ordN===dis.length&&dis.length>0?'#166534':'var(--mt)';
     window._pesReqIds=dis.map(x=>x.id);window._pesReqDate=deliveryDate;
-    const _reqSet=new Set();
-    dis.forEach(x=>{const dr=getDelivReq(deliveryDate,effSupplierId(x)||'_none');if(dr.time||dr.place)_reqSet.add((dr.time?'🕘 '+String(dr.time).replace(/^jam\s+/i,''):'')+(dr.time&&dr.place?' · ':'')+(dr.place?'📍 '+dr.place:''));});
-    const _reqLine=_reqSet.size?`<div style="font-size:11px;color:#7c3aed;margin-top:2px;font-weight:600">${[..._reqSet].map(t=>t.replace(/&/g,'&amp;').replace(/</g,'&lt;')).join(' &nbsp;|&nbsp; ')}</div>`:'';
+
     const dayKey=`day_${di}`;
     const dayOpen=window._pesCollapseDay[dayKey]!==false; // default open
     const chevron=dayOpen?'▾':'▸';
@@ -2418,7 +2418,7 @@ function renderPesananByHari(items,dates){
             <span style="font-size:15px;font-weight:800;font-family:'Plus Jakarta Sans','Outfit',sans-serif;letter-spacing:-.3px;color:var(--tx)">${deliveryDayName}, ${ddd}/${ddm}/${ddY}</span>
             ${isTodayDelivery?'<span class="badge bg-or">Hari Ini</span>':''}
           </div>
-          <div style="font-size:11px;color:var(--mt);margin-top:2px">Menu: ${DAYS[di]}, ${String(nd.getDate()).padStart(2,'0')}/${String(nd.getMonth()+1).padStart(2,'0')}</div>${_reqLine}
+          <div style="font-size:11px;color:var(--mt);margin-top:2px">Menu: ${DAYS[di]}, ${String(nd.getDate()).padStart(2,'0')}/${String(nd.getMonth()+1).padStart(2,'0')}</div>
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px" onclick="event.stopPropagation()">
@@ -2481,7 +2481,8 @@ function renderPesananByHari(items,dates){
             const nameStyle=(ord?'text-decoration:line-through;color:#94a3b8':'font-weight:600')+(matNeedsAttention(m)?';color:#dc2626;font-weight:800':'');
             const qtyStyle=ord?'color:#94a3b8':'color:var(--tx)';
             const rowBg=paid?'background:#f0fdf4':recv?'background:#fef9c3':ord?'background:#fafafa':'';
-            const _spBadge=effSupplierId(si)?(()=>{const _sp2=getSupp(effSupplierId(si));if(!_sp2)return'';const _bs2=supplierBadgeStyle(_sp2.id);return `<div style="font-size:10px;line-height:1.2;color:${_bs2.text};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px">🏪 ${_sp2.name}</div>`;})():'';
+            const _rq1=reqTxt(effReq(si,deliveryDate)).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+            const _spBadge=effSupplierId(si)?(()=>{const _sp2=getSupp(effSupplierId(si));if(!_sp2)return'';const _bs2=supplierBadgeStyle(_sp2.id);return `<div style="font-size:10px;line-height:1.2;color:${_bs2.text};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px">🏪 ${_sp2.name}${_rq1?` <span style="color:#7c3aed;font-weight:600">· ${_rq1}</span>`:''}</div>`;})():(_rq1?`<div style="font-size:10px;line-height:1.2;color:#7c3aed;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px">${_rq1}</div>`:'');
             html+=`<div style="border-top:1px solid var(--br)">`;
             html+=`<div style="display:flex;align-items:center;padding:6px 16px 6px 32px;gap:6px;flex-wrap:nowrap;${rowBg}">
               <span style="flex:1;min-width:0;overflow:hidden">
@@ -3113,7 +3114,7 @@ function delivHead(dd,dr,kitName){
 }
 function delivGroupsFor(sis,dd,kitName){
   const map=new Map();
-  sis.forEach(si=>{const sid=effSupplierId(si)||'_none';const dr=getDelivReq(dd,sid);const k=(dr.time||'')+'|'+(dr.place||'');if(!map.has(k))map.set(k,{dr,items:[]});map.get(k).items.push(si);});
+  sis.forEach(si=>{const dr=effReq(si,dd);const k=(dr.time||'')+'|'+(dr.place||'');if(!map.has(k))map.set(k,{dr,items:[]});map.get(k).items.push(si);});
   return [...map.values()].map(g=>({label:delivHead(dd,g.dr,kitName),items:g.items.map(si=>{const m=getMat(si.materialId);return{name:m?.name||'?',qty:si.qty,unit:m?.unit||'',ord:si.isOrdered,note:si.reqNote||''};})}));
 }
 function buildDayText(day,date,items,kitName){
