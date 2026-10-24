@@ -363,7 +363,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div class="nav-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M1 7l2-5h10l2 5"/><path d="M6 15V11h4v4"/><path d="M1 7h14"/></svg></span>Master Dapur</div>
     <div class="nav-item" onclick="navigate('riwayat')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.5"/><path d="M8 4.5V8l3 2"/></svg></span>Riwayat</div>
   </nav>
-  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20261020-v73</div>
+  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20261024-v75</div>
 </aside>
 
 <!-- MOBILE HEADER -->
@@ -1019,12 +1019,11 @@ function getSupp(id){return (S.suppliers||[]).find(s=>s.id===id);}
 // Begitu bahan itu punya 2+ supplier, auto-detect berhenti dan user harus
 // pilih manual (supaya tidak salah tebak).
 // Supplier efektif sebuah bahan: pilihan manual di bahan (supplierIds) kalau ada,
-// kalau kosong otomatis ikut Supplier Utama (S.primarySupplierId).
-function matUsesPrimary(m){return !((m&&m.supplierIds||[]).some(id=>getSupp(id)));}
+// Supplier Utama (S.primarySupplierId) hanya dipakai untuk memilih antar supplier pada bahan yang punya 2+ supplier.
+function matUsesPrimary(m){return false;} // supplier utama tidak lagi diwariskan ke bahan lain
 function matSupplierIds(m){
   const ids=((m&&m.supplierIds)||[]).filter(id=>getSupp(id));
-  if(ids.length)return ids;
-  return (S.primarySupplierId&&getSupp(S.primarySupplierId))?[S.primarySupplierId]:[];
+  return ids;
 }
 function effSupplierId(si){
   if(si.supplierId&&getSupp(si.supplierId))return si.supplierId;
@@ -1280,6 +1279,7 @@ function addMenu(kitId,wk,day){
 }
 function deleteMenu(id){
   const _mn=(S.menus||[]).find(m=>m.id===id);
+  if(!confirm(`Hapus menu "${_mn?_mn.name:''}" dari jadwal?`))return;
   if(_mn)logChange('jadwal','delete',`Menu "${_mn.name}" dihapus dari ${DAYS[_mn.day]}`);
   S.menus=S.menus.filter(m=>m.id!==id);
   save();
@@ -1544,7 +1544,7 @@ function addReminder(){
   save();renderReminderList();if(curPage==='dashboard')renderDashboard();
 }
 function doneReminder(id){const r=(S.customReminders||[]).find(x=>x.id===id);if(r){r.done=true;save();if(curPage==='dashboard')renderDashboard();}}
-function deleteReminder(id){S.customReminders=(S.customReminders||[]).filter(x=>x.id!==id);save();renderReminderList();if(curPage==='dashboard')renderDashboard();}
+function deleteReminder(id){if(!confirm('Hapus pengingat ini?'))return;S.customReminders=(S.customReminders||[]).filter(x=>x.id!==id);save();renderReminderList();if(curPage==='dashboard')renderDashboard();}
 // ── Notifikasi browser (hanya muncul saat aplikasi terbuka; tidak ada server) ──
 function toggleNotif(){
   if(typeof Notification==='undefined'){alert('Browser ini belum mendukung notifikasi. (Di iPhone, notifikasi hanya jalan kalau aplikasi di-Add to Home Screen.)');return;}
@@ -1977,7 +1977,7 @@ function renderJadwalContent(){
     </div>
     ${menuBody}
   </div>`;
-  document.getElementById('jadwal-date-hdr').innerHTML=`<span>${fmt(nd)}</span><button class="btn btn-ol btn-icon" style="color:var(--rd)" onclick="deleteDaySchedule()" title="Hapus menu &amp; bahan hari ini" aria-label="Hapus Hari Ini">🗑️</button>`;
+  document.getElementById('jadwal-date-hdr').innerHTML=`<span>${fmt(nd)}</span><button class="btn btn-ol btn-icon" style="color:var(--rd)" onclick="deleteDaySchedule()" title="Hapus menu &amp; bahan hari ini" aria-label="Hapus Hari Ini">🗑️</button><button class="btn btn-ol btn-icon" onclick="openMoveDay()" title="Pindah / tukar hari (menu + bahan)" aria-label="Pindah Hari">⇄</button>`;
   document.getElementById('jadwal-menu-col').innerHTML=menuHtml;
   const dayTotal=items.reduce((a,si)=>a+si.qty*effPrice(si),0);
   const itemsChevron=jadwalItemsOpen?'▾':'▸';
@@ -2093,10 +2093,11 @@ function editItem(id){
 }
 function deleteItemFromModal(){
   if(!editItemId)return;
-  if(!confirm('Hapus bahan ini dari jadwal?'))return;
   const _eid=editItemId;
+  const _si0=S.scheduleItems.find(s=>s.id===_eid);const _m0=_si0&&getMat(_si0.materialId);
+  if(!confirm(`Hapus "${_m0?_m0.name:'bahan ini'}" dari jadwal?`))return;
   closeModal('modal-add-item');
-  deleteItem(_eid);
+  deleteItem(_eid,true);
 }
 function onItemMaterialChange(existingPrice,existingSupplierId){
   const mid=document.getElementById('item-material').value;
@@ -2151,6 +2152,15 @@ function saveItem(){
   if(!mid){alert('Pilih bahan baku dari daftar saran.');return;}
   if(!qty||qty<=0){alert('Masukkan jumlah yang valid.');return;}
   const m=getMat(mid);
+  if(editItemId){
+    const _si=S.scheduleItems.find(s=>s.id===editItemId);
+    if(_si){
+      const _ch=[];
+      if(_si.materialId!==mid)_ch.push(`bahan ${getMat(_si.materialId)?.name||'?'} → ${m?.name||'?'}`);
+      if(_si.qty!==qty)_ch.push(`jumlah ${_si.qty} → ${qty}`);
+      if(_ch.length&&!confirm('Simpan perubahan ini?\n• '+_ch.join('\n• ')))return;
+    }
+  }
   const wantAttn=document.getElementById('item-attn').checked;
   if(m&&!!m.needsAttention!==wantAttn){
     m.needsAttention=wantAttn;
@@ -2181,8 +2191,9 @@ function saveItem(){
   }
   save();closeModal('modal-add-item');renderWeeklySummary();renderDayTabs();renderJadwalContent();
 }
-function deleteItem(id){
-  if(!confirm('Hapus bahan ini dari jadwal?'))return;
+function deleteItem(id,skipConfirm){
+  const _s0=S.scheduleItems.find(s=>s.id===id);const _m00=_s0&&getMat(_s0.materialId);
+  if(!skipConfirm&&!confirm(`Hapus "${_m00?_m00.name:'bahan ini'}" dari jadwal?`))return;
   const _si=S.scheduleItems.find(s=>s.id===id);
   if(_si){const _m=getMat(_si.materialId);logChange('jadwal','delete',`"${_m?.name||'?'}" dihapus dari jadwal ${DAYS[_si.day]} (${_si.qty} ${_m?.unit||''})`);}
   S.scheduleItems=S.scheduleItems.filter(s=>s.id!==id);save();renderWeeklySummary();renderDayTabs();renderJadwalContent();
@@ -2327,6 +2338,7 @@ function markDayOrdered(di){
   const kid=document.getElementById('pesanan-kitchen')?.value||curKitchen;
   const its=S.scheduleItems.filter(s=>s.weekKey===pesananWeek&&s.kitchenId===kid&&s.day===di);
   const allOrd=its.length>0&&its.every(s=>s.isOrdered);
+  if(!confirm(allOrd?`Batalkan status "Sudah Pesan" untuk ${its.length} bahan?`:`Tandai ${its.length} bahan sebagai "Sudah Pesan"?`))return;
   its.forEach(s=>{s.isOrdered=!allOrd;s.orderedAt=!allOrd?fmtDate(new Date()):null;});
   save();renderPesanan();if(curPage==='dashboard')renderDashboard();
 }
@@ -2335,6 +2347,7 @@ function markDayPaid(di){
   const its=S.scheduleItems.filter(s=>s.weekKey===pesananWeek&&s.kitchenId===kid&&s.day===di&&s.isOrdered);
   if(!its.length){alert('Tandai "Sudah Pesan" dulu sebelum menandai bayar.');return;}
   const allPaid=its.length>0&&its.every(s=>s.isPaid);
+  if(!confirm(allPaid?`Batalkan status "Bayar" untuk ${its.length} bahan?`:`Tandai ${its.length} bahan sebagai "Sudah Bayar"?`))return;
   its.forEach(s=>{s.isPaid=!allPaid;s.paidAt=!allPaid?fmtDate(new Date()):null;});
   save();renderPesanan();if(curPage==='dashboard')renderDashboard();
 }
@@ -2343,6 +2356,7 @@ function markDayReceived(di){
   const its=S.scheduleItems.filter(s=>s.weekKey===pesananWeek&&s.kitchenId===kid&&s.day===di&&s.isOrdered);
   if(!its.length){alert('Tandai "Sudah Pesan" dulu sebelum menandai barang datang.');return;}
   const allRecv=its.length>0&&its.every(s=>s.isReceived);
+  if(!confirm(allRecv?`Batalkan status "Datang" untuk ${its.length} bahan?`:`Tandai ${its.length} bahan sebagai "Sudah Datang"?`))return;
   its.forEach(s=>{s.isReceived=!allRecv;if(allRecv){s.isPaid=false;s.paidAt=null;}});
   save();renderPesanan();if(curPage==='dashboard')renderDashboard();
 }
@@ -2355,6 +2369,7 @@ function markTypeItems(ids,action){
     its=its.filter(s=>s.isOrdered);
     if(!its.length){alert(action==='receive'?'Tandai "Pesan" dulu sebelum menandai barang datang.':'Tandai "Pesan" dulu sebelum menandai bayar.');return;}
   }
+  if(!confirm(`Tandai ${its.length} bahan sebagai "${action==='order'?'Sudah Pesan':action==='receive'?'Sudah Datang':'Sudah Bayar'}"?`))return;
   its.forEach(si=>{
     if(action==='order'){si.isOrdered=true;si.orderedAt=fmtDate(new Date());}
     else if(action==='receive'){si.isReceived=true;}
@@ -2835,7 +2850,7 @@ function openBulkEdit(){
   document.getElementById('be-unit').innerHTML=keep+getAllUnits().map(u=>`<option value="${u}">${u}</option>`).join('');
   document.getElementById('be-stock').innerHTML=keep+[['h1','⏰ H-1 (otomatis)'],['h2','⏰ H-2 (otomatis)'],['h3','⏰ H-3 (otomatis)'],['h4','⏰ H-4 (otomatis)'],['rapel','📦 Rapel Mingguan']].map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
   const prim=S.primarySupplierId?getSupp(S.primarySupplierId):null;
-  document.getElementById('bs-supplier').innerHTML=keep+`<option value="__auto__">⭐ Ikuti supplier utama${prim?' ('+prim.name+')':''}</option>`+(S.suppliers||[]).map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  document.getElementById('bs-supplier').innerHTML=keep+(S.suppliers||[]).map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
   document.getElementById('bs-keepold').checked=false;
   bsSuppChanged();
   const ts=getAllTypes().filter(t=>S.materials.some(m=>m.type===t));
@@ -2853,6 +2868,8 @@ function applyBulkEdit(){
   if(!type&&!unit&&!stock&&!sv){alert('Pilih minimal satu hal yang mau diubah.');return;}
   const mats=S.materials.filter(m=>_mbSel.has(m.id));if(!mats.length)return;
   const ST={h1:'H-1',h2:'H-2',h3:'H-3',h4:'H-4',rapel:'Rapel'};
+  {const _p=[];if(type)_p.push('kategori → '+type);if(unit)_p.push('satuan → '+unit);if(stock)_p.push('tipe stok → '+ST[stock]);if(sv)_p.push('supplier → '+(getSupp(sv)?.name||'')+(keepOld?' (ditambah)':' (menggantikan supplier lama)'));
+   if(!confirm(`Ubah ${mats.length} bahan sekaligus?\n• `+_p.join('\n• ')))return;}
   mats.forEach(m=>{
     if(type)m.type=type;
     if(unit)m.unit=unit;
@@ -3034,6 +3051,10 @@ function saveMaterial(){
       if(m.type!==type)changes.push(`kategori ${m.type} → ${type}`);
       if(m.unit!==unit)changes.push(`satuan ${m.unit} → ${unit}`);
       if(m.price!==price)changes.push(`harga ${fmtRp(m.price)} → ${fmtRp(price)}`);
+      if((m.stockType||'h1')!==stockType)changes.push(`tipe stok ${m.stockType||'h1'} → ${stockType}`);
+      const _o=(m.supplierIds||[]).slice().sort().join(','),_n=supplierIds.slice().sort().join(',');
+      if(_o!==_n)changes.push('supplier: '+(supplierIds.map(x=>getSupp(x)?.name).filter(Boolean).join(', ')||'tidak ada'));
+      if(changes.length&&!confirm(`Simpan perubahan "${m.name}"?\n• `+changes.join('\n• ')))return;
       if(m.price&&m.price!==price){if(!m.priceHistory)m.priceHistory=[];m.priceHistory.push({price:m.price,date:fmtDate(new Date())});if(m.priceHistory.length>10)m.priceHistory=m.priceHistory.slice(-10);}
       Object.assign(m,{name,type,unit,price,stockType,supplierIds});
       if(changes.length)logChange('bahan','edit',`"${name}" diubah: ${changes.join(', ')}`);
@@ -3047,6 +3068,7 @@ function saveMaterial(){
 }
 function clearDays(id){
   const m=getMat(id);if(!m)return;
+  if(!confirm(`Reset hari untuk "${m.name}"?`))return;
   m.days=0;save();renderMasterBarang();
 }
 function deleteMaterial(id){
@@ -3072,11 +3094,52 @@ function sortMaster(col){
 function deleteWeekSchedule(){
   const kit=S.kitchens.find(k=>k.id===curKitchen);
   const cnt=S.scheduleItems.filter(s=>s.weekKey===curWeek&&s.kitchenId===curKitchen).length;
-  if(!cnt){alert('Tidak ada jadwal untuk minggu ini.');return;}
-  if(!confirm(`Hapus ${cnt} item jadwal minggu ini (${curWeek}) untuk dapur ${kit?.name||''}?`))return;
+  const mcnt=(S.menus||[]).filter(m=>m.weekKey===curWeek&&m.kitchenId===curKitchen).length;
+  if(!cnt&&!mcnt){alert('Tidak ada jadwal untuk minggu ini.');return;}
+  if(!confirm(`Hapus ${mcnt} menu masakan dan ${cnt} bahan minggu ini (${curWeek}) untuk dapur ${kit?.name||''}?`))return;
   S.scheduleItems=S.scheduleItems.filter(s=>!(s.weekKey===curWeek&&s.kitchenId===curKitchen));
-  logChange('jadwal','delete',`Semua jadwal bahan minggu ${curWeek} dihapus (${cnt} item) — ${kit?.name||''}`);
+  if(S.menus)S.menus=S.menus.filter(m=>!(m.weekKey===curWeek&&m.kitchenId===curKitchen));
+  logChange('jadwal','delete',`Semua menu & bahan minggu ${curWeek} dihapus (${mcnt} menu, ${cnt} bahan) — ${kit?.name||''}`);
   save();renderWeeklySummary();renderDayTabs();renderJadwalContent();
+}
+function openMoveDay(){
+  const kit=S.kitchens.find(k=>k.id===curKitchen);
+  const mc=(S.menus||[]).filter(m=>m.weekKey===curWeek&&m.kitchenId===curKitchen&&m.day===curDay).length;
+  const ic=S.scheduleItems.filter(s=>s.weekKey===curWeek&&s.kitchenId===curKitchen&&s.day===curDay).length;
+  document.getElementById('mv-info').textContent=`${DAYS[curDay]} · ${mc} menu, ${ic} bahan${kit?' · '+kit.name:''}`;
+  document.getElementById('mv-target').innerHTML=DAYS.map((d,i)=>i===curDay?'':`<option value="${i}">${d}</option>`).join('');
+  document.getElementById('mv-mode').value='swap';
+  openModal('modal-moveday');
+}
+function applyMoveDay(){
+  const a=curDay,b=parseInt(document.getElementById('mv-target').value);
+  if(isNaN(b)||a===b)return;
+  const mode=document.getElementById('mv-mode').value;
+  const inDay=(x,d)=>x.weekKey===curWeek&&x.kitchenId===curKitchen&&x.day===d;
+  const aItems=S.scheduleItems.filter(x=>inDay(x,a)),bItems=S.scheduleItems.filter(x=>inDay(x,b));
+  const aMenus=(S.menus||[]).filter(x=>inDay(x,a)),bMenus=(S.menus||[]).filter(x=>inDay(x,b));
+  if(!aItems.length&&!aMenus.length&&mode==='move'){alert('Tidak ada menu atau bahan untuk dipindah.');return;}
+  const ordered=aItems.concat(mode==='swap'?bItems:[]).filter(x=>x.isOrdered||x.isReceived||x.isPaid).length;
+  const msg=mode==='swap'
+    ?`Tukar ${DAYS[a]} ⇄ ${DAYS[b]} (menu + bahan)?`
+    :`Pindahkan menu + bahan ${DAYS[a]} ke ${DAYS[b]}? Isi ${DAYS[b]} yang sudah ada tetap dipertahankan (digabung).`;
+  if(!confirm(msg+(ordered?`\n\n⚠️ ${ordered} bahan sudah ditandai pesan/datang/bayar; statusnya ikut berpindah.`:'')))return;
+  if(mode==='swap'){
+    aItems.forEach(x=>x.day=b);bItems.forEach(x=>x.day=a);
+    aMenus.forEach(x=>x.day=b);bMenus.forEach(x=>x.day=a);
+  }else{
+    aMenus.forEach(x=>{
+      if(bMenus.some(y=>y.name.toLowerCase()===x.name.toLowerCase())){S.menus=S.menus.filter(y=>y!==x);}else x.day=b;
+    });
+    aItems.forEach(x=>{
+      const dup=bItems.find(y=>y.materialId===x.materialId);
+      if(dup){dup.qty=roundQty((dup.qty||0)+(x.qty||0));S.scheduleItems=S.scheduleItems.filter(y=>y!==x);}
+      else x.day=b;
+    });
+  }
+  logChange('jadwal','edit',`${mode==='swap'?'Tukar':'Pindah'} hari: ${DAYS[a]} ${mode==='swap'?'⇄':'→'} ${DAYS[b]} (${aMenus.length} menu, ${aItems.length} bahan)`);
+  closeModal('modal-moveday');
+  curDay=b;save();renderWeeklySummary();renderDayTabs();renderJadwalContent();
 }
 function deleteDaySchedule(){
   const kit=S.kitchens.find(k=>k.id===curKitchen);
@@ -3510,6 +3573,7 @@ function importMasterBarang(input){
     try{
       const arr=JSON.parse(e.target.result);
       if(!Array.isArray(arr)){alert('Format file tidak valid.');return;}
+      if(!confirm(`Import ${arr.length} bahan dari file? Bahan dengan nama sama akan ditimpa datanya.`))return;
       let added=0,updated=0;
       arr.forEach(m=>{
         if(!m.id||!m.name)return;
@@ -3562,7 +3626,10 @@ function saveKitchen(){
   const color=document.getElementById('kitchen-color').value||DEFAULT_ACCENT;
   if(!name){alert('Nama dapur wajib diisi.');return;}
   const id=document.getElementById('kitchen-id').value;
-  if(id){const k=getKit(id);if(k)Object.assign(k,{name,location,color});}
+  if(id){const k=getKit(id);if(k){
+    const ch=[];if(k.name!==name)ch.push(`nama "${k.name}" → "${name}"`);if((k.location||'')!==location)ch.push('lokasi');if((k.color||DEFAULT_ACCENT)!==color)ch.push('warna');
+    if(ch.length&&!confirm(`Simpan perubahan dapur "${k.name}"?\n• `+ch.join('\n• ')))return;
+    Object.assign(k,{name,location,color});}}
   else S.kitchens.push({id:uid(),name,location,color,created:fmtDate(new Date())});
   save();closeModal('modal-kitchen');renderMasterDapur();
 }
@@ -3572,6 +3639,7 @@ function deleteKitchen(id){
   if(!used&&!confirm('Hapus dapur ini?'))return;
   S.kitchens=S.kitchens.filter(k=>k.id!==id);
   if(used)S.scheduleItems=S.scheduleItems.filter(s=>s.kitchenId!==id);
+  if(S.menus)S.menus=S.menus.filter(m=>m.kitchenId!==id);
   save();renderMasterDapur();
 }
 
@@ -3640,8 +3708,12 @@ function parseDayIdx(raw){
 }
 
 // ── Type auto-detection from ingredient name ──
+const _PROT_TYPES=['Protein Hewani','Protein Nabati','Protein'];
 function autoDetectType(name){
   const n=name.toLowerCase();
+  // Protein dicek paling awal supaya "Ayam", "Telur", "Tahu" dst tidak pernah salah masuk Karbohidrat/Frozen/dll.
+  if(/(^|[^a-z])(tahu|tempe|oncom|tauco|kedelai|edamame|kacang (merah|hijau|tanah|kedelai|tolo)|kembang tahu|tofu)([^a-z]|$)/.test(n)&&!/(^|[^a-z])(ayam|telur|ikan|daging|sapi)([^a-z]|$)/.test(n))return 'Protein Nabati';
+  if(/(^|[^a-z])(ayam|telur|telor|daging|ikan|dori|lele|nila|bandeng|tuna|tongkol|salmon|teri|patin|gurame|kakap|udang|cumi|kerang|sapi|kambing|domba|bebek|itik|puyuh|hati|ampela|ceker|dada|paha|sayap|fillet|fillet|filet|giling|brisket|iga|rendang|seafood|babat|usus|kulit ayam|tetelan|has dalam|sengkel)([^a-z]|$)/.test(n)&&!/susu|santan|kaldu|bumbu|saus|saos/.test(n))return 'Protein Hewani';
   if(/beras|nasi putih|tepung terigu|tepung cakra|tepung panir|roti|mie|pasta|kentang|singkong|ubi|maizena/.test(n))return 'Karbohidrat';
   if(/ayam|daging|ikan|dori|giling|fillet|telur|tahu|tempe|udang|cumi|sapi|kambing|seafood/.test(n))return 'Protein';
   if(/wortel|kubis|bayam|selada|sawi|kangkung|tomat|timun|kembang kol|brokoli|paprika|labu|terong|pare|buncis|kacang panjang|seledri|sereh|bawang prei|bombay|jagung pipil|kelengkeng|daun jeruk|daun salam|kunyit|kunir|lengkuas|jahe|bunga lawang|kapulaga/.test(n))return 'Sayuran';
@@ -3702,7 +3774,10 @@ function buildReviewItems(rawItems){
     const representativeName=[...g.originalNames][0];
     const corrected=capitalizeWords(representativeName);
     const wasCapitalized=representativeName!==corrected;
-    const detectedType=g.jenisRaw||autoDetectType(representativeName);
+    const _det=autoDetectType(representativeName);
+    // Jenis dari file dipakai kecuali jelas bertabrakan dengan nama bahan (mis. ayam tercatat Karbohidrat)
+    const _jr=g.jenisRaw?(S.customTypes||[]).concat(BASE_TYPES).find(t=>t.toLowerCase()===String(g.jenisRaw).trim().toLowerCase())||g.jenisRaw:'';
+    const detectedType=(!_jr||(_det!=='Lainnya'&&_PROT_TYPES.includes(_det)&&(!_PROT_TYPES.includes(_jr)||_jr==='Protein')))?_det:_jr;
     const newPrice=g.prices.length?Math.round(g.prices.reduce((a,b)=>a+b,0)/g.prices.length):0;
     // Exact match in master (by corrected name)
     const exactMaster=S.materials.find(m=>m.name.toLowerCase()===corrected.toLowerCase()||m.name.toLowerCase()===key);
@@ -4587,7 +4662,7 @@ function renderMatSupplierCheckboxes(selectedIds){
   el.innerHTML=S.suppliers.map(s=>`<label style="display:flex;align-items:center;gap:7px;padding:5px 0;font-size:13px;cursor:pointer">
     <input type="checkbox" value="${s.id}"${selectedIds.includes(s.id)?' checked':''} style="width:15px;height:15px;flex-shrink:0">
     <span>${s.name}</span>${S.primarySupplierId===s.id?' <span style="font-size:10px;color:#92400e;background:#fef3c7;padding:1px 6px;border-radius:99px">⭐ Utama</span>':''}
-  </label>`).join('')+(S.primarySupplierId&&getSupp(S.primarySupplierId)?`<div class="fh" style="margin-top:4px">Tidak ada yang dicentang = otomatis ikut supplier utama (${getSupp(S.primarySupplierId).name}).</div>`:'');
+  </label>`).join('')+(S.primarySupplierId&&getSupp(S.primarySupplierId)?`<div class="fh" style="margin-top:4px">Kalau bahan ini punya lebih dari satu supplier, ⭐ ${getSupp(S.primarySupplierId).name} dipakai lebih dulu.</div>`:'');
 }
 function getCheckedMatSuppliers(){
   return Array.from(document.querySelectorAll('#mat-supplier-list input[type=checkbox]:checked')).map(el=>el.value);
@@ -4595,7 +4670,7 @@ function getCheckedMatSuppliers(){
 function renderSupplierList(){
   const el=document.getElementById('supplier-list-body');
   if(!el)return;
-  if(!(S.suppliers||[]).length){el.innerHTML='<div style="padding:16px;color:var(--mt);text-align:center;font-size:13px">Belum ada supplier. Tambah supplier di bawah.</div>';return;}
+  if(!(S.suppliers||[]).length){el.innerHTML='<div style="padding:16px;color:var(--mt);text-align:center;font-size:13px">Belum ada supplier. Tekan “＋ Tambah Supplier Baru” di bawah.</div>';return;}
   el.innerHTML=(S.suppliers||[]).map(s=>{
     const mats=S.materials.filter(m=>matSupplierIds(m).includes(s.id));
     const isPrimary=S.primarySupplierId===s.id;
@@ -4616,7 +4691,7 @@ function renderSupplierList(){
           ${matsHtml}
         </div>
         <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
-          <button class="btn btn-xs" onclick="setPrimarySupplier('${s.id}')" title="${isPrimary?'Batal jadikan utama':'Jadikan supplier utama'}" style="white-space:nowrap;${isPrimary?'background:#f59e0b;color:#fff;border-color:#f59e0b':'background:#fff;border:1.5px solid var(--br);color:var(--tx)'}">${isPrimary?'⭐ Utama':'☆ Jadikan Utama'}</button>
+          <button class="btn btn-xs" onclick="setPrimarySupplier('${s.id}')" title="${isPrimary?'Batal jadikan utama':'Jadikan utama: dipilih lebih dulu hanya untuk bahan yang punya beberapa supplier'}" style="white-space:nowrap;${isPrimary?'background:#f59e0b;color:#fff;border-color:#f59e0b':'background:#fff;border:1.5px solid var(--br);color:var(--tx)'}">${isPrimary?'⭐ Utama':'☆ Jadikan Utama'}</button>
           <button class="btn btn-pr btn-xs" onclick="openSuppMats('${s.id}')" style="white-space:nowrap">📦 Atur Bahan</button>
           <button class="btn btn-ol btn-xs" onclick="openEditSupplier('${s.id}')">✏️ Edit</button>
           <button class="btn btn-rd btn-xs" onclick="deleteSupplier('${s.id}')">🗑️ Hapus</button>
@@ -4627,7 +4702,7 @@ function renderSupplierList(){
 }
 function setPrimarySupplier(id){
   S.primarySupplierId = S.primarySupplierId===id ? null : id;
-  logChange('bahan','edit',S.primarySupplierId?`Supplier utama: "${getSupp(id)?.name}" (otomatis dipakai bahan tanpa pilihan manual)`:'Supplier utama dibatalkan');
+  logChange('bahan','edit',S.primarySupplierId?`Supplier utama: "${getSupp(id)?.name}" (diprioritaskan hanya untuk bahan yang punya beberapa supplier)`:'Supplier utama dibatalkan');
   save();
   renderSupplierList();
   if(curPage==='master-barang')renderMasterBarang();
@@ -4638,16 +4713,33 @@ function setPrimarySupplier(id){
 function pickSupplierColor(hex){
   document.getElementById('supp-color').value=hex;
 }
-function openSupplierMgmt(){
-  renderSupplierList();
+function _suppFormShow(mode,name){
+  const f=document.getElementById('supp-form');
+  f.style.display='block';
+  const edit=mode==='edit';
+  f.style.borderColor=edit?'#f59e0b':'#16a34a';f.style.background=edit?'#fffbeb':'#f0fdf4';
+  document.getElementById('supp-form-title').textContent=edit?'✏️ Edit Supplier: '+name:'＋ Supplier Baru';
+  document.getElementById('supp-save-btn').textContent=edit?'Simpan Perubahan':'Simpan Supplier Baru';
+  document.getElementById('supp-add-btn').style.display='none';
+  setTimeout(()=>{try{f.scrollIntoView({block:'nearest',behavior:'smooth'})}catch(e){}},50);
+}
+function _suppFormClear(){
   document.getElementById('supp-id').value='';
   document.getElementById('supp-name').value='';
   document.getElementById('supp-phone').value='';
   document.getElementById('supp-notes').value='';
   document.getElementById('supp-color').value=DEFAULT_SUPPLIER_COLOR;
-  document.getElementById('supp-form-title').textContent='Tambah Supplier';
+}
+function _suppFormHide(){
+  document.getElementById('supp-form').style.display='none';
+  document.getElementById('supp-add-btn').style.display='block';
+}
+function openSupplierMgmt(){
+  renderSupplierList();_suppFormClear();_suppFormHide();
   openModal('modal-supplier');
 }
+function openAddSupplier(){_suppFormClear();_suppFormShow('add');}
+function cancelSupplierForm(){_suppFormClear();_suppFormHide();}
 function openEditSupplier(id){
   const s=getSupp(id);if(!s)return;
   document.getElementById('supp-id').value=s.id;
@@ -4655,7 +4747,7 @@ function openEditSupplier(id){
   document.getElementById('supp-phone').value=s.phone||'';
   document.getElementById('supp-notes').value=s.notes||'';
   document.getElementById('supp-color').value=s.color||DEFAULT_SUPPLIER_COLOR;
-  document.getElementById('supp-form-title').textContent='Edit Supplier';
+  _suppFormShow('edit',s.name);
   renderSupplierList();
   openModal('modal-supplier');
 }
@@ -4666,14 +4758,12 @@ function saveSupplier(){
   const notes=document.getElementById('supp-notes').value.trim();
   const color=document.getElementById('supp-color').value||DEFAULT_SUPPLIER_COLOR;
   const id=document.getElementById('supp-id').value;
-  if(id){const s=getSupp(id);if(s)Object.assign(s,{name,phone,notes,color});}
+  if(id){const s=getSupp(id);if(s){
+    const ch=[];if(s.name!==name)ch.push(`nama "${s.name}" → "${name}"`);if((s.phone||'')!==phone)ch.push('kontak');if((s.notes||'')!==notes)ch.push('catatan');if((s.color||DEFAULT_SUPPLIER_COLOR)!==color)ch.push('warna');
+    if(ch.length&&!confirm(`Simpan perubahan supplier "${s.name}"?\n• `+ch.join('\n• ')))return;
+    Object.assign(s,{name,phone,notes,color});}}
   else{if(!S.suppliers)S.suppliers=[];S.suppliers.push({id:uid(),name,phone,notes,color});}
-  document.getElementById('supp-id').value='';
-  document.getElementById('supp-name').value='';
-  document.getElementById('supp-phone').value='';
-  document.getElementById('supp-notes').value='';
-  document.getElementById('supp-color').value=DEFAULT_SUPPLIER_COLOR;
-  document.getElementById('supp-form-title').textContent='Tambah Supplier';
+  _suppFormClear();_suppFormHide();
   save();renderSupplierList();
   if(document.getElementById('mat-supplier-list'))renderMatSupplierCheckboxes(getCheckedMatSuppliers());
 }
@@ -4762,6 +4852,9 @@ function smToggleType(t,on){_smVisible().filter(m=>m.type===t).forEach(m=>on?_sm
 function saveSuppMats(){
   const sid=_smSuppId,s=getSupp(sid);if(!s)return;
   let added=0,removed=0;
+  {let a=0,r=0;S.materials.forEach(m=>{const has=(m.supplierIds||[]).includes(sid),want=_smSel.has(m.id);if(want&&!has)a++;else if(!want&&has)r++;});
+   if(!a&&!r){closeModal('modal-supp-mats');return;}
+   if(!confirm(`Simpan perubahan bahan untuk "${s.name}"?\n• ${a} bahan ditambahkan\n• ${r} bahan dilepas`))return;}
   S.materials.forEach(m=>{
     if(sid===S.primarySupplierId&&matUsesPrimary(m))return;
     const has=(m.supplierIds||[]).includes(sid),want=_smSel.has(m.id);
@@ -5128,9 +5221,11 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkNotif
 <div class="mbg" id="modal-supplier">
   <div class="modal" style="max-width:600px">
     <div class="mt">🏪 Kelola Supplier</div>
-    <div class="fh" style="margin-bottom:10px">Tandai satu supplier sebagai "⭐ Utama" supaya otomatis menjadi supplier semua bahan yang supplier-nya tidak diatur manual. Untuk satu bahan tertentu, ubah lewat tombol ✏️ (Edit Bahan) di Master Barang.</div>
+    <div class="fh" style="margin-bottom:10px">⭐ Utama dipakai lebih dulu hanya untuk bahan yang punya lebih dari satu supplier. Untuk menghubungkan bahan ke supplier, pakai tombol 📦 Atur Bahan, atau ✏️ Edit Bahan di Master Barang.</div>
     <div id="supplier-list-body" style="max-height:340px;overflow-y:auto;border:1px solid var(--br);border-radius:10px;margin-bottom:14px"></div>
-    <div style="font-size:13px;font-weight:700;margin-bottom:8px;color:var(--tx)" id="supp-form-title">Tambah Supplier</div>
+    <button class="btn btn-pr" id="supp-add-btn" onclick="openAddSupplier()" style="width:100%;margin-bottom:6px">＋ Tambah Supplier Baru</button>
+    <div id="supp-form" style="display:none;border:2px solid #16a34a;border-radius:12px;padding:12px 14px;margin-bottom:6px;background:#f0fdf4">
+    <div style="font-size:13px;font-weight:800;margin-bottom:8px;color:var(--tx)" id="supp-form-title">＋ Supplier Baru</div>
     <input type="hidden" id="supp-id">
     <div class="fg"><label class="fl">Nama Supplier *</label><input type="text" id="supp-name" placeholder="cth: Pak Budi Sayur"></div>
     <div class="fg"><label class="fl">No. HP / Kontak</label><input type="text" id="supp-phone" placeholder="cth: 0812-3456-7890"></div>
@@ -5152,14 +5247,30 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkNotif
         <button type="button" class="kc-swatch" title="Abu Gelap" onclick="pickSupplierColor('#475569')" style="width:26px;height:26px;border-radius:50%;border:1.5px solid var(--br);background:#475569;cursor:pointer;padding:0"></button>
       </div>
     </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">
+      <button class="btn btn-ol" onclick="cancelSupplierForm()">Batal</button>
+      <button class="btn btn-pr" id="supp-save-btn" onclick="saveSupplier()">Simpan Supplier Baru</button>
+    </div>
+    </div>
     <div class="mac">
       <button class="btn btn-ol" onclick="closeModal('modal-supplier')">Tutup</button>
-      <button class="btn btn-pr" onclick="saveSupplier()">Simpan Supplier</button>
     </div>
   </div>
 </div>
 
 <!-- Pengingat custom -->
+<div class="mbg" id="modal-moveday">
+  <div class="modal" style="max-width:380px">
+    <div class="mt">⇄ Pindah / Tukar Hari</div>
+    <div class="fh" id="mv-info" style="margin-bottom:10px"></div>
+    <div class="fg"><label class="fl">Ke hari</label><select id="mv-target" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid var(--br);font-size:13px"></select></div>
+    <div class="fg"><label class="fl">Cara</label><select id="mv-mode" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid var(--br);font-size:13px">
+      <option value="swap">Tukar — isi kedua hari saling bertukar</option>
+      <option value="move">Pindah — gabung ke hari tujuan</option></select></div>
+    <div class="fh">Menu masakan dan bahannya ikut berpindah bersama.</div>
+    <div class="mac"><button class="btn btn-ol" onclick="closeModal('modal-moveday')">Batal</button><button class="btn btn-pr" onclick="applyMoveDay()">Terapkan</button></div>
+  </div>
+</div>
 <div class="mbg" id="modal-delreq">
   <div class="modal" style="max-width:480px">
     <div class="mt">📝 Jam, Tempat &amp; Catatan Pengiriman</div>
