@@ -162,13 +162,15 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
 .vt-btn.active{background:#fff;color:var(--tx);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 
 /* ── ORDER ITEMS ── */
-.oi{display:flex;align-items:center;gap:12px;padding:10px 14px 10px 0;border-bottom:1px solid var(--br);transition:background .15s;border-left:3px solid transparent}
+.oi{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;padding:10px 12px 10px 0;min-width:0;border-bottom:1px solid var(--br);transition:background .15s;border-left:3px solid transparent}
 .oi:last-child{border-bottom:none}.oi:hover{background:#f8f8f8}
 .oi-info{flex:1;min-width:0;padding-left:12px}
 .oi-name{font-weight:600;font-size:13px}
 .oi-meta{font-size:12px;color:var(--mt);margin-top:3px;display:flex;align-items:center;flex-wrap:wrap;gap:5px}
 .oi-price{font-size:13px;font-weight:700;color:var(--tx);white-space:nowrap;text-align:right}
-.oi-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;min-width:80px}
+.oi-right{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0;min-width:70px}
+.oi-chip{flex:0 0 100%;min-width:0;padding-left:12px;box-sizing:border-box}
+.oi-chip .dl-chip{white-space:normal;max-width:100%;box-sizing:border-box}
 .oi-checks{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .chk-lbl{display:flex;align-items:center;gap:5px;font-size:13px;font-weight:500;cursor:pointer;padding:5px 10px;border-radius:7px;border:1.5px solid var(--br);background:#fff;transition:all .15s;user-select:none;white-space:nowrap}
 .chk-lbl:hover{border-color:#d0d0d0;background:var(--prp)}
@@ -187,7 +189,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
 .price-input{width:100px;padding:4px 8px;font-size:13px;border-radius:6px;border:1.5px solid var(--br)}
 
 /* ── DEADLINE CHIPS ── */
-.dl-chip{display:inline-block;padding:1px 7px;border-radius:99px;font-size:10px;font-weight:500;white-space:nowrap}
+.dl-chip{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:500;white-space:normal;line-height:1.35}
 .dl-late{background:#fee2e2;color:#991b1b}.dl-today{background:#fef9c3;color:#713f12}
 .dl-soon{background:#ffedd5;color:#9a3412}.dl-ok{background:#f1f5f9;color:#475569}
 
@@ -242,6 +244,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
 .prog-fill{height:100%;background:#888;border-radius:99px;transition:width .3s}
 
 /* ── RESPONSIVE ── */
+html,body{max-width:100%;overflow-x:clip}
+.card,.mg,.modal{min-width:0}
 @media(max-width:768px){
   .sidebar{display:none}.mob-hdr{display:flex}.bot-nav{display:block}.fab{display:block}
   .main{margin-left:0;padding:12px;padding-top:64px;padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}
@@ -259,6 +263,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
   .stat-val{font-size:22px}
   .wiz-step-num{display:none}
   .oi-info{max-width:100%}
+  .oi{gap:4px 8px;padding-right:8px}
+  .oi-name{font-size:12.5px}
+  .oi-price{font-size:12.5px}
 
 
 
@@ -297,10 +304,16 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
 }
 @media(max-width:480px){
   .tbadge{font-size:9.5px!important;padding:1px 6px!important;gap:2px!important}
-  .rk-type{font-size:9px!important;padding:4px 8px!important;letter-spacing:.2px!important}
-  .rk-leg{font-size:8.5px!important;gap:4px 8px!important;padding:5px 8px!important}
+  .rk-type{font-size:8px!important;padding:3px 8px!important;letter-spacing:.2px!important;line-height:1.2!important}
+  .rk-leg{font-size:8px!important;gap:3px 7px!important;padding:4px 8px!important}
   .rk-leg b{display:none}
-  .rk-leg .dot{width:11px!important;height:11px!important;font-size:7px!important}
+  .rk-leg .dot{width:10px!important;height:10px!important;font-size:6px!important;border-width:1.5px!important}
+  .rk-name{font-size:11px!important}
+  .rk-q{font-size:10px!important;min-width:22px!important;padding:2px 2px!important}
+  .rk-tot{font-size:11px!important}
+  .stbtn{width:19px!important;height:19px!important;font-size:9px!important;border-width:1.5px!important}
+  #rekap-body th{font-size:8.5px!important}
+  #rekap-body td,#rekap-body th{padding-top:4px!important;padding-bottom:4px!important}
   .k-stat-row{grid-template-columns:1fr 1fr}
   .fbar{gap:7px}
 }
@@ -368,7 +381,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div class="nav-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M1 7l2-5h10l2 5"/><path d="M6 15V11h4v4"/><path d="M1 7h14"/></svg></span>Master Dapur</div>
     <div class="nav-item" onclick="navigate('riwayat')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.5"/><path d="M8 4.5V8l3 2"/></svg></span>Riwayat</div>
   </nav>
-  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20261024-v78</div>
+  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20261024-v81</div>
 </aside>
 
 <!-- MOBILE HEADER -->
@@ -517,6 +530,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
       <div id="mb-bulkbar" style="display:none;align-items:center;gap:8px;flex-wrap:wrap">
         <b id="mb-bulk-count" style="font-size:12px"></b>
         <button class="btn btn-pr btn-xs" onclick="openBulkEdit()">✏️ Ubah Sekaligus</button>
+        <button class="btn btn-ol btn-xs" id="mb-mergebtn" onclick="openMergeSel()">🔀 Gabungkan</button>
       </div>
     </div>
     <div class="card">
@@ -559,6 +573,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
         <button class="vt-btn" id="vt-riwayat-jadwal" onclick="setRiwayatFilter('jadwal')">📅 Jadwal</button>
       </div>
     </div>
+    <div id="riwayat-undobar"></div>
     <div class="card" id="riwayat-list"></div>
   </div>
 
@@ -934,6 +949,7 @@ function safeSetItem(key,val){
   }
 }
 function save(){
+  try{histOnSave();}catch(e){console.warn('hist',e);}
   maybeAutoBackup();
   if(!safeSetItem('mbg-v2',JSON.stringify(S))){
     // Penyimpanan lokal penuh — kemungkinan besar karena cadangan otomatis
@@ -1746,9 +1762,80 @@ function populateKitchenSelect(selId,val){
 // baru berubah. Disimpan maksimal 300 entri terbaru biar tidak membengkak.
 function logChange(cat,action,summary){
   if(!S.changeLog)S.changeLog=[];
-  S.changeLog.unshift({id:uid(),ts:Date.now(),cat,action,summary,kitchenId:curKitchen||''});
+  const _e={id:uid(),ts:Date.now(),cat,action,summary,kitchenId:curKitchen||''};
+  S.changeLog.unshift(_e);
   if(S.changeLog.length>300)S.changeLog=S.changeLog.slice(0,300);
+  if(!_hPending)_hPending={ids:[],sums:[]};
+  _hPending.ids.push(_e.id);_hPending.sums.push(summary);
 }
+// ══ Urungkan / Ulangi (maks 10 langkah, disimpan di IndexedDB perangkat ini) ══
+const HIST_MAX=10;
+let _hist={steps:[],cursor:-1},_hPrev=null,_hPending=null,_hSuppress=false,_hLoaded=false,_hMem={};
+const _H_SKIP={changeLog:1,autoBackups:1,_updated:1};
+function _hMap(){const m={};try{Object.keys(S||{}).forEach(k=>{if(_H_SKIP[k])return;m[k]=JSON.stringify(S[k]);});}catch(e){}return m;}
+function _hSig(m){let h=5381,n=0;Object.keys(m).sort().forEach(k=>{const v=m[k]||'';n+=v.length;for(let i=0;i<v.length;i+=7){h=((h<<5)+h+v.charCodeAt(i))|0;}h=((h<<5)+h+k.length)|0;});return n+':'+h;}
+function _idb(){return new Promise((res,rej)=>{try{if(typeof indexedDB==='undefined'||!indexedDB)return rej(new Error('no idb'));const r=indexedDB.open('mbg-hist',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);}catch(e){rej(e);}});}
+function _kvSet(k,v){_hMem[k]=v;return _idb().then(db=>new Promise(res=>{try{const t=db.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=()=>{db.close();res();};t.onerror=()=>{db.close();res();};}catch(e){res();}})).catch(()=>{});}
+function _kvGet(k){return _idb().then(db=>new Promise(res=>{try{const r=db.transaction('kv').objectStore('kv').get(k);r.onsuccess=()=>{db.close();res(r.result);};r.onerror=()=>{db.close();res(undefined);};}catch(e){res(undefined);}})).catch(()=>_hMem[k]);}
+function _histPersist(){_kvSet('hist',{steps:_hist.steps,cursor:_hist.cursor});}
+function histReset(){_hist={steps:[],cursor:-1};_hPending=null;_hPrev=_hMap();if(_hLoaded){_histPersist();_kvSet('sig',_hSig(_hPrev));}}
+function histInit(){
+  _hPrev=_hMap();
+  return Promise.all([_kvGet('hist'),_kvGet('sig')]).then(([h,sig])=>{
+    if(h&&Array.isArray(h.steps)&&sig===_hSig(_hPrev)){_hist={steps:h.steps.slice(-HIST_MAX),cursor:Math.min(h.cursor,h.steps.length-1)};}
+    _hLoaded=true;
+    if(curPage==='riwayat')renderRiwayat();
+  }).catch(()=>{_hLoaded=true;});
+}
+function histOnSave(){
+  if(_hSuppress){_hPrev=_hMap();if(_hLoaded)_kvSet('sig',_hSig(_hPrev));return;}
+  const cur=_hMap();
+  if(_hPending&&_hPrev){
+    const before={},after={};let any=false;
+    new Set([...Object.keys(_hPrev),...Object.keys(cur)]).forEach(k=>{if(_hPrev[k]!==cur[k]){before[k]=_hPrev[k]===undefined?null:_hPrev[k];after[k]=cur[k]===undefined?null:cur[k];any=true;}});
+    if(any){
+      _hist.steps=_hist.steps.slice(0,_hist.cursor+1);
+      const sums=_hPending.sums;
+      _hist.steps.push({id:uid(),ts:Date.now(),logIds:_hPending.ids,summary:sums.length>1?sums[0]+' (+'+(sums.length-1)+' lainnya)':sums[0],before,after});
+      while(_hist.steps.length>HIST_MAX)_hist.steps.shift();
+      _hist.cursor=_hist.steps.length-1;
+      _hPending=null;
+      if(_hLoaded)_histPersist();
+    }
+  }
+  _hPrev=cur;
+  if(_hLoaded)_kvSet('sig',_hSig(cur));
+}
+function _hApply(map){Object.keys(map).forEach(k=>{if(map[k]===null)delete S[k];else S[k]=JSON.parse(map[k]);});}
+function _hFinish(summary){
+  if(!S.changeLog)S.changeLog=[];
+  S.changeLog.unshift({id:uid(),ts:Date.now(),cat:'jadwal',action:'edit',summary,kitchenId:curKitchen||''});
+  _hSuppress=true;save();_hSuppress=false;
+  _histPersist();
+  rerenderCurrent();if(curPage==='riwayat')renderRiwayat();
+}
+function histStepIdx(logId){return _hist.steps.findIndex(st=>(st.logIds||[]).includes(logId));}
+function histUndoTo(i){
+  if(i<0||i>_hist.cursor)return;
+  const n=_hist.cursor-i+1;
+  const msg=n>1?`Kembalikan data ke kondisi sebelum "${_hist.steps[i].summary}"?\n\n${n-1} perubahan sesudahnya ikut dibatalkan (masih bisa di-Ulangi).`:`Urungkan: "${_hist.steps[i].summary}"?`;
+  if(!confirm(msg))return;
+  _hSuppress=true;
+  for(let j=_hist.cursor;j>=i;j--)_hApply(_hist.steps[j].before);
+  _hist.cursor=i-1;
+  _hFinish('↩ Diurungkan: '+_hist.steps[i].summary);
+}
+function histRedoTo(i){
+  if(i<=_hist.cursor||i>=_hist.steps.length)return;
+  const n=i-_hist.cursor;
+  if(n>1&&!confirm(`Ulangi ${n} perubahan sampai "${_hist.steps[i].summary}"?`))return;
+  _hSuppress=true;
+  for(let j=_hist.cursor+1;j<=i;j++)_hApply(_hist.steps[j].after);
+  _hist.cursor=i;
+  _hFinish('↪ Diulangi: '+_hist.steps[i].summary);
+}
+function histUndoLast(){histUndoTo(_hist.cursor);}
+function histRedoNext(){histRedoTo(_hist.cursor+1);}
 let riwayatFilterCat='';
 function setRiwayatFilter(cat){
   riwayatFilterCat=cat;
@@ -1785,12 +1872,21 @@ function renderRiwayat(){
     el.innerHTML='<div class="empty"><div class="ei">🕐</div><div class="et">Belum ada riwayat perubahan</div><div class="ed">Perubahan di Master Barang dan Jadwal akan muncul di sini.</div></div>';
     return;
   }
+  const _ub=document.getElementById('riwayat-undobar');
+  if(_ub){
+    const can=_hist.steps.length>0,cu=_hist.cursor>=0,cr=_hist.cursor<_hist.steps.length-1;
+    const bs='font-size:12px;padding:6px 10px';
+    _ub.innerHTML=can?`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px"><button class="btn btn-ol btn-xs" ${cu?'':'disabled'} onclick="histUndoLast()" style="${bs};${cu?'':'opacity:.4'}">↩ Urungkan terakhir</button><button class="btn btn-ol btn-xs" ${cr?'':'disabled'} onclick="histRedoNext()" style="${bs};${cr?'':'opacity:.4'}">↪ Ulangi</button><span style="font-size:11px;color:var(--mt)">${_hist.steps.length} langkah terakhir tersimpan di perangkat ini</span></div>`:`<div style="font-size:11px;color:var(--mt);margin-bottom:10px">↩ Urungkan/Ulangi tersedia untuk 10 perubahan terakhir di perangkat ini.</div>`;
+  }
   const icon={add:'➕',edit:'✏️',delete:'🗑️'};
   const catLabel={bahan:'📦 Bahan',jadwal:'📅 Jadwal'};
   const catColor={bahan:'#0369a1',jadwal:'#7c3aed'};
   el.innerHTML=list.map(e=>{
     const kit=S.kitchens.find(k=>k.id===e.kitchenId);
-    return `<div style="display:flex;gap:10px;padding:12px 14px;border-bottom:1px solid var(--br)">
+    const _si=histStepIdx(e.id);
+    const _undone=_si>=0&&_si>_hist.cursor;
+    const _btn=_si<0?'':(_undone?`<button class="btn btn-ol btn-xs" onclick="histRedoTo(${_si})" style="flex-shrink:0;align-self:flex-start;font-size:11px;padding:4px 8px">↪ Ulangi</button>`:`<button class="btn btn-ol btn-xs" onclick="histUndoTo(${_si})" style="flex-shrink:0;align-self:flex-start;font-size:11px;padding:4px 8px">↩ Urungkan</button>`);
+    return `<div style="display:flex;gap:10px;padding:12px 14px;border-bottom:1px solid var(--br)${_undone?';opacity:.55':''}">
       <div style="font-size:16px;flex-shrink:0;line-height:1.4">${icon[e.action]||'•'}</div>
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;color:var(--tx);line-height:1.5">${e.summary}</div>
@@ -1798,8 +1894,10 @@ function renderRiwayat(){
           <span style="font-size:10px;font-weight:700;color:${catColor[e.cat]||'var(--mt)'}">${catLabel[e.cat]||e.cat}</span>
           ${kit?`<span style="font-size:11px;color:var(--mt)">· ${kit.name}</span>`:''}
           <span style="font-size:11px;color:var(--mt)">· ${riwayatTimeAgo(e.ts)}</span>
+          ${_undone?'<span style="font-size:10px;font-weight:700;color:#b45309">· dibatalkan</span>':''}
         </div>
       </div>
+      ${_btn}
     </div>`;
   }).join('');
 }
@@ -2033,9 +2131,9 @@ function renderJadwalContent(){
           <div class="oi-right">
             <div class="oi-price">${fmtRp(sub)}</div>
             <div style="font-size:11px;color:var(--mt)">${fmtRp(ep)}/${m.unit}</div>
-            ${dlChip(m,nd,dates,si.isOrdered,si.isReceived)}
           </div>
           <button class="btn btn-ol btn-xs" onclick="editItem('${si.id}')" style="flex-shrink:0">✏️</button>
+          <div class="oi-chip">${dlChip(m,nd,dates,si.isOrdered,si.isReceived)}</div>
         </div>`;
       });
     });
@@ -2849,6 +2947,7 @@ function mbUpdateBar(){
   const bar=document.getElementById('mb-bulkbar');if(!bar)return;
   bar.style.display=(_mbMode&&_mbSel.size)?'flex':'none';
   document.getElementById('mb-bulk-count').textContent=_mbSel.size+' dipilih';
+  const _mgb=document.getElementById('mb-mergebtn');if(_mgb){_mgb.disabled=_mbSel.size<2;_mgb.style.opacity=_mbSel.size<2?'.5':'1';_mgb.title=_mbSel.size<2?'Pilih minimal 2 bahan':'Gabungkan bahan terpilih jadi satu';}
   const mb=document.getElementById('mb-modebtn');
   if(mb){mb.textContent=_mbMode?'✕ Selesai pilih':'☑ Pilih beberapa';}
   const all=document.getElementById('mb-selall');
@@ -3133,7 +3232,7 @@ function showUndo(msg,snap){
   t.innerHTML='';
   const sp=document.createElement('span');sp.textContent=msg;sp.style.cssText='flex:1;min-width:0';
   const b=document.createElement('button');b.textContent='Urungkan';b.style.cssText='background:none;border:none;color:#fbbf24;font-weight:800;cursor:pointer;font-size:13px;padding:0;white-space:nowrap';
-  b.onclick=()=>{try{S=JSON.parse(snap);save();rerenderCurrent();}catch(e){}t.style.display='none';};
+  b.onclick=()=>{try{const cl=S.changeLog,ab=S.autoBackups;S=JSON.parse(snap);S.changeLog=cl;if(ab)S.autoBackups=ab;logChange('jadwal','edit','↩ Dibatalkan: '+msg);save();rerenderCurrent();if(curPage==='riwayat')renderRiwayat();}catch(e){}t.style.display='none';};
   t.appendChild(sp);t.appendChild(b);t.style.display='flex';
   clearTimeout(_undoTimer);_undoTimer=setTimeout(()=>{t.style.display='none';},8000);
 }
@@ -3404,7 +3503,7 @@ const REKAP_ST=[
 function statusCircleBtn(sis,onclickJs,size){
   const st=sis.map(_itState);const mn=Math.min(...st),mx=Math.max(...st);
   const d=REKAP_ST[mn];const next=REKAP_ST[(mn+1)%4];const mixed=mn!==mx;const z=size||26;
-  return `<button onclick="${onclickJs}" title="${d.label}${mixed?' (sebagian berbeda)':''} — klik: ${next.label}" style="width:${z}px;height:${z}px;border-radius:50%;border:2px ${mixed?'dashed':'solid'} ${d.bd};background:${d.bg};color:${d.fg};font-size:${mn===1?13:12}px;font-weight:800;cursor:pointer;padding:0;line-height:1;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">${d.txt}</button>`;
+  return `<button class="stbtn" onclick="${onclickJs}" title="${d.label}${mixed?' (sebagian berbeda)':''} — klik: ${next.label}" style="width:${z}px;height:${z}px;border-radius:50%;border:2px ${mixed?'dashed':'solid'} ${d.bd};background:${d.bg};color:${d.fg};font-size:${mn===1?13:12}px;font-weight:800;cursor:pointer;padding:0;line-height:1;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">${d.txt}</button>`;
 }
 function cycleGroupStatus(key){
   const ids=window[key]||[];const its=ids.map(id=>S.scheduleItems.find(s=>s.id===id)).filter(Boolean);
@@ -3479,21 +3578,21 @@ function openRekap(){
       const si=allItems.find(s=>s.materialId===matId&&s.day===d);
       const cellOrd=si?.isOrdered;
       if(!q)return `<td style="text-align:center;color:#d1d5db;font-size:11px;padding:7px 3px">—</td>`;
-      return `<td style="text-align:center;padding:4px 2px"><span style="display:inline-block;min-width:28px;padding:3px 4px;border-radius:5px;font-size:12px;font-weight:700;${cellOrd?'background:#dcfce7;color:#166534':'background:#eff6ff;color:#1d4ed8'}">${q}</span></td>`;
+      return `<td style="text-align:center;padding:4px 2px"><span class="rk-q" style="display:inline-block;min-width:28px;padding:3px 4px;border-radius:5px;font-size:12px;font-weight:700;${cellOrd?'background:#dcfce7;color:#166534':'background:#eff6ff;color:#1d4ed8'}">${q}</span></td>`;
     }).join('');
     rows+=`<tr style="border-bottom:1px solid var(--br)${allOrd?';background:#fafafa':''}">
       <td style="padding:5px 4px 5px 8px;position:sticky;left:0;background:${allOrd?'#fafafa':'#fff'};z-index:2;width:34px;text-align:center">
         ${rekapStatusBtn(matId,kid,matSis)}
       </td>
       <td style="padding:7px 6px 7px 0;position:sticky;left:34px;background:${allOrd?'#fafafa':'#fff'};z-index:2;max-width:120px;min-width:90px">
-        <div style="font-size:13px;${nameStyle};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${mat.name}</div>
+        <div class="rk-name" style="font-size:13px;${nameStyle};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${mat.name}</div>
         <div style="display:flex;gap:3px;align-items:center;margin-top:1px">
           <span style="font-size:10px;color:#94a3b8">${mat.unit}</span>
           ${multiDay?'<span style="font-size:9px;font-weight:700;padding:0 4px;border-radius:4px;background:#dbeafe;color:#1e40af">PO</span>':''}
         </div>
       </td>
       ${dayCells}
-      <td style="text-align:right;font-weight:700;font-size:13px;padding:7px 4px;color:${allOrd?'#94a3b8':'var(--pr)'}${allOrd?';text-decoration:line-through':''}">${totalQty}</td>
+      <td class="rk-tot" style="text-align:right;font-weight:700;font-size:13px;padding:7px 4px;color:${allOrd?'#94a3b8':'var(--pr)'}${allOrd?';text-decoration:line-through':''}">${totalQty}</td>
       <td style="padding:7px 8px 7px 2px">
         <button onclick="copyMatFromRekap('${matId}')" style="background:none;border:none;cursor:pointer;font-size:13px;opacity:.45;padding:1px" title="Copy">📋</button>
       </td>
@@ -3583,24 +3682,83 @@ function openMergeModal(id){
     <div style="font-size:12px;color:var(--mt);margin-top:8px">Semua pesanan dari bahan yang dihapus akan otomatis dipindahkan ke <b>${m.name}</b>.</div>`;
   openModal('modal-merge');
 }
+function mergeInto(keepId,delIds,opts){
+  opts=opts||{};
+  const keep=getMat(keepId);if(!keep)return null;
+  const dels=delIds.map(getMat).filter(m=>m&&m.id!==keepId);
+  const delSet=new Set(dels.map(m=>m.id));
+  let moved=0,summed=0;
+  S.scheduleItems.forEach(si=>{if(delSet.has(si.materialId)){si.materialId=keepId;moved++;}});
+  const first=new Map();
+  S.scheduleItems=S.scheduleItems.filter(si=>{
+    if(si.materialId!==keepId)return true;
+    const k=`${si.kitchenId}-${si.weekKey}-${si.day}`;
+    const f=first.get(k);
+    if(!f){first.set(k,si);return true;}
+    f.qty=roundQty((f.qty||0)+(si.qty||0));summed++;
+    if(si.reqNote&&!f.reqNote)f.reqNote=si.reqNote;
+    if(_itState(si)<_itState(f)){f.isOrdered=si.isOrdered;f.orderedAt=si.orderedAt||null;f.isReceived=si.isReceived;f.isPaid=si.isPaid;f.paidAt=si.paidAt||null;}
+    return false;
+  });
+  if(opts.mergeSuppliers){
+    const ids=[...(keep.supplierIds||[])];
+    dels.forEach(d=>(d.supplierIds||[]).forEach(x=>{if(getSupp(x)&&!ids.includes(x))ids.push(x);}));
+    keep.supplierIds=ids;
+  }
+  if(dels.some(d=>d.needsAttention))keep.needsAttention=true;
+  if(opts.name)keep.name=opts.name;
+  S.materials=S.materials.filter(m=>!delSet.has(m.id));
+  return {moved,summed,dels};
+}
 function executeMerge(){
   const keepMat=getMat(mergeKeepId);
   const delMat=getMat(mergeDeleteId||document.getElementById('merge-delete-sel')?.value);
   if(!keepMat||!delMat){alert('Pilih bahan yang akan di-merge.');return;}
   if(keepMat.id===delMat.id){alert('Tidak bisa merge bahan yang sama.');return;}
-  // Redirect all scheduleItems from delMat to keepMat
-  let moved=0;
-  S.scheduleItems.forEach(si=>{if(si.materialId===delMat.id){si.materialId=keepMat.id;moved++;}});
-  // Remove duplicate day entries (same kitchen, week, day after merge)
-  const seen=new Set();
-  S.scheduleItems=S.scheduleItems.filter(si=>{
-    const key=`${si.kitchenId}-${si.weekKey}-${si.day}-${si.materialId}`;
-    if(seen.has(key))return false;seen.add(key);return true;
-  });
-  // Delete the merged material
-  S.materials=S.materials.filter(m=>m.id!==delMat.id);
+  const res=mergeInto(keepMat.id,[delMat.id],{});
+  logChange('bahan','edit',`Merge: "${delMat.name}" digabung ke "${keepMat.name}"`);
   save();closeModal('modal-merge');renderMasterBarang();
-  alert(`✅ Merge berhasil!\n• ${moved} pesanan dari "${delMat.name}" dipindahkan ke "${keepMat.name}"\n• "${delMat.name}" dihapus dari master`);
+  alert(`✅ Merge berhasil!\n• ${res.moved} pesanan dari "${delMat.name}" dipindahkan ke "${keepMat.name}"\n• "${delMat.name}" dihapus dari master`);
+}
+// ── Gabungkan dari mode "Pilih beberapa" ──
+function openMergeSel(){
+  const mats=S.materials.filter(m=>_mbSel.has(m.id));
+  if(mats.length<2){alert('Pilih minimal 2 bahan untuk digabungkan.');return;}
+  const use=m=>S.scheduleItems.filter(si=>si.materialId===m.id).length;
+  document.getElementById('ms-body').innerHTML=`
+    <div class="fh" style="margin-bottom:8px">Pilih bahan yang <b>dipertahankan</b>. Bahan lain akan dihapus dan seluruh jadwalnya dipindah ke bahan yang dipertahankan.</div>
+    <div id="ms-list" style="border:1px solid var(--br);border-radius:10px;margin-bottom:10px">${mats.map((m,i)=>`<label style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--br);cursor:pointer"><input type="radio" name="ms-keep" value="${m.id}" ${i===0?'checked':''} onchange="msRefresh()" style="width:16px;height:16px;flex-shrink:0"><span style="flex:1;min-width:0"><b style="font-size:13px">${m.name}</b><div style="font-size:11px;color:var(--mt)">${m.type} · ${m.unit} · ${use(m)} jadwal · ${(m.supplierIds||[]).map(x=>getSupp(x)?.name).filter(Boolean).join(', ')||'tanpa supplier'}</div></span></label>`).join('')}</div>
+    <div class="fg"><label class="fl">Nama bahan hasil gabungan</label><input type="text" id="ms-name"></div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:8px"><input type="checkbox" id="ms-supp" checked style="width:16px;height:16px"> Gabungkan juga supplier-nya</label>
+    <div id="ms-warn"></div>
+    <div id="ms-sum" style="font-size:12px;color:var(--mt)"></div>`;
+  msRefresh(true);openModal('modal-mergesel');
+}
+function msRefresh(initName){
+  const mats=S.materials.filter(m=>_mbSel.has(m.id));
+  const keepId=(document.querySelector('input[name="ms-keep"]:checked')||{}).value;
+  const keep=getMat(keepId);if(!keep)return;
+  const nm=document.getElementById('ms-name');if(nm&&(initName||nm.dataset.auto!=='0'))nm.value=keep.name;
+  const others=mats.filter(m=>m.id!==keepId);
+  const unitDiff=others.filter(m=>m.unit!==keep.unit);
+  const typeDiff=others.filter(m=>m.type!==keep.type);
+  let w='';
+  if(unitDiff.length)w+=`<div class="alert warning" style="margin-bottom:8px"><span class="ai">⚠️</span><div><div class="at">Satuan berbeda: ${unitDiff.map(m=>m.name+' ('+m.unit+')').join(', ')} → jumlahnya TIDAK dikonversi, tetap dihitung sebagai ${keep.unit}.</div></div></div>`;
+  if(typeDiff.length)w+=`<div style="font-size:12px;color:#92400e;margin-bottom:6px">Kategori berbeda: ${typeDiff.map(m=>m.name+' ('+m.type+')').join(', ')} → akan jadi ${keep.type}.</div>`;
+  document.getElementById('ms-warn').innerHTML=w;
+  document.getElementById('ms-sum').innerHTML=`Dipertahankan: <b>${keep.name}</b> · Dihapus: ${others.map(m=>'<b>'+m.name+'</b>').join(', ')}`;
+}
+function applyMergeSel(){
+  const mats=S.materials.filter(m=>_mbSel.has(m.id));
+  const keepId=(document.querySelector('input[name="ms-keep"]:checked')||{}).value;
+  const keep=getMat(keepId);if(!keep||mats.length<2)return;
+  const name=document.getElementById('ms-name').value.trim()||keep.name;
+  if(name.toLowerCase()!==keep.name.toLowerCase()&&S.materials.some(m=>m.id!==keepId&&!_mbSel.has(m.id)&&m.name.toLowerCase()===name.toLowerCase())){alert('Nama itu sudah dipakai bahan lain.');return;}
+  const dels=mats.filter(m=>m.id!==keepId);
+  _undoable(`${dels.length} bahan digabung ke "${name}"`);
+  const res=mergeInto(keepId,dels.map(m=>m.id),{mergeSuppliers:document.getElementById('ms-supp').checked,name});
+  logChange('bahan','edit',`Merge ${dels.length+1} bahan → "${name}" (${dels.map(m=>'"'+m.name+'"').join(', ')} dihapus; ${res.moved} jadwal dipindah, ${res.summed} digabung jumlahnya)`);
+  save();closeModal('modal-mergesel');_mbSel=new Set();_mbMode=false;renderMasterBarang();
 }
 
 function exportAllData(){
@@ -3619,7 +3777,7 @@ function importAllData(input){
       const data=JSON.parse(e.target.result);
       if(!data.kitchens||!data.materials){alert('File tidak valid.');return;}
       if(!confirm('Semua data akan diganti dengan data dari file backup. Lanjutkan?'))return;
-      S=data;save();
+      S=data;histReset();save();
       alert('Data berhasil direstore! ✓');
       location.reload();
     }catch(err){alert('File tidak valid: '+err.message);}
@@ -3684,6 +3842,7 @@ function restoreAutoBackup(backupId){
   const restored=JSON.parse(JSON.stringify(b.data));
   restored.autoBackups=S.autoBackups;
   S=restored;
+  histReset();
   save();
   alert('✓ Data berhasil dipulihkan ke cadangan tersebut.');
   location.reload();
@@ -4689,6 +4848,7 @@ document.querySelectorAll('.mbg').forEach(el=>{el.addEventListener('click',e=>{i
 // ═══════════════════════════════════════
 function applyState(state){
   S = migrateState(state);
+  if(_hLoaded)histReset();else _hPrev=_hMap();
   const today=new Date();
   const _defWk=getDefaultWeek();
   curWeek=_defWk;
@@ -5298,6 +5458,7 @@ function closeFab(){
 }
 function init(){
   applyState(loadState());
+  histInit();
   sbGet().then(remote=>{
     if(remote){
       const remoteV=remote._updated||0;
@@ -5401,6 +5562,13 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkNotif
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span id="ns-count" style="font-size:12px;font-weight:700;flex:1"></span><button class="btn btn-ol btn-xs" onclick="nsSelAllUsed()">Pilih yang dipakai di pesanan</button></div>
     <div id="ns-list" style="max-height:46vh;overflow-y:auto;border:1px solid var(--br);border-radius:10px;margin-bottom:12px"></div>
     <div class="mac"><button class="btn btn-ol" onclick="closeModal('modal-nosupp')">Batal</button><button class="btn btn-pr" onclick="applyNoSupp()">Hubungkan</button></div>
+  </div>
+</div>
+<div class="mbg" id="modal-mergesel">
+  <div class="modal" style="max-width:440px">
+    <div class="mt">🔀 Gabungkan Bahan</div>
+    <div id="ms-body" style="max-height:62vh;overflow-y:auto"></div>
+    <div class="mac"><button class="btn btn-ol" onclick="closeModal('modal-mergesel')">Batal</button><button class="btn btn-pr" onclick="applyMergeSel()">Gabungkan</button></div>
   </div>
 </div>
 <div class="mbg" id="modal-moveday">
