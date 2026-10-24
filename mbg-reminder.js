@@ -24,9 +24,9 @@ function effSupplierId(S,si){
   if(si.supplierId&&sup(si.supplierId))return si.supplierId;
   const m=S.materials.find(x=>x.id===si.materialId);
   let ids=((m&&m.supplierIds)||[]).filter(sup);
-  // Bahan tanpa pilihan manual otomatis ikut supplier utama
-  if(!ids.length&&S.primarySupplierId&&sup(S.primarySupplierId))ids=[S.primarySupplierId];
-  return ids.length===1?ids[0]:null;
+  // Supplier utama hanya memilih antar supplier pada bahan yang punya 2+ supplier
+  if(!ids.length)return null;
+  return (S.primarySupplierId&&ids.includes(S.primarySupplierId))?S.primarySupplierId:ids[0];
 }
 function computeReminders(S, td){
   const res={h0:{},h1:{},custom:[]};
