@@ -62,6 +62,8 @@ function buildMessage(S, res){
     }).join('\n')+'\n\n';
   };
   let t='';
+  const nn=((res.h0._none||[]).length)+((res.h1._none||[]).length);
+  if(nn)t+='⚠️ '+nn+' bahan belum punya supplier — atur di aplikasi (Kelola Supplier → Atur).\n\n';
   t+=sect('📦 DATANG HARI INI — hubungi supplier:',res.h0);
   t+=sect('⏰ DATANG BESOK (H-1) — konfirmasi supplier:',res.h1);
   if(res.custom.length){

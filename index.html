@@ -296,6 +296,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
   .vt-btn{padding:6px 8px;font-size:12px}
 }
 @media(max-width:480px){
+  .tbadge{font-size:9.5px!important;padding:1px 6px!important;gap:2px!important}
+  .rk-type{font-size:9px!important;padding:4px 8px!important;letter-spacing:.2px!important}
+  .rk-leg{font-size:8.5px!important;gap:4px 8px!important;padding:5px 8px!important}
+  .rk-leg b{display:none}
+  .rk-leg .dot{width:11px!important;height:11px!important;font-size:7px!important}
   .k-stat-row{grid-template-columns:1fr 1fr}
   .fbar{gap:7px}
 }
@@ -363,7 +368,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div class="nav-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M1 7l2-5h10l2 5"/><path d="M6 15V11h4v4"/><path d="M1 7h14"/></svg></span>Master Dapur</div>
     <div class="nav-item" onclick="navigate('riwayat')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.5"/><path d="M8 4.5V8l3 2"/></svg></span>Riwayat</div>
   </nav>
-  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20261024-v77</div>
+  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20261024-v78</div>
 </aside>
 
 <!-- MOBILE HEADER -->
@@ -508,6 +513,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     </div>
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
       <button class="btn btn-ol btn-xs" id="mb-modebtn" onclick="mbToggleMode()">☑ Pilih beberapa</button>
+      <button class="btn btn-ol btn-xs" id="mb-nosupp" onclick="mbToggleNoSupp()">🏪 Tanpa supplier</button>
       <div id="mb-bulkbar" style="display:none;align-items:center;gap:8px;flex-wrap:wrap">
         <b id="mb-bulk-count" style="font-size:12px"></b>
         <button class="btn btn-pr btn-xs" onclick="openBulkEdit()">✏️ Ubah Sekaligus</button>
@@ -781,7 +787,7 @@ function typeBadge(type,opts={}){
   const emoji=typeEmoji(type);
   const pill=TYPE_PILL[type]||'background:#f1f5f9;color:#475569';
   const sz=opts.size||'11px';
-  return `<span style="display:inline-flex;align-items:center;gap:3px;font-size:${sz};font-weight:600;padding:2px 7px;border-radius:20px;${pill}">${emoji} ${type}</span>`;
+  return `<span class="tbadge" style="display:inline-flex;align-items:center;gap:3px;font-size:${sz};font-weight:600;padding:2px 7px;border-radius:20px;${pill}">${emoji} ${type}</span>`;
 }
 
 // ═══════════════════════════════════════
@@ -1488,6 +1494,13 @@ function waSuppMsg(kind,sid){
   const url='https://wa.me/'+ph+'?text='+encodeURIComponent(buildSuppMsg(kind,sid));
   window.open(url,'_blank');
 }
+function backupReminderHtml(){
+  let last=parseInt(localStorage.getItem('mbg-last-backup')||'0');
+  if(!last){let fs=parseInt(localStorage.getItem('mbg-first-seen')||'0');if(!fs){fs=Date.now();safeSetItem('mbg-first-seen',String(fs));}last=fs;}
+  const days=Math.floor((Date.now()-last)/864e5);
+  if(days<7)return '';
+  return `<div class="card" style="padding:10px 14px;margin-bottom:12px;border-left:4px solid #0ea5e9;display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span style="flex:1;min-width:160px;font-size:12px;font-weight:600">💾 Backup terakhir ${localStorage.getItem('mbg-last-backup')?days+' hari lalu':'belum pernah'} — unduh backup mingguan</span><button class="btn btn-pr btn-xs" onclick="exportAllData();renderDashboard()">Unduh Backup</button></div>`;
+}
 function assistantCardHtml(){
   const r=getSupplierReminders();
   const grp=(kind,map,title,color)=>{
@@ -1510,7 +1523,9 @@ function assistantCardHtml(){
     return `<div style="display:flex;align-items:center;gap:8px;padding:8px 11px;border:1px solid var(--br);border-radius:10px;margin-bottom:6px;background:#fff">
       <div style="flex:1;font-size:13px">${x.note}${s?` <span style="color:var(--mt);font-size:11px">· 🏪 ${s.name}</span>`:''}<div style="font-size:11px;color:var(--mt)">${lbl}</div></div>
       <button class="btn btn-gn btn-xs" onclick="doneReminder('${x.id}')">✓ Selesai</button></div>`;}).join('')+'</div>':'';
-  const body=grp('h0',r.h0,'📦 Hari H — barang datang HARI INI','#dc2626')+grp('h1',r.h1,'⏰ H-1 — barang datang BESOK','#d97706')+cust;
+  const _un=suppLessUpcoming().size;
+  const _unHtml=_un?`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;margin-bottom:10px;background:#fffbeb;border:1px solid #f59e0b;border-radius:10px;font-size:12px;color:#92400e;font-weight:600"><span style="flex:1;min-width:140px">⚠️ ${_un} bahan di pesanan minggu ini &amp; depan belum punya supplier</span><button class="btn btn-pr btn-xs" onclick="openNoSupp()">Atur</button></div>`:'';
+  const body=_unHtml+grp('h0',r.h0,'📦 Hari H — barang datang HARI INI','#dc2626')+grp('h1',r.h1,'⏰ H-1 — barang datang BESOK','#d97706')+cust;
   const notifOn=typeof Notification!=='undefined'&&Notification.permission==='granted'&&localStorage.getItem('mbg-notif-on')==='1';
   return `<div class="card" style="padding:14px 16px;margin-bottom:14px;border-left:4px solid #7c3aed">
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
@@ -1581,7 +1596,7 @@ function renderDashboard(){
   }
 
   // === Global summary bar ===
-  let html=assistantCardHtml();
+  let html=backupReminderHtml()+assistantCardHtml();
   const allWkItems=S.scheduleItems.filter(si=>S.kitchens.some(k=>k.id===si.kitchenId)&&si.weekKey===wk);
   const urgentToday=[];const urgentOverdue=[];
   S.kitchens.forEach(k=>{
@@ -2338,7 +2353,7 @@ function markDayOrdered(di){
   const kid=document.getElementById('pesanan-kitchen')?.value||curKitchen;
   const its=S.scheduleItems.filter(s=>s.weekKey===pesananWeek&&s.kitchenId===kid&&s.day===di);
   const allOrd=its.length>0&&its.every(s=>s.isOrdered);
-  if(!confirm(allOrd?`Batalkan status "Sudah Pesan" untuk ${its.length} bahan?`:`Tandai ${its.length} bahan sebagai "Sudah Pesan"?`))return;
+  _undoable(allOrd?`Status "Pesan" dibatalkan (${its.length} bahan)`:`${its.length} bahan ditandai Sudah Pesan`);
   its.forEach(s=>{s.isOrdered=!allOrd;s.orderedAt=!allOrd?fmtDate(new Date()):null;});
   save();renderPesanan();if(curPage==='dashboard')renderDashboard();
 }
@@ -2347,7 +2362,7 @@ function markDayPaid(di){
   const its=S.scheduleItems.filter(s=>s.weekKey===pesananWeek&&s.kitchenId===kid&&s.day===di&&s.isOrdered);
   if(!its.length){alert('Tandai "Sudah Pesan" dulu sebelum menandai bayar.');return;}
   const allPaid=its.length>0&&its.every(s=>s.isPaid);
-  if(!confirm(allPaid?`Batalkan status "Bayar" untuk ${its.length} bahan?`:`Tandai ${its.length} bahan sebagai "Sudah Bayar"?`))return;
+  _undoable(allPaid?`Status "Bayar" dibatalkan (${its.length} bahan)`:`${its.length} bahan ditandai Sudah Bayar`);
   its.forEach(s=>{s.isPaid=!allPaid;s.paidAt=!allPaid?fmtDate(new Date()):null;});
   save();renderPesanan();if(curPage==='dashboard')renderDashboard();
 }
@@ -2356,7 +2371,7 @@ function markDayReceived(di){
   const its=S.scheduleItems.filter(s=>s.weekKey===pesananWeek&&s.kitchenId===kid&&s.day===di&&s.isOrdered);
   if(!its.length){alert('Tandai "Sudah Pesan" dulu sebelum menandai barang datang.');return;}
   const allRecv=its.length>0&&its.every(s=>s.isReceived);
-  if(!confirm(allRecv?`Batalkan status "Datang" untuk ${its.length} bahan?`:`Tandai ${its.length} bahan sebagai "Sudah Datang"?`))return;
+  _undoable(allRecv?`Status "Datang" dibatalkan (${its.length} bahan)`:`${its.length} bahan ditandai Sudah Datang`);
   its.forEach(s=>{s.isReceived=!allRecv;if(allRecv){s.isPaid=false;s.paidAt=null;}});
   save();renderPesanan();if(curPage==='dashboard')renderDashboard();
 }
@@ -2369,7 +2384,7 @@ function markTypeItems(ids,action){
     its=its.filter(s=>s.isOrdered);
     if(!its.length){alert(action==='receive'?'Tandai "Pesan" dulu sebelum menandai barang datang.':'Tandai "Pesan" dulu sebelum menandai bayar.');return;}
   }
-  if(!confirm(`Tandai ${its.length} bahan sebagai "${action==='order'?'Sudah Pesan':action==='receive'?'Sudah Datang':'Sudah Bayar'}"?`))return;
+  _undoable(`${its.length} bahan ditandai ${action==='order'?'Sudah Pesan':action==='receive'?'Sudah Datang':'Sudah Bayar'}`);
   its.forEach(si=>{
     if(action==='order'){si.isOrdered=true;si.orderedAt=fmtDate(new Date());}
     else if(action==='receive'){si.isReceived=true;}
@@ -2679,6 +2694,7 @@ function renderPesananBySupplier(items,dates){
     sis.forEach(si=>{if(!byDay[si.day])byDay[si.day]=[];byDay[si.day].push(si);});
     const sortedDays=Object.keys(byDay).map(Number).sort((a,b)=>a-b);
     const _sk='sup_'+sid.replace(/\W/g,'_');
+    window[_sk+'_ids']=sis.map(x=>x.id);
     window[_sk]={kitName:_supKitName,groups:sortedDays.map(di=>{
       const delivDate=addDays(dates[di],-1);
       const ddn=ALL_DAYS[delivDate.getDay()];
@@ -2691,7 +2707,9 @@ function renderPesananBySupplier(items,dates){
       <div class="mg-hdr">
         <div class="mg-name">🏪 ${label}${supp?.phone?` <span style="font-weight:400;color:var(--mt);font-size:11px">${supp.phone}</span>`:''}</div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span style="font-weight:800;color:var(--pr)">${sis.length} item</span>
+          <span style="font-size:11px;color:var(--mt)">${sis.length} item</span>
+          <span style="font-weight:800;color:var(--pr)">${fmtRp(sis.reduce((a,x)=>a+effPrice(x)*(x.qty||0),0))}</span>
+          ${statusCircleBtn(sis,`cycleGroupStatus('${_sk}_ids')`,24)}
           <button onclick="copyTypeKey('${_sk}')" style="background:none;border:none;cursor:pointer;font-size:11px;opacity:.4;padding:0 1px" title="Copy">📋</button>
         </div>
       </div>`;
@@ -2869,7 +2887,7 @@ function applyBulkEdit(){
   const mats=S.materials.filter(m=>_mbSel.has(m.id));if(!mats.length)return;
   const ST={h1:'H-1',h2:'H-2',h3:'H-3',h4:'H-4',rapel:'Rapel'};
   {const _p=[];if(type)_p.push('kategori → '+type);if(unit)_p.push('satuan → '+unit);if(stock)_p.push('tipe stok → '+ST[stock]);if(sv)_p.push('supplier → '+(getSupp(sv)?.name||'')+(keepOld?' (ditambah)':' (menggantikan supplier lama)'));
-   if(!confirm(`Ubah ${mats.length} bahan sekaligus?\n• `+_p.join('\n• ')))return;}
+   _undoable(`${mats.length} bahan diubah: `+_p.join(', '));}
   mats.forEach(m=>{
     if(type)m.type=type;
     if(unit)m.unit=unit;
@@ -2894,7 +2912,10 @@ function renderMasterBarang(){
     tbody.innerHTML=`<tr><td colspan="7"><div class="empty"><div class="ei">📦</div><div class="et">Belum ada bahan baku</div></div></td></tr>`;return;
   }
   // Sort
-  const sorted=[...S.materials].sort((a,b)=>{
+  const _nsN=suppLessMats().length;
+  const _nb=document.getElementById('mb-nosupp');
+  if(_nb){_nb.textContent=`🏪 Tanpa supplier (${_nsN})`;_nb.style.cssText=_mbNoSupp?'background:#fef3c7;border-color:#f59e0b;color:#92400e;font-weight:700':(_nsN?'':'opacity:.6');}
+  const sorted=[...S.materials].filter(m=>!_mbNoSupp||!matSupplierIds(m).length).sort((a,b)=>{
     let va=masterSort.col==='name'?a.name:a.type;
     let vb=masterSort.col==='name'?b.name:b.type;
     if(masterSort.col==='type')va=va+(a.name);
@@ -2906,6 +2927,7 @@ function renderMasterBarang(){
     const el=document.getElementById(`sort-${c}`);
     if(el)el.textContent=masterSort.col===c?(masterSort.dir===1?'↑':'↓'):'↕';
   });
+  if(!sorted.length){tbody.innerHTML=`<tr><td colspan="7"><div class="empty"><div class="ei">✅</div><div class="et">Semua bahan sudah punya supplier</div></div></td></tr>`;mbUpdateBar();return;}
   mbUpdateBar();
   // Detect similar pairs
   const similarPairs=detectSimilarMaterials();
@@ -3102,6 +3124,75 @@ function deleteWeekSchedule(){
   logChange('jadwal','delete',`Semua menu & bahan minggu ${curWeek} dihapus (${mcnt} menu, ${cnt} bahan) — ${kit?.name||''}`);
   save();renderWeeklySummary();renderDayTabs();renderJadwalContent();
 }
+let _undoTimer=null;
+function showUndo(msg,snap){
+  let t=document.getElementById('undo-toast');
+  if(!t){t=document.createElement('div');t.id='undo-toast';
+    t.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:84px;z-index:3000;background:#1f2937;color:#fff;border-radius:12px;padding:10px 14px;font-size:13px;display:flex;align-items:center;gap:12px;box-shadow:0 6px 24px rgba(0,0,0,.3);max-width:92vw';
+    document.body.appendChild(t);}
+  t.innerHTML='';
+  const sp=document.createElement('span');sp.textContent=msg;sp.style.cssText='flex:1;min-width:0';
+  const b=document.createElement('button');b.textContent='Urungkan';b.style.cssText='background:none;border:none;color:#fbbf24;font-weight:800;cursor:pointer;font-size:13px;padding:0;white-space:nowrap';
+  b.onclick=()=>{try{S=JSON.parse(snap);save();rerenderCurrent();}catch(e){}t.style.display='none';};
+  t.appendChild(sp);t.appendChild(b);t.style.display='flex';
+  clearTimeout(_undoTimer);_undoTimer=setTimeout(()=>{t.style.display='none';},8000);
+}
+function _undoable(msg){showUndo(msg,JSON.stringify(S));}
+function rerenderCurrent(){
+  try{
+    if(curPage==='jadwal'){renderWeeklySummary();renderDayTabs();renderJadwalContent();}
+    else if(curPage==='pesanan')renderPesanan();
+    else if(curPage==='dashboard')renderDashboard();
+    else if(curPage==='master-barang')renderMasterBarang();
+    else if(curPage==='master-dapur')renderMasterDapur();
+    if(document.getElementById('supplier-list-body'))renderSupplierList();
+  }catch(e){}
+}
+function suppLessMats(){return S.materials.filter(m=>!matSupplierIds(m).length);}
+function _upcomingWeekKeys(){const d0=getWeekDates(getWeekKey(today0()));return [getWeekKey(today0()),getWeekKey(addDays(d0[0],7))];}
+function suppLessUpcoming(){
+  const wks=_upcomingWeekKeys();const ids=new Set();
+  S.scheduleItems.forEach(si=>{if(wks.includes(si.weekKey)&&!si.isReceived&&!effSupplierId(si)){const m=getMat(si.materialId);if(m)ids.add(m.id);}});
+  return ids;
+}
+let _nsSel=new Set();
+function openNoSupp(){
+  _nsSel=new Set();
+  const list=suppLessMats();
+  const sel=document.getElementById('ns-supplier');
+  sel.innerHTML='<option value="">— pilih supplier —</option>'+(S.suppliers||[]).map(x=>`<option value="${x.id}">${x.name}</option>`).join('');
+  renderNoSupp();openModal('modal-nosupp');
+}
+function renderNoSupp(){
+  const used=suppLessUpcoming();
+  const mats=suppLessMats();
+  const el=document.getElementById('ns-list');
+  if(!mats.length){el.innerHTML='<div style="padding:16px;text-align:center;color:var(--mt);font-size:13px">✅ Semua bahan sudah punya supplier.</div>';document.getElementById('ns-count').textContent='';return;}
+  const types=getAllTypes().filter(t=>mats.some(m=>m.type===t)).concat([...new Set(mats.map(m=>m.type))].filter(t=>!getAllTypes().includes(t)));
+  el.innerHTML=types.map(t=>{
+    const ms=mats.filter(m=>m.type===t).sort((a,b)=>(used.has(b.id)-used.has(a.id))||a.name.localeCompare(b.name));
+    const all=ms.every(m=>_nsSel.has(m.id));
+    const tq=String(t).replace(/'/g,"\\'");
+    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 12px;background:#f5f5f5;position:sticky;top:0;border-bottom:1px solid var(--br)"><input type="checkbox" ${all?'checked':''} onchange="nsToggleType('${tq}',this.checked)" style="width:16px;height:16px"><span class="tlbl" style="font-size:11px;font-weight:700;flex:1">${typeEmoji(t)} ${t}</span><span style="font-size:10px;color:var(--mt)">${ms.filter(m=>_nsSel.has(m.id)).length}/${ms.length}</span></div>`+ms.map(m=>`<label style="display:flex;align-items:center;gap:8px;padding:7px 12px 7px 24px;border-bottom:1px solid var(--br);cursor:pointer"><input type="checkbox" ${_nsSel.has(m.id)?'checked':''} onchange="nsToggle('${m.id}',this.checked)" style="width:16px;height:16px;flex-shrink:0"><span style="flex:1;font-size:13px">${m.name}</span>${used.has(m.id)?'<span style="font-size:10px;color:#dc2626;font-weight:700">dipakai di pesanan</span>':''}</label>`).join('');
+  }).join('');
+  document.getElementById('ns-count').textContent=_nsSel.size+' bahan dipilih · '+mats.length+' tanpa supplier';
+}
+function nsToggle(id,on){on?_nsSel.add(id):_nsSel.delete(id);renderNoSupp();}
+function nsToggleType(t,on){suppLessMats().filter(m=>m.type===t).forEach(m=>on?_nsSel.add(m.id):_nsSel.delete(m.id));renderNoSupp();}
+function nsSelAllUsed(){const u=suppLessUpcoming();u.forEach(id=>_nsSel.add(id));renderNoSupp();}
+function applyNoSupp(){
+  const sid=document.getElementById('ns-supplier').value;
+  if(!sid){alert('Pilih supplier dulu.');return;}
+  const mats=S.materials.filter(m=>_nsSel.has(m.id));
+  if(!mats.length){alert('Centang bahan yang mau dihubungkan.');return;}
+  const sp=getSupp(sid);
+  _undoable(`${mats.length} bahan dihubungkan ke "${sp?.name}"`);
+  mats.forEach(m=>{m.supplierIds=[sid];});
+  logChange('bahan','edit',`${mats.length} bahan dihubungkan ke supplier "${sp?.name}"`);
+  save();closeModal('modal-nosupp');rerenderCurrent();
+}
+let _mbNoSupp=false;
+function mbToggleNoSupp(){_mbNoSupp=!_mbNoSupp;renderMasterBarang();}
 function openMoveDay(){
   const kit=S.kitchens.find(k=>k.id===curKitchen);
   const mc=(S.menus||[]).filter(m=>m.weekKey===curWeek&&m.kitchenId===curKitchen&&m.day===curDay).length;
@@ -3123,7 +3214,7 @@ function applyMoveDay(){
   const msg=mode==='swap'
     ?`Tukar ${DAYS[a]} ⇄ ${DAYS[b]} (menu + bahan)?`
     :`Pindahkan menu + bahan ${DAYS[a]} ke ${DAYS[b]}? Isi ${DAYS[b]} yang sudah ada tetap dipertahankan (digabung).`;
-  if(!confirm(msg+(ordered?`\n\n⚠️ ${ordered} bahan sudah ditandai pesan/datang/bayar; statusnya ikut berpindah.`:'')))return;
+  _undoable((mode==='swap'?'Hari ditukar: ':'Hari dipindah: ')+DAYS[a]+(mode==='swap'?' ⇄ ':' → ')+DAYS[b]+(ordered?` · ${ordered} bahan sudah berstatus, ikut pindah`:''));
   if(mode==='swap'){
     aItems.forEach(x=>x.day=b);bItems.forEach(x=>x.day=a);
     aMenus.forEach(x=>x.day=b);bMenus.forEach(x=>x.day=a);
@@ -3310,6 +3401,18 @@ const REKAP_ST=[
   {k:1,label:'Sudah dipesan',txt:'✓',bg:'#dcfce7',bd:'#16a34a',fg:'#166534'},
   {k:2,label:'Sudah datang',txt:'📦',bg:'#dbeafe',bd:'#2563eb',fg:'#1e40af'},
   {k:3,label:'Sudah dibayar',txt:'💰',bg:'#fef9c3',bd:'#ca8a04',fg:'#854d0e'}];
+function statusCircleBtn(sis,onclickJs,size){
+  const st=sis.map(_itState);const mn=Math.min(...st),mx=Math.max(...st);
+  const d=REKAP_ST[mn];const next=REKAP_ST[(mn+1)%4];const mixed=mn!==mx;const z=size||26;
+  return `<button onclick="${onclickJs}" title="${d.label}${mixed?' (sebagian berbeda)':''} — klik: ${next.label}" style="width:${z}px;height:${z}px;border-radius:50%;border:2px ${mixed?'dashed':'solid'} ${d.bd};background:${d.bg};color:${d.fg};font-size:${mn===1?13:12}px;font-weight:800;cursor:pointer;padding:0;line-height:1;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">${d.txt}</button>`;
+}
+function cycleGroupStatus(key){
+  const ids=window[key]||[];const its=ids.map(id=>S.scheduleItems.find(s=>s.id===id)).filter(Boolean);
+  if(!its.length)return;
+  const n=(Math.min(...its.map(_itState))+1)%4;const today=fmtDate(new Date());
+  its.forEach(s=>{s.isOrdered=n>=1;if(n>=1){if(!s.orderedAt)s.orderedAt=today;}else s.orderedAt=null;s.isReceived=n>=2;s.isPaid=n>=3;s.paidAt=n>=3?(s.paidAt||today):null;});
+  save();renderPesanan();if(curPage==='dashboard')renderDashboard();
+}
 function _itState(si){return si.isPaid&&si.isReceived?3:si.isReceived&&si.isOrdered?2:si.isOrdered?1:0;}
 function rekapStatusBtn(matId,kid,sis){
   const st=sis.map(_itState);const mn=Math.min(...st),mx=Math.max(...st);
@@ -3366,7 +3469,7 @@ function openRekap(){
     if(mat.type!==lastType){
       lastType=mat.type;
       const emoji=typeEmoji(mat.type);
-      rows+=`<tr style="background:#f5f9f6"><td colspan="10" style="padding:6px 10px;font-size:11px;font-weight:700;color:#2d7a4f;letter-spacing:.3px">${emoji} ${mat.type.toUpperCase()}</td></tr>`;
+      rows+=`<tr style="background:#f5f9f6"><td class="rk-type" colspan="10" style="padding:6px 10px;font-size:11px;font-weight:700;color:#2d7a4f;letter-spacing:.3px">${emoji} ${mat.type.toUpperCase()}</td></tr>`;
     }
     const totalQty=roundQty(Object.values(days).reduce((a,b)=>a+b,0));
     const multiDay=Object.keys(days).length>1;
@@ -3399,7 +3502,7 @@ function openRekap(){
 
   (()=>{const _k=S.kitchens.find(k=>k.id===(document.getElementById('pesanan-kitchen')?.value||curKitchen));const _sub=document.getElementById('rekap-subtitle');if(_sub)_sub.textContent=(_k?.name||'Dapur')+' · '+totalBahan+' bahan';})();
   document.getElementById('rekap-body').innerHTML=`
-    <div style="display:flex;flex-wrap:wrap;gap:6px 10px;padding:7px 10px;border-bottom:1px solid var(--br);font-size:10px;color:var(--mt);align-items:center"><b>Klik untuk ganti status:</b>${REKAP_ST.map(x=>`<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:14px;height:14px;border-radius:50%;border:2px solid ${x.bd};background:${x.bg};display:inline-flex;align-items:center;justify-content:center;font-size:8px;color:${x.fg}">${x.txt}</span>${x.label}</span>`).join('')}</div>
+    <div class="rk-leg" style="display:flex;flex-wrap:wrap;gap:6px 10px;padding:7px 10px;border-bottom:1px solid var(--br);font-size:10px;color:var(--mt);align-items:center"><b>Klik untuk ganti status:</b>${REKAP_ST.map(x=>`<span style="display:inline-flex;align-items:center;gap:4px"><span class="dot" style="width:14px;height:14px;border-radius:50%;border:2px solid ${x.bd};background:${x.bg};display:inline-flex;align-items:center;justify-content:center;font-size:8px;color:${x.fg}">${x.txt}</span>${x.label}</span>`).join('')}</div>
     <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
       <table style="width:100%;border-collapse:collapse;min-width:320px">
         <thead><tr>
@@ -3501,6 +3604,7 @@ function executeMerge(){
 }
 
 function exportAllData(){
+  safeSetItem('mbg-last-backup',String(Date.now()));
   const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
@@ -4697,6 +4801,9 @@ function getCheckedMatSuppliers(){
 function renderSupplierList(){
   const el=document.getElementById('supplier-list-body');
   if(!el)return;
+  const _nc=suppLessMats().length;
+  const _na=document.getElementById('supp-noassign');
+  if(_na)_na.innerHTML=_nc?`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;margin-bottom:10px;background:#fffbeb;border:1.5px solid #f59e0b;border-radius:10px"><span style="flex:1;min-width:150px;font-size:13px;font-weight:700;color:#92400e">⚠️ ${_nc} bahan belum punya supplier</span><button class="btn btn-pr btn-xs" onclick="openNoSupp()">Atur</button></div>`:'';
   if(!(S.suppliers||[]).length){el.innerHTML='<div style="padding:16px;color:var(--mt);text-align:center;font-size:13px">Belum ada supplier. Tekan “＋ Tambah Supplier Baru” di bawah.</div>';return;}
   el.innerHTML=(S.suppliers||[]).map(s=>{
     const mats=S.materials.filter(m=>matSupplierIds(m).includes(s.id));
@@ -4881,7 +4988,7 @@ function saveSuppMats(){
   let added=0,removed=0;
   {let a=0,r=0;S.materials.forEach(m=>{const has=(m.supplierIds||[]).includes(sid),want=_smSel.has(m.id);if(want&&!has)a++;else if(!want&&has)r++;});
    if(!a&&!r){closeModal('modal-supp-mats');return;}
-   if(!confirm(`Simpan perubahan bahan untuk "${s.name}"?\n• ${a} bahan ditambahkan\n• ${r} bahan dilepas`))return;}
+   _undoable(`Supplier "${s.name}": +${a} bahan, -${r} bahan`);}
   S.materials.forEach(m=>{
     if(sid===S.primarySupplierId&&matUsesPrimary(m))return;
     const has=(m.supplierIds||[]).includes(sid),want=_smSel.has(m.id);
@@ -5249,6 +5356,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkNotif
   <div class="modal" style="max-width:600px">
     <div class="mt">🏪 Kelola Supplier</div>
     <div class="fh" style="margin-bottom:10px">⭐ Utama dipakai lebih dulu hanya untuk bahan yang punya lebih dari satu supplier. Untuk menghubungkan bahan ke supplier, pakai tombol 📦 Atur Bahan, atau ✏️ Edit Bahan di Master Barang.</div>
+    <div id="supp-noassign"></div>
     <div id="supplier-list-body" style="max-height:340px;overflow-y:auto;border:1px solid var(--br);border-radius:10px;margin-bottom:14px"></div>
     <button class="btn btn-pr" id="supp-add-btn" onclick="openAddSupplier()" style="width:100%;margin-bottom:6px">＋ Tambah Supplier Baru</button>
     <div id="supp-form" style="display:none;border:2px solid #16a34a;border-radius:12px;padding:12px 14px;margin-bottom:6px;background:#f0fdf4">
@@ -5286,6 +5394,15 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkNotif
 </div>
 
 <!-- Pengingat custom -->
+<div class="mbg" id="modal-nosupp">
+  <div class="modal" style="max-width:460px">
+    <div class="mt">🏪 Bahan Tanpa Supplier</div>
+    <div class="fg"><label class="fl">Hubungkan ke supplier</label><select id="ns-supplier" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid var(--br);font-size:13px"></select></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span id="ns-count" style="font-size:12px;font-weight:700;flex:1"></span><button class="btn btn-ol btn-xs" onclick="nsSelAllUsed()">Pilih yang dipakai di pesanan</button></div>
+    <div id="ns-list" style="max-height:46vh;overflow-y:auto;border:1px solid var(--br);border-radius:10px;margin-bottom:12px"></div>
+    <div class="mac"><button class="btn btn-ol" onclick="closeModal('modal-nosupp')">Batal</button><button class="btn btn-pr" onclick="applyNoSupp()">Hubungkan</button></div>
+  </div>
+</div>
 <div class="mbg" id="modal-moveday">
   <div class="modal" style="max-width:380px">
     <div class="mt">⇄ Pindah / Tukar Hari</div>
