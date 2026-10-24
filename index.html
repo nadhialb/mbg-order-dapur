@@ -363,7 +363,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#888;box-shado
     <div class="nav-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M1 7l2-5h10l2 5"/><path d="M6 15V11h4v4"/><path d="M1 7h14"/></svg></span>Master Dapur</div>
     <div class="nav-item" onclick="navigate('riwayat')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.5"/><path d="M8 4.5V8l3 2"/></svg></span>Riwayat</div>
   </nav>
-  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20261024-v75</div>
+  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20261024-v77</div>
 </aside>
 
 <!-- MOBILE HEADER -->
@@ -1977,7 +1977,7 @@ function renderJadwalContent(){
     </div>
     ${menuBody}
   </div>`;
-  document.getElementById('jadwal-date-hdr').innerHTML=`<span>${fmt(nd)}</span><button class="btn btn-ol btn-icon" style="color:var(--rd)" onclick="deleteDaySchedule()" title="Hapus menu &amp; bahan hari ini" aria-label="Hapus Hari Ini">🗑️</button><button class="btn btn-ol btn-icon" onclick="openMoveDay()" title="Pindah / tukar hari (menu + bahan)" aria-label="Pindah Hari">⇄</button>`;
+  document.getElementById('jadwal-date-hdr').innerHTML=`<span>${fmt(nd)}</span><div style="display:flex;gap:4px;align-items:center"><button class="btn btn-ol btn-icon" onclick="openMoveDay()" title="Pindah / tukar hari (menu + bahan)" aria-label="Pindah Hari">⇄</button><button class="btn btn-ol btn-icon" style="color:var(--rd)" onclick="deleteDaySchedule()" title="Hapus menu &amp; bahan hari ini" aria-label="Hapus Hari Ini">🗑️</button></div>`;
   document.getElementById('jadwal-menu-col').innerHTML=menuHtml;
   const dayTotal=items.reduce((a,si)=>a+si.qty*effPrice(si),0);
   const itemsChevron=jadwalItemsOpen?'▾':'▸';
@@ -3305,6 +3305,30 @@ function renderRapelNotif(){
 }
 
 // ── Rekap pesanan ───────────────────────
+const REKAP_ST=[
+  {k:0,label:'Belum dipesan',txt:'',bg:'#fff',bd:'#cbd5e1',fg:'#94a3b8'},
+  {k:1,label:'Sudah dipesan',txt:'✓',bg:'#dcfce7',bd:'#16a34a',fg:'#166534'},
+  {k:2,label:'Sudah datang',txt:'📦',bg:'#dbeafe',bd:'#2563eb',fg:'#1e40af'},
+  {k:3,label:'Sudah dibayar',txt:'💰',bg:'#fef9c3',bd:'#ca8a04',fg:'#854d0e'}];
+function _itState(si){return si.isPaid&&si.isReceived?3:si.isReceived&&si.isOrdered?2:si.isOrdered?1:0;}
+function rekapStatusBtn(matId,kid,sis){
+  const st=sis.map(_itState);const mn=Math.min(...st),mx=Math.max(...st);
+  const d=REKAP_ST[mn];const next=REKAP_ST[(mn+1)%4];
+  const mixed=mn!==mx;
+  return `<button onclick="cycleRekapStatus('${matId}','${kid}','${pesananWeek}')" title="${d.label}${mixed?' (sebagian hari berbeda)':''} — klik: ${next.label}" style="width:26px;height:26px;border-radius:50%;border:2px ${mixed?'dashed':'solid'} ${d.bd};background:${d.bg};color:${d.fg};font-size:${mn===1?13:12}px;font-weight:800;cursor:pointer;padding:0;line-height:1;display:inline-flex;align-items:center;justify-content:center">${d.txt}</button>`;
+}
+function cycleRekapStatus(matId,kid,wk){
+  const its=S.scheduleItems.filter(s=>s.materialId===matId&&s.kitchenId===kid&&s.weekKey===wk);
+  if(!its.length)return;
+  const mn=Math.min(...its.map(_itState));const n=(mn+1)%4;
+  const today=fmtDate(new Date());
+  its.forEach(s=>{
+    s.isOrdered=n>=1;if(n>=1){if(!s.orderedAt)s.orderedAt=today;}else s.orderedAt=null;
+    s.isReceived=n>=2;
+    s.isPaid=n>=3;s.paidAt=n>=3?(s.paidAt||today):null;
+  });
+  save();openRekap();if(curPage==='pesanan')renderPesanan();if(curPage==='dashboard')renderDashboard();
+}
 function toggleRekapOrdered(matId,kid,wk,checked){
   S.scheduleItems.filter(s=>s.materialId===matId&&s.kitchenId===kid&&s.weekKey===wk).forEach(s=>{s.isOrdered=checked;s.orderedAt=checked?fmtDate(new Date()):null;});
   save();openRekap();if(curPage==='pesanan')renderPesanan();
@@ -3337,10 +3361,12 @@ function openRekap(){
     totalBahan++;
     const matSis=allItems.filter(s=>s.materialId===matId);
     const allOrd=matSis.length>0&&matSis.every(s=>s.isOrdered);
+    const allRecv=allOrd&&matSis.every(s=>s.isReceived);
+    const allPaid=allRecv&&matSis.every(s=>s.isPaid);
     if(mat.type!==lastType){
       lastType=mat.type;
       const emoji=typeEmoji(mat.type);
-      rows+=`<tr style="background:#f5f9f6"><td colspan="8" style="padding:6px 10px;font-size:11px;font-weight:700;color:#2d7a4f;letter-spacing:.3px">${emoji} ${mat.type.toUpperCase()}</td></tr>`;
+      rows+=`<tr style="background:#f5f9f6"><td colspan="10" style="padding:6px 10px;font-size:11px;font-weight:700;color:#2d7a4f;letter-spacing:.3px">${emoji} ${mat.type.toUpperCase()}</td></tr>`;
     }
     const totalQty=roundQty(Object.values(days).reduce((a,b)=>a+b,0));
     const multiDay=Object.keys(days).length>1;
@@ -3353,8 +3379,8 @@ function openRekap(){
       return `<td style="text-align:center;padding:4px 2px"><span style="display:inline-block;min-width:28px;padding:3px 4px;border-radius:5px;font-size:12px;font-weight:700;${cellOrd?'background:#dcfce7;color:#166534':'background:#eff6ff;color:#1d4ed8'}">${q}</span></td>`;
     }).join('');
     rows+=`<tr style="border-bottom:1px solid var(--br)${allOrd?';background:#fafafa':''}">
-      <td style="padding:7px 4px 7px 8px;position:sticky;left:0;background:${allOrd?'#fafafa':'#fff'};z-index:2;min-width:0;width:34px">
-        <input type="checkbox" ${allOrd?'checked':''} onchange="toggleRekapOrdered('${matId}','${kid}','${pesananWeek}',this.checked)" style="width:15px;height:15px;cursor:pointer;accent-color:var(--gn)">
+      <td style="padding:5px 4px 5px 8px;position:sticky;left:0;background:${allOrd?'#fafafa':'#fff'};z-index:2;width:34px;text-align:center">
+        ${rekapStatusBtn(matId,kid,matSis)}
       </td>
       <td style="padding:7px 6px 7px 0;position:sticky;left:34px;background:${allOrd?'#fafafa':'#fff'};z-index:2;max-width:120px;min-width:90px">
         <div style="font-size:13px;${nameStyle};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${mat.name}</div>
@@ -3373,6 +3399,7 @@ function openRekap(){
 
   (()=>{const _k=S.kitchens.find(k=>k.id===(document.getElementById('pesanan-kitchen')?.value||curKitchen));const _sub=document.getElementById('rekap-subtitle');if(_sub)_sub.textContent=(_k?.name||'Dapur')+' · '+totalBahan+' bahan';})();
   document.getElementById('rekap-body').innerHTML=`
+    <div style="display:flex;flex-wrap:wrap;gap:6px 10px;padding:7px 10px;border-bottom:1px solid var(--br);font-size:10px;color:var(--mt);align-items:center"><b>Klik untuk ganti status:</b>${REKAP_ST.map(x=>`<span style="display:inline-flex;align-items:center;gap:4px"><span style="width:14px;height:14px;border-radius:50%;border:2px solid ${x.bd};background:${x.bg};display:inline-flex;align-items:center;justify-content:center;font-size:8px;color:${x.fg}">${x.txt}</span>${x.label}</span>`).join('')}</div>
     <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
       <table style="width:100%;border-collapse:collapse;min-width:320px">
         <thead><tr>
