@@ -381,11 +381,12 @@ html,body{max-width:100%;overflow-x:clip}
     <div class="nav-item" onclick="navigate('master-dapur')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="8" rx="1"/><path d="M1 7l2-5h10l2 5"/><path d="M6 15V11h4v4"/><path d="M1 7h14"/></svg></span>Master Dapur</div>
     <div class="nav-item" onclick="navigate('riwayat')"><span class="ic"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.5"/><path d="M8 4.5V8l3 2"/></svg></span>Riwayat</div>
   </nav>
-  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20261024-v81</div>
+  <div style="padding:0 14px 8px"><button class="btn btn-ol btn-sm" onclick="openGuide()" style="width:100%">📖 Cara Pakai</button></div>
+  <div class="sb-footer">MBG Dapur v2.0 &middot; build 20261026-v83</div>
 </aside>
 
 <!-- MOBILE HEADER -->
-<div class="mob-hdr"><span class="brand">🍱 MBG Order</span><span class="mb" id="mob-date"></span></div>
+<div class="mob-hdr"><span class="brand">🍱 MBG Order</span><span style="display:flex;align-items:center;gap:8px"><span class="mb" id="mob-date"></span><button onclick="openGuide()" aria-label="Cara pakai" title="Cara pakai" style="width:26px;height:26px;border-radius:50%;border:1.5px solid rgba(255,255,255,.55);background:none;color:#fff;font-weight:800;font-size:13px;cursor:pointer;padding:0;line-height:1">?</button></span></div>
 
 <main class="main">
 
@@ -1612,7 +1613,7 @@ function renderDashboard(){
   }
 
   // === Global summary bar ===
-  let html=backupReminderHtml()+assistantCardHtml();
+  let html=welcomeHtml()+backupReminderHtml()+assistantCardHtml();
   const allWkItems=S.scheduleItems.filter(si=>S.kitchens.some(k=>k.id===si.kitchenId)&&si.weekKey===wk);
   const urgentToday=[];const urgentOverdue=[];
   S.kitchens.forEach(k=>{
@@ -2104,7 +2105,7 @@ function renderJadwalContent(){
   if(!jadwalItemsOpen){
     // ciutkan: cuma header + total yang tampil
   } else if(!items.length){
-    html+=`<div class="empty"><div class="ei">📋</div><div class="et">Belum ada bahan untuk hari ini</div><div class="ed">Klik "Tambah Bahan" untuk menambahkan.</div></div>`;
+    html+=`<div class="empty"><div class="ei">📋</div><div class="et">Belum ada bahan untuk hari ini</div><div class="ed">Klik "Tambah Bahan", atau pakai Barang → Import Excel untuk memasukkan satu minggu sekaligus.</div></div>`;
   } else {
     let total=0;
     const _tOrder=getAllTypes();
@@ -3247,6 +3248,11 @@ function rerenderCurrent(){
     if(document.getElementById('supplier-list-body'))renderSupplierList();
   }catch(e){}
 }
+function openGuide(){openModal('modal-guide');}
+function welcomeHtml(){
+  if(S.scheduleItems.length||S.materials.length>3)return '';
+  return `<div class="card" style="padding:14px 16px;margin-bottom:12px;border-left:4px solid #16a34a"><div style="font-weight:800;font-size:14px;margin-bottom:6px">👋 Mulai di sini</div><div style="font-size:13px;line-height:1.6">1. Buka <b>Barang</b> → <b>📊 Import Excel</b> (atau tambah bahan manual).<br>2. Susun menu &amp; bahan di <b>Jadwal</b>.<br>3. Pantau <b>Pesanan</b> dan pengingat supplier di sini.</div><button class="btn btn-pr btn-xs" style="margin-top:8px" onclick="openGuide()">📖 Buka Cara Pakai</button></div>`;
+}
 function suppLessMats(){return S.materials.filter(m=>!matSupplierIds(m).length);}
 function _upcomingWeekKeys(){const d0=getWeekDates(getWeekKey(today0()));return [getWeekKey(today0()),getWeekKey(addDays(d0[0],7))];}
 function suppLessUpcoming(){
@@ -3517,7 +3523,7 @@ function rekapStatusBtn(matId,kid,sis){
   const st=sis.map(_itState);const mn=Math.min(...st),mx=Math.max(...st);
   const d=REKAP_ST[mn];const next=REKAP_ST[(mn+1)%4];
   const mixed=mn!==mx;
-  return `<button onclick="cycleRekapStatus('${matId}','${kid}','${pesananWeek}')" title="${d.label}${mixed?' (sebagian hari berbeda)':''} — klik: ${next.label}" style="width:26px;height:26px;border-radius:50%;border:2px ${mixed?'dashed':'solid'} ${d.bd};background:${d.bg};color:${d.fg};font-size:${mn===1?13:12}px;font-weight:800;cursor:pointer;padding:0;line-height:1;display:inline-flex;align-items:center;justify-content:center">${d.txt}</button>`;
+  return `<button class="stbtn" onclick="cycleRekapStatus('${matId}','${kid}','${pesananWeek}')" title="${d.label}${mixed?' (sebagian hari berbeda)':''} — klik: ${next.label}" style="width:26px;height:26px;border-radius:50%;border:2px ${mixed?'dashed':'solid'} ${d.bd};background:${d.bg};color:${d.fg};font-size:${mn===1?13:12}px;font-weight:800;cursor:pointer;padding:0;line-height:1;display:inline-flex;align-items:center;justify-content:center">${d.txt}</button>`;
 }
 function cycleRekapStatus(matId,kid,wk){
   const its=S.scheduleItems.filter(s=>s.materialId===matId&&s.kitchenId===kid&&s.weekKey===wk);
@@ -4200,22 +4206,24 @@ function renderWizStep(step){
     let existingRows=existingItems.length===0
       ?'<div style="color:var(--mt);font-size:13px;padding:12px">Tidak ada — ini adalah minggu pertama import</div>'
       :existingItems.map((r)=>{
+        const idx=ri.indexOf(r);
+        if(!r.pcChoice)r.pcChoice=r.newPrice>0?'excel':'master';
         const priceChanged=r.newPrice>0&&r.newPrice!==r.masterPrice;
         const rowBg=priceChanged?'background:#fffbeb':'';
-        const diffAmt=r.newPrice-r.masterPrice;
-        const diffLabel=!r.newPrice?'<span style="color:var(--mt);font-size:11px">tidak ada harga di file</span>'
-          :!priceChanged?'<span style="color:#059669;font-size:11px">✓ sama</span>'
-          :diffAmt>0?`<span style="color:#d97706;font-size:11px">▲ +${fmtRp(diffAmt)}</span>`
-          :`<span style="color:#059669;font-size:11px">▼ ${fmtRp(diffAmt)}</span>`;
-        const willUpdate=r.newPrice>0&&priceChanged;
+        const excelTxt=r.newPrice>0?(priceChanged?`<span style="font-weight:700;color:#b45309">${fmtRp(r.newPrice)} ⚠️</span>`:fmtRp(r.newPrice)):'<span style="color:var(--mt)">—</span>';
         return `<tr style="${rowBg}">
-          <td style="padding:7px 8px;font-weight:600;font-size:13px">${r.corrected}</td>
+          <td style="padding:7px 8px;font-weight:600;font-size:13px">${r.corrected}${priceChanged?' <span style="font-size:10px;font-weight:700;color:#b45309;background:#fef3c7;padding:1px 6px;border-radius:99px;white-space:nowrap">harga beda</span>':''}</td>
           <td style="padding:7px 8px;font-size:12px;color:var(--mt)">${r.dayLabels}</td>
           <td style="padding:7px 8px;font-size:13px">${fmtRp(r.masterPrice)}</td>
-          <td style="padding:7px 8px;font-size:13px;font-weight:${priceChanged?700:400}">${r.newPrice>0?fmtRp(r.newPrice):'—'}</td>
-          <td style="padding:7px 8px;font-size:13px;color:var(--mt)">${r.avgPrice>0?fmtRp(r.avgPrice):'—'}</td>
-          <td style="padding:7px 8px">${diffLabel}</td>
-          <td style="padding:7px 8px;font-size:12px">${willUpdate?'<span style="color:#059669">✅ Diupdate</span>':'<span style="color:var(--mt)">Tidak berubah</span>'}</td>
+          <td style="padding:7px 8px;font-size:13px">${excelTxt}</td>
+          <td style="padding:7px 8px;white-space:nowrap">
+            <select id="ri-pc-${idx}" onchange="impPriceChoice(${idx})" style="padding:4px 6px;font-size:12px;border:1.5px solid var(--br);border-radius:6px;background:#fff">
+              <option value="excel" ${r.pcChoice==='excel'?'selected':''} ${r.newPrice>0?'':'disabled'}>Harga Excel</option>
+              <option value="master" ${r.pcChoice==='master'?'selected':''}>Tetap master</option>
+              <option value="manual" ${r.pcChoice==='manual'?'selected':''}>Isi manual…</option>
+            </select>
+            <input id="ri-pm-${idx}" type="number" min="0" step="500" value="${r.pcManual??''}" placeholder="Rp" oninput="impPriceManual(${idx},this.value)" style="width:90px;padding:4px 6px;font-size:12px;border:1.5px solid var(--br);border-radius:6px;${r.pcChoice==='manual'?'':'display:none'}">
+          </td>
         </tr>`;
       }).join('');
 
@@ -4237,6 +4245,7 @@ function renderWizStep(step){
           <td><select id="ri-type-${idx}" style="padding:5px 8px;font-size:13px;border:1.5px solid var(--br);border-radius:6px;background:#fff">${typeSelect}</select></td>
           <td style="font-size:12px;color:var(--mt);white-space:nowrap">${r.dayLabels}</td>
           <td style="font-size:12px;color:var(--mt);white-space:nowrap">${r.totalQty} ${r.unit}</td>
+          <td><input id="ri-pr-${idx}" type="number" min="0" step="500" value="${r.pcNew??(r.newPrice||'')}" oninput="impNewPrice(${idx},this.value)" placeholder="Rp" style="width:90px;padding:5px 6px;font-size:13px;border:1.5px solid ${r.newPrice>0?'var(--br)':'#f59e0b'};border-radius:6px"></td>
           <td style="font-size:11px;color:var(--mt);max-width:160px">${warnText}</td>
         </tr>`;
       }).join('');
@@ -4269,17 +4278,15 @@ function renderWizStep(step){
       </div>
 
       ${existingItems.length?`
-      <div style="font-size:13px;font-weight:700;color:var(--mt);margin-bottom:6px">📋 Sudah Ada di Master — Update Harga</div>
-      <div style="overflow-x:auto;max-height:200px;overflow-y:auto;border:1px solid var(--br);border-radius:10px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px"><div style="font-size:13px;font-weight:700;color:var(--mt);flex:1;min-width:150px">📋 Sudah Ada di Master — Pilih Harga</div><button class="btn btn-ol btn-xs" onclick="impPriceAll('excel')">Semua harga Excel</button><button class="btn btn-ol btn-xs" onclick="impPriceAll('master')">Semua tetap master</button></div>
+      <div style="overflow-x:auto;max-height:240px;overflow-y:auto;border:1px solid var(--br);border-radius:10px;margin-bottom:14px">
         <table style="width:100%;border-collapse:collapse;font-size:13px">
           <thead><tr style="background:#f5f9f6;position:sticky;top:0">
             <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--mt)">NAMA</th>
             <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--mt)">HARI</th>
-            <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--mt)">HARGA LAMA</th>
-            <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--mt)">HARGA BARU ✓</th>
-            <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--mt)">RATA-RATA (INFO)</th>
-            <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--mt)">SELISIH</th>
-            <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--mt)">STATUS</th>
+            <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--mt)">HARGA MASTER</th>
+            <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--mt)">HARGA EXCEL</th>
+            <th style="padding:7px 8px;text-align:left;font-size:11px;color:var(--mt)">HARGA AKHIR</th>
           </tr></thead>
           <tbody>${existingRows}</tbody>
         </table>
@@ -4298,6 +4305,7 @@ function renderWizStep(step){
             <th style="padding:7px 10px;text-align:left;font-size:11px;color:var(--mt)">JENIS</th>
             <th style="padding:7px 10px;text-align:left;font-size:11px;color:var(--mt)">HARI</th>
             <th style="padding:7px 10px;text-align:left;font-size:11px;color:var(--mt)">QTY</th>
+            <th style="padding:7px 10px;text-align:left;font-size:11px;color:var(--mt)">HARGA</th>
             <th style="padding:7px 10px;text-align:left;font-size:11px;color:var(--mt)">KETERANGAN</th>
           </tr></thead>
           <tbody>${newRows}</tbody>
@@ -4310,7 +4318,8 @@ function renderWizStep(step){
     // Collect reviewed names/types from step 3 inputs
     IMP.reviewedItems.forEach((r,idx)=>{
       if(r.existsInMaster){
-        // Auto use new price (no dropdown)
+        const ch=r.pcChoice||(r.newPrice>0?'excel':'master');
+        r.finalPrice=ch==='manual'?(parseFloat(r.pcManual)>=0?parseFloat(r.pcManual):r.masterPrice):ch==='master'?r.masterPrice:(r.newPrice>0?r.newPrice:r.masterPrice);
         r.priceChoice='new';
         r.finalName=r.corrected;
         r.finalType=r.type;
@@ -4318,6 +4327,8 @@ function renderWizStep(step){
         r.finalName=document.getElementById(`ri-name-${idx}`)?.value.trim()||r.corrected;
         r.finalType=document.getElementById(`ri-type-${idx}`)?.value||r.type;
         r.priceChoice='keep';
+        const pv=parseFloat(document.getElementById(`ri-pr-${idx}`)?.value);
+        r.finalPrice=!isNaN(pv)&&pv>=0?pv:(r.newPrice||0);
       }
     });
     const result=processImport();
@@ -4675,6 +4686,21 @@ function updateMapping(){
   });
 }
 
+function impPriceChoice(idx){
+  const r=IMP.reviewedItems[idx];if(!r)return;
+  const v=document.getElementById('ri-pc-'+idx).value;r.pcChoice=v;
+  const m=document.getElementById('ri-pm-'+idx);if(m){m.style.display=v==='manual'?'':'none';if(v==='manual'&&m.value==='')m.focus();}
+}
+function impPriceManual(idx,val){const r=IMP.reviewedItems[idx];if(r)r.pcManual=val;}
+function impNewPrice(idx,val){const r=IMP.reviewedItems[idx];if(r)r.pcNew=val;}
+function impPriceAll(choice){
+  (IMP.reviewedItems||[]).forEach((r,idx)=>{
+    if(!r.existsInMaster)return;
+    r.pcChoice=(choice==='excel'&&!(r.newPrice>0))?'master':choice;
+    const sel=document.getElementById('ri-pc-'+idx);if(sel)sel.value=r.pcChoice;
+    const m=document.getElementById('ri-pm-'+idx);if(m)m.style.display='none';
+  });
+}
 function wizNext(){
   if(IMP.step===1){if(!IMP.wb){alert('Upload file terlebih dahulu.');return;}renderWizStep(2);}
   else if(IMP.step===2){updateMapping();renderWizStep(3);}
@@ -4691,10 +4717,10 @@ function processImport(){
   // Build a lookup: originalNameLower → reviewed item (finalName, finalType)
   const reviewLookup={};
   (IMP.reviewedItems||[]).forEach(r=>{
-    r.originalNames.forEach(on=>{reviewLookup[on.toLowerCase().trim()]={finalName:r.finalName||r.corrected,finalType:r.finalType||r.type};});
+    r.originalNames.forEach(on=>{reviewLookup[on.toLowerCase().trim()]={finalName:r.finalName||r.corrected,finalType:r.finalType||r.type,finalPrice:r.finalPrice};});
     // also index by corrected name and finalName
-    reviewLookup[(r.corrected||'').toLowerCase()]={finalName:r.finalName||r.corrected,finalType:r.finalType||r.type};
-    if(r.finalName)reviewLookup[r.finalName.toLowerCase()]={finalName:r.finalName,finalType:r.finalType||r.type};
+    reviewLookup[(r.corrected||'').toLowerCase()]={finalName:r.finalName||r.corrected,finalType:r.finalType||r.type,finalPrice:r.finalPrice};
+    if(r.finalName)reviewLookup[r.finalName.toLowerCase()]={finalName:r.finalName,finalType:r.finalType||r.type,finalPrice:r.finalPrice};
   });
 
   // Reverse mapping: colIndex → field
@@ -4738,8 +4764,9 @@ function processImport(){
       // Use date-derived weekKey if available, else fall back to manually selected week
       const parsedDate=parseDateFromRaw(hariRaw);
       const itemWeekKey=parsedDate?getWeekKey(parsedDate):weekKey;
-      const m=findOrCreateMat(name,type,unit,price);
-      newItems.push({id:uid(),kitchenId:kitId,weekKey:itemWeekKey,day:dayIdx,materialId:m.id,qty,unitPrice:price||null,isOrdered:false,orderedAt:null,isPaid:false,paidAt:null});
+      const _fp=resolveName(name).finalPrice;const price2=_fp!==undefined?_fp:price;
+      const m=findOrCreateMat(name,type,unit,price2);
+      newItems.push({id:uid(),kitchenId:kitId,weekKey:itemWeekKey,day:dayIdx,materialId:m.id,qty,unitPrice:price2||null,isOrdered:false,orderedAt:null,isPaid:false,paidAt:null});
     });
   } else {
     // Structure B: days as columns
@@ -4754,11 +4781,12 @@ function processImport(){
       const type=jenisIdx>=0?String(row[jenisIdx]||'').trim():'';
       const unit=satuanIdx>=0?String(row[satuanIdx]||'').trim():'';
       const price=hargaIdx>=0?parseFloat(row[hargaIdx])||0:0;
-      const m=findOrCreateMat(name,type,unit,price);
+      const _fp=resolveName(name).finalPrice;const price2=_fp!==undefined?_fp:price;
+      const m=findOrCreateMat(name,type,unit,price2);
       dayIdxMap.forEach(({ci,di})=>{
         if(IMP.dayFilter&&!IMP.dayFilter.includes(di))return;
         const qty=parseFloat(row[ci])||0;if(qty<=0)return;
-        newItems.push({id:uid(),kitchenId:kitId,weekKey,day:di,materialId:m.id,qty,unitPrice:price||null,isOrdered:false,orderedAt:null,isPaid:false,paidAt:null});
+        newItems.push({id:uid(),kitchenId:kitId,weekKey,day:di,materialId:m.id,qty,unitPrice:price2||null,isOrdered:false,orderedAt:null,isPaid:false,paidAt:null});
       });
     });
   }
@@ -4785,9 +4813,7 @@ function processImport(){
   // Build price updates for existing master items
   const priceUpdates=[];
   (IMP.reviewedItems||[]).filter(r=>r.existsInMaster&&r.masterMat).forEach(r=>{
-    const choice=r.priceChoice||'avg';
-    if(choice==='keep')return;
-    const newP=choice==='new'?r.newPrice:r.avgPrice;
+    const newP=r.finalPrice!==undefined?r.finalPrice:r.newPrice;
     if(newP>0&&newP!==r.masterPrice)priceUpdates.push({materialId:r.masterMat.id,newPrice:newP,oldPrice:r.masterPrice,name:r.corrected});
   });
 
@@ -5555,6 +5581,51 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkNotif
 </div>
 
 <!-- Pengingat custom -->
+<div class="mbg" id="modal-guide">
+  <div class="modal" style="max-width:560px;max-height:88vh;display:flex;flex-direction:column">
+    <div class="mt">📖 Cara Pakai MBG Order</div>
+    <div id="guide-body" style="overflow-y:auto;flex:1;min-height:0;font-size:13px;line-height:1.55">
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 12px;margin-bottom:10px">
+        <b>Alur kerja singkat</b>
+        <ol style="margin:6px 0 0 18px;padding:0">
+          <li><b>Barang</b> — isi daftar bahan di menu <i>Barang</i> (atau <i>Import Excel</i>).</li>
+          <li><b>Jadwal</b> — susun menu &amp; bahan per hari di menu <i>Jadwal</i>.</li>
+          <li><b>Pesanan</b> — di <i>Pesanan</i>, tandai Pesan → Datang → Bayar.</li>
+          <li><b>Rekap</b> — tombol 📊 untuk melihat total semua bahan seminggu.</li>
+          <li><b>Supplier</b> — hubungi supplier lewat kartu pengingat di <i>Beranda</i>.</li>
+        </ol>
+      </div>
+      <details open><summary><b>📦 Barang &amp; Import Excel</b></summary><div class="gd">
+        Menu <b>Barang</b> berisi semua bahan: nama, jenis, satuan, harga acuan, dan tipe stok (H-1…H-4 = dipesan N hari sebelum datang; Rapel = dipesan sekaligus tiap Jumat untuk minggu depan).<br>
+        <b>Import Excel</b>: unggah file → cocokkan kolom → periksa nama &amp; jenis bahan baru → pilih harga (Excel, tetap master, atau isi manual; harga yang beda ditandai kuning) → konfirmasi.<br>
+        <b>Pilih beberapa</b>: centang banyak bahan, lalu <i>Ubah Sekaligus</i> (jenis, satuan, tipe stok, supplier) atau <i>Gabungkan</i> bahan yang dobel.
+      </div></details>
+      <details><summary><b>📅 Jadwal Menu</b></summary><div class="gd">
+        Pilih dapur dan minggu, lalu tab hari. Tambahkan <b>menu masakan</b> dan <b>bahan</b> beserta jumlahnya. Tombol <b>⇄</b> menukar atau memindahkan seluruh menu + bahan ke hari lain; <b>🗑️</b> menghapus isi satu hari. ✏️ mengedit bahan; centang "butuh perhatian" untuk menandai 🚩 bahan penting.
+      </div></details>
+      <details><summary><b>🛒 Daftar Pesanan</b></summary><div class="gd">
+        Tiga tampilan: <b>Hari</b>, <b>Bahan</b>, <b>Supplier</b>. Tap <b>Pesan</b> → <b>Datang</b> → <b>Bayar</b> pada tiap bahan. Tombol <b>⋮</b> di header hari/kategori: tandai semua sekaligus, 🚩 urgent, dan <b>📝 Jam, Tempat &amp; Catatan</b> (jam kirim, tempat kirim, catatan per bahan seperti "diselep"). Info itu tampil kecil di bawah nama bahan dan ikut di hasil copy 📋 dan chat WhatsApp. Tab <b>Supplier</b> menampilkan total biaya per supplier dan satu tombol status untuk semua bahannya.
+      </div></details>
+      <details><summary><b>📊 Rekap Bahan</b></summary><div class="gd">
+        Tabel semua bahan satu minggu. Lingkaran di kiri tiap bahan: klik untuk berganti status — kosong (belum dipesan) → ✓ hijau (dipesan) → 📦 biru (datang) → 💰 kuning (dibayar) → kembali kosong. Garis putus-putus berarti status tiap hari berbeda.
+      </div></details>
+      <details><summary><b>🏪 Supplier</b></summary><div class="gd">
+        Di <b>Barang → ⋮ Lainnya → Kelola Supplier</b>: <b>＋ Tambah Supplier Baru</b>, ✏️ Edit, <b>📦 Atur Bahan</b> (pilih banyak bahan sekaligus). <b>⭐ Utama</b> hanya dipakai untuk bahan yang punya lebih dari satu supplier. Kartu kuning <b>⚠️ bahan belum punya supplier</b> → tombol <i>Atur</i> untuk menghubungkannya sekaligus.
+      </div></details>
+      <details><summary><b>🔔 Beranda &amp; Pengingat</b></summary><div class="gd">
+        Kartu <b>Asisten Pengingat Supplier</b> menampilkan supplier yang perlu dihubungi <b>hari ini</b> (hari H) dan <b>besok</b> (H-1), lengkap dengan tombol <b>💬 WhatsApp</b> / <b>📋 Salin pesan</b> berformat siap kirim. Tambahkan pengingat pribadi lewat <b>＋ Pengingat</b>. Notifikasi di HP aktif lewat tombol 🔔 (atau lewat ntfy jam 08.00 jika sudah disiapkan admin).
+      </div></details>
+      <details><summary><b>↩ Riwayat, Urungkan &amp; Ulangi</b></summary><div class="gd">
+        Semua perubahan tercatat di <b>Riwayat</b>. Tiap entri punya <b>↩ Urungkan</b> / <b>↪ Ulangi</b> (10 langkah terakhir, hanya di perangkat yang sama). Setelah aksi massal juga muncul tombol <b>Urungkan</b> selama beberapa detik.
+      </div></details>
+      <details><summary><b>💾 Simpan, Cloud &amp; Backup</b></summary><div class="gd">
+        Data tersimpan otomatis di perangkat dan disinkronkan ke cloud. Di <b>Barang</b>: <b>☁ Simpan</b> (kirim ke cloud), <b>⬇ Ambil</b> (tarik dari cloud). <b>⋮ Lainnya</b> → <i>Backup</i> mengunduh file cadangan; <i>Restore</i> memulihkannya; <i>Cadangan otomatis</i> menyimpan beberapa titik pemulihan. Unduh backup minimal seminggu sekali (aplikasi akan mengingatkan).
+      </div></details>
+    </div>
+    <div class="mac"><button class="btn btn-pr" onclick="closeModal('modal-guide')">Mengerti</button></div>
+  </div>
+</div>
+<style>.gd{padding:6px 0 10px 2px;color:var(--tx)}#guide-body details{border-bottom:1px solid var(--br);padding:7px 0}#guide-body summary{cursor:pointer;list-style:none;padding:2px 0}#guide-body summary::-webkit-details-marker{display:none}</style>
 <div class="mbg" id="modal-nosupp">
   <div class="modal" style="max-width:460px">
     <div class="mt">🏪 Bahan Tanpa Supplier</div>
